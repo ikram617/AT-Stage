@@ -1,4 +1,3 @@
-
 """
 SIMULATION DONNÉES FTTH — ALGÉRIE TÉLÉCOM (v4 FINALE)
 → Tous les bâtiments résidentiels (résidences & immeubles uniquement)
@@ -9,11 +8,20 @@ SIMULATION DONNÉES FTTH — ALGÉRIE TÉLÉCOM (v4 FINALE)
 import os, sys, warnings
 import numpy as np
 import pandas as pd
-from math import radians, cos, sin, asin, sqrt
+from math import radians, cos, sin, asin, sqrt, ceil
+from backend.config import settings
+
+
+# Longueurs câbles préfabriqués AT (en mètres) — séance 08/03/2026
+PREFAB_LENGTHS = settings.CABLE_LENGTHS
+
+def snap_to_prefab(dist_m: float) -> int:
+    """Snappe une distance réelle vers le câble préfab AT le plus proche."""
+    return min(PREFAB_LENGTHS, key=lambda x: abs(x - dist_m))
 
 warnings.filterwarnings("ignore")
 np.random.seed(2026)
-os.makedirs("data", exist_ok=True)
+os.makedirs(r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee", exist_ok=True)
 
 try:
     import osmnx as ox
@@ -296,8 +304,10 @@ def estimer_logements(bats):
 
 # ====================== GÉNÉRATION TABLES ======================
 def generer_tables(bats):
-    print(f"\n[3/3] Génération tables AT")
-    # (ton code original complet)
+    print(f"\n[3/3] Génération tables AT (40% commerce RDC + GPS identique par bâtiment + splitter_n1 rempli)")
+
+    from backend.config import settings   # ← config centralisée
+
     zones, equipements, cartes, ports = [], [], [], []
     fdts, spl1_rows, fats, spl2 = [], [], [], []
     clients, adresses, numeros, abonnes = [], [], [], []
@@ -305,15 +315,23 @@ def generer_tables(bats):
     client_seq = 0
     numero_seq = 0
 
+    olt_abonnes_count = {}
+
+    # 40% des bâtiments ont commerce RDC
+    nb_bat_total = len(bats)
+    nb_commerce_rdc = int(nb_bat_total * 0.40)
+    commerce_indices = np.random.choice(nb_bat_total, nb_commerce_rdc, replace=False)
+    commerce_set = set(commerce_indices)
+
     for bat_idx, row in bats.iterrows():
         olt_seq = bat_idx + 1
         zone_id = f"Z{ZONE_CODE}-{olt_seq:03d}"
         olt_lat = row["lat"]
         olt_lon = row["lon"]
         nb_et = int(row["nb_etages"])
-        nb_log = int(row["nb_logements"])
-        comm_rdc = bool(row.get("commerce_rdc", False))
         polygon = row.geometry
+
+        comm_rdc = bat_idx in commerce_set
 
         elot = resoudre_elot(row, bat_idx)
         commune, cecli = commune_proche(olt_lat, olt_lon)
@@ -324,20 +342,20 @@ def generer_tables(bats):
 
         olt_nom = f"T{ZONE_CODE}-{olt_seq:03d}-{elot}-AN6000-IN"
 
-        # ZONE
-        zones.append({"id": zone_id, "wilaya": WILAYA, "wilaya_nom": wilaya_nom, "commune": commune, "zone_geographique": cecli})
+        if zone_id not in olt_abonnes_count:
+            olt_abonnes_count[zone_id] = 0
 
-        # ÉQUIPEMENT
+        # ZONE + ÉQUIPEMENT + CARTE + PORT
+        zones.append({"id": zone_id, "wilaya": WILAYA, "wilaya_nom": wilaya_nom, "commune": commune, "zone_geographique": cecli})
         equipements.append({"id": zone_id, "nom": olt_nom, "ip": f"100.{WILAYA}.{(olt_seq % 254)+1}.{np.random.randint(1,254)}", "type": np.random.choice(["FIBERHOME","HUAWEI","ZTE"], p=[0.5,0.35,0.15]), "latitude": olt_lat, "longitude": olt_lon})
 
-        # CARTE + PORT
         for slot in [1, 2]:
             cartes.append({"id": int(f"{ZONE_CODE}{olt_seq:03d}7{slot:02d}"), "nom": f"{olt_nom}_Frame:0/Slot:{slot}", "id_equipement": zone_id, "position": f"0/{slot}", "type": "gpon", "rack": slot})
             for p in range(1, 17):
                 etat = "utilisé" if (slot == 1 and p <= 4) else "libre"
                 ports.append({"id": int(f"{ZONE_CODE}{olt_seq:03d}7{slot:02d}{p:02d}"), "nom": f"{olt_nom}-Frame:0/Slot:{slot}/Port:{p}", "nomCarte": f"{olt_nom}_Frame:0/Slot:{slot}", "position": p, "etat": etat, "zone_id": zone_id})
 
-        # FDT locale
+        # FDT locale + SPLITTER N1 (rempli !)
         nb_fdts = np.random.randint(2, 5)
         fdts_bat = []
         for i in range(nb_fdts):
@@ -348,26 +366,24 @@ def generer_tables(bats):
             fdts_bat.append({"id": fdt_nom, "nom_equipement": olt_nom, "zone": zone_id, "latitude": fl, "longitude": flo, "distance_olt_m": round(dist)})
             fdts.append(fdts_bat[-1])
 
+            # SPLITTER N1 rempli ici
+            spl1_rows.append({
+                "id": f"{fdt_nom}-S01",
+                "nom_FDT": fdt_nom,
+                "rapport_de_division": "1:8",
+                "etat": "utilisé",
+                "zone_id": zone_id
+            })
+
         fdt_ref = fdts_bat[0]
         fdt_nom = fdt_ref["id"]
         fdt_seq_num = int(fdt_nom.split("-")[-1])
-        fdt_lat = fdt_ref["latitude"]
-        fdt_lon = fdt_ref["longitude"]
-
-        # SPLITTER N1
-        nb_spl = np.random.randint(4, 14)
-        port_ctr = 1
-        for s in range(1, nb_spl + 1):
-            spl_nom = f"{fdt_nom}-S{s:02d}"
-            sl, slo = rand_offset(fdt_lat, fdt_lon, 0, 10)
-            spl1_rows.append({"id": spl_nom, "nom_FDT": fdt_nom, "id_port": f"{olt_nom}-Frame:0/Slot:1/Port:{port_ctr}", "latitude": sl, "longitude": slo, "zone_id": zone_id})
-            port_ctr += 1
 
         spl_seq_local = 1
         fat_num = 1
         porte_globale = 1
 
-        # Commerce RDC
+        # Commerce RDC (40%)
         if comm_rdc:
             nb_com = np.random.randint(2, 5)
             portes_c = list(range(porte_globale, porte_globale + nb_com))
@@ -375,20 +391,22 @@ def generer_tables(bats):
             fat_id = fmt_fat(olt_seq, fdt_seq_num, spl_seq_local, elot, portes_c, 0, 1)
             fl, flo = rand_offset(olt_lat, olt_lon, 0, 15)
             nb_occ = np.random.randint(1, nb_com + 1)
-            fats.append({"id": fat_id, "nom_FDT": fdt_nom, "num_de_groupe": 0, "latitude": fl, "longitude": flo, "usage": "commerces", "nb_ports": 8, "nb_abonnes_sim": nb_occ, "nb_etages_bat": nb_et, "nb_log_etage": 4, "zone_id": zone_id, "distance_fdt_m": round(haversine(fl, flo, fdt_lat, fdt_lon))})
-            for dn in range(1, 9):
-                spl2.append({"id": f"{fat_id}-DOWN-{dn:02d}", "nom_FAT": fat_id, "id_splitter1": f"{fdt_nom}-S{spl_seq_local:02d}", "rapport_de_division": "1:08", "port_splitter": f"{fdt_nom}-S{spl_seq_local:02d}-DOWN-{dn}", "etat": "utilisé" if dn <= nb_occ else "libre", "zone_id": zone_id})
+            dist_fat_abonne = snap_to_prefab(haversine(fl, flo, olt_lat, olt_lon))
+            fats.append({"id": fat_id, "nom_FDT": fdt_nom, "num_de_groupe": 0, "latitude": fl, "longitude": flo, "usage": "commerces", "nb_ports": settings.FAT_CAPACITY, "nb_abonnes_sim": nb_occ, "nb_etages_bat": nb_et, "nb_log_etage": 4, "zone_id": zone_id, "distance_FAT_m": dist_fat_abonne})
+            for dn in range(1, settings.FAT_CAPACITY + 1):
+                spl2.append({"id": f"{fat_id}-DOWN-{dn:02d}", "nom_FAT": fat_id, "id_splitter1": f"{fdt_nom}-S{spl_seq_local:02d}", "rapport_de_division": f"1:{settings.SPLITTER_N2_RATIO}", "port_splitter": f"{fdt_nom}-S{spl_seq_local:02d}-DOWN-{dn}", "etat": "utilisé" if dn <= nb_occ else "libre", "zone_id": zone_id})
             spl_seq_local += 1
             fat_num += 1
+            olt_abonnes_count[zone_id] = olt_abonnes_count.get(zone_id, 0) + nb_occ
 
         # Logements
         etage = 1
-        while etage <= nb_et:
+        while etage <= nb_et and olt_abonnes_count.get(zone_id, 0) < 2048:
             portes_groupe = []
             etage_debut = etage
-            while etage <= nb_et and len(portes_groupe) < 8:
-                places_restantes = 8 - len(portes_groupe)
-                portes_etage_courant = min(4, places_restantes)  # 4 = log_par_etage moyen
+            while etage <= nb_et and len(portes_groupe) < settings.FAT_CAPACITY:
+                places_restantes = settings.FAT_CAPACITY - len(portes_groupe)
+                portes_etage_courant = min(4, places_restantes)
                 for _ in range(portes_etage_courant):
                     portes_groupe.append(porte_globale)
                     porte_globale += 1
@@ -397,16 +415,22 @@ def generer_tables(bats):
             if not portes_groupe:
                 break
 
-            groupes = [portes_groupe[i:i + 8] for i in range(0, len(portes_groupe), 8)]
+            groupes = [portes_groupe[i:i + settings.FAT_CAPACITY] for i in range(0, len(portes_groupe), settings.FAT_CAPACITY)]
             for g_idx, groupe in enumerate(groupes):
                 fat_id = fmt_fat(olt_seq, fdt_seq_num, spl_seq_local, elot, groupe, etage_debut, g_idx + 1)
                 fl, flo = rand_offset(olt_lat, olt_lon, 0, 30)
                 nb_occ = len(groupe)
+                dist_fat_abonne = snap_to_prefab(haversine(fl, flo, olt_lat, olt_lon))
 
-                fats.append({"id": fat_id, "nom_FDT": fdt_nom, "num_de_groupe": fat_num, "latitude": fl, "longitude": flo, "usage": "logements", "nb_ports": 8, "nb_abonnes_sim": nb_occ, "nb_etages_bat": nb_et, "nb_log_etage": 4, "zone_id": zone_id, "distance_fdt_m": round(haversine(fl, flo, fdt_lat, fdt_lon))})
+                fats.append({"id": fat_id, "nom_FDT": fdt_nom, "num_de_groupe": fat_num, "latitude": fl, "longitude": flo, "usage": "logements", "nb_ports": settings.FAT_CAPACITY, "nb_abonnes_sim": nb_occ, "nb_etages_bat": nb_et, "nb_log_etage": 4, "zone_id": zone_id, "distance_FAT_m": dist_fat_abonne})
 
-                for dn in range(1, 9):
-                    spl2.append({"id": f"{fat_id}-DOWN-{dn:02d}", "nom_FAT": fat_id, "id_splitter1": f"{fdt_nom}-S{spl_seq_local:02d}", "rapport_de_division": "1:08", "port_splitter": f"{fdt_nom}-S{spl_seq_local:02d}-DOWN-{dn}", "etat": "utilisé" if dn <= nb_occ else "libre", "zone_id": zone_id})
+                for dn in range(1, settings.FAT_CAPACITY + 1):
+                    spl2.append({"id": f"{fat_id}-DOWN-{dn:02d}", "nom_FAT": fat_id, "id_splitter1": f"{fdt_nom}-S{spl_seq_local:02d}", "rapport_de_division": f"1:{settings.SPLITTER_N2_RATIO}", "port_splitter": f"{fdt_nom}-S{spl_seq_local:02d}-DOWN-{dn}", "etat": "utilisé" if dn <= nb_occ else "libre", "zone_id": zone_id})
+
+                # GPS IDENTIQUE PAR BÂTIMENT (comme l'ancienne version qui donnait de bons scores au modèle)
+                pt = polygon.representative_point()
+                lat_abonne = round(pt.y, 6)
+                lon_abonne = round(pt.x, 6)
 
                 for porte in groupe:
                     cc = fmt_code_client(client_seq)
@@ -414,29 +438,39 @@ def generer_tables(bats):
                     prefix = np.random.choice(OPERATEURS[op])
                     contact = int(prefix + f"{np.random.randint(1000000,9999999):07d}")
 
-                    pt = polygon.representative_point()
+                    bloc_letter = chr(65 + (bat_idx % 26))
+                    id_batiment = f"RES-{elot}-BLOC-{bloc_letter}"
 
                     abonnes.append({
-                        "code_client": cc, "latitude": round(pt.y, 6), "longitude": round(pt.x, 6),
-                        "etage": etage_debut, "porte": porte, "id_batiment": f"BAT{bat_idx+1:05d}",
-                        "id_zone": zone_id, "FAT_relative": fat_id
+                        "code_client": cc,
+                        "latitude": lat_abonne,
+                        "longitude": lon_abonne,
+                        "etage": etage_debut,
+                        "porte": porte,
+                        "id_batiment": id_batiment,
+                        "id_zone": zone_id,
+                        "FAT_relative": fat_id
                     })
 
                     clients.append({"code_client": cc, "contact": contact, "nom": f"{np.random.choice(PRENOMS)} {np.random.choice(NOMS_FAM)}"})
 
                     adresses.append({
-                        "code_client": cc, "batiment_pav": batiment_pav, "voie": voie_osm if voie_osm else f"FAT{ZONE_CODE}-{elot}",
-                        "quartier": quartier_osm, "commune": commune.replace("-", " "), "wilaya": wilaya_nom
+                        "code_client": cc,
+                        "batiment_pav": batiment_pav,
+                        "voie": voie_osm if voie_osm else f"FAT{ZONE_CODE}-{elot}",
+                        "quartier": quartier_osm,
+                        "commune": commune.replace("-", " "),
+                        "wilaya": wilaya_nom
                     })
 
                     numeros.append({"num_de_groupe": int(f"4{1800000 + numero_seq:07d}"), "code_client": cc, "region_relative": zone_id, "FAT_relative": fat_id})
 
                     client_seq += 1
                     numero_seq += 1
+                    olt_abonnes_count[zone_id] = olt_abonnes_count.get(zone_id, 0) + 1
 
                 fat_num += 1
-
-            spl_seq_local += 1
+                spl_seq_local += 1
 
     return {
         "zone": pd.DataFrame(zones), "equipement": pd.DataFrame(equipements),
@@ -446,33 +480,114 @@ def generer_tables(bats):
         "client": pd.DataFrame(clients), "adresse": pd.DataFrame(adresses),
         "numero": pd.DataFrame(numeros), "abonnes": pd.DataFrame(abonnes)
     }
+import pandas as pd
+import os
 
-# ====================== MAIN ======================
-"""if __name__ == "__main__":
+def merge_all_tables():
+    print("🔄 Lecture de TOUTES les tables depuis donnee/...")
+
+    # Charger toutes les tables existantes
+    abonnes     = pd.read_csv(r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee/abonnes.csv")
+    client      = pd.read_csv(r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee/client.csv")
+    fat         = pd.read_csv(r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee/fat.csv")
+    numero      = pd.read_csv(r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee/numero.csv")
+    adresse     = pd.read_csv(r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee/adresse.csv")
+    zone        = pd.read_csv(r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee/zone.csv")
+    equipement  = pd.read_csv(r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee/equipement.csv")
+    fdt         = pd.read_csv(r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee/fdt.csv")
+    carte       = pd.read_csv(r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee/carte.csv")
+    port        = pd.read_csv(r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee/port.csv")
+    splitter_n1 = pd.read_csv(r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee/splitter_n1.csv")
+    splitter_n2 = pd.read_csv(r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee/splitter_n2.csv")
+
+    print(f"   → {len(abonnes):,} abonnés chargés")
+
+    # ====================== FUSION ======================
+    df = abonnes.merge(client, on="code_client", how="left")
+
+    # Garder les coordonnées des abonnés (les plus importantes)
+    df = df.rename(columns={"latitude": "lat_abonne", "longitude": "lon_abonne"})
+
+    # FAT
+    df = df.merge(
+        fat[["id", "latitude", "longitude", "usage", "nb_ports", "nb_abonnes_sim", "distance_FAT_m", "nom_FDT"]],
+        left_on="FAT_relative", right_on="id", how="left"
+    ).drop(columns=["id"], errors="ignore")
+
+    df = df.rename(columns={"latitude": "lat_fat", "longitude": "lon_fat"})
+
+    # Numéro + Adresse
+    df = df.merge(numero[["code_client", "num_de_groupe"]], on="code_client", how="left")
+    df = df.merge(adresse, on="code_client", how="left")
+
+    # Zone
+    df = df.merge(zone[["id", "commune", "zone_geographique"]], left_on="id_zone", right_on="id", how="left").drop(columns=["id"], errors="ignore")
+
+    # OLT
+    df = df.merge(equipement[["id", "nom", "type", "ip"]], left_on="id_zone", right_on="id", how="left").drop(columns=["id"], errors="ignore")
+    df = df.rename(columns={"nom": "nom_OLT", "type": "type_OLT"})
+
+    # FDT
+    df = df.merge(fdt[["id", "latitude", "longitude", "distance_olt_m"]], left_on="nom_FDT", right_on="id", how="left").drop(columns=["id"], errors="ignore")
+    df = df.rename(columns={"latitude": "lat_fdt", "longitude": "lon_fdt"})
+
+    # Carte (agrégation)
+    if not carte.empty:
+        carte_agg = carte.groupby("id_equipement").agg(
+            nb_cartes=('id', 'count'),
+            cartes_positions=('position', lambda x: ', '.join(sorted(set(x.astype(str)))))
+        ).reset_index()
+        df = df.merge(carte_agg, left_on="id_zone", right_on="id_equipement", how="left").drop(columns=["id_equipement"], errors="ignore")
+
+    # Port (agrégation)
+    if not port.empty:
+        port_agg = port.groupby("zone_id").agg(
+            nb_ports_total=('id', 'count'),
+            nb_ports_utilises=('etat', lambda x: (x == 'utilisé').sum()),
+            nb_ports_libres=('etat', lambda x: (x == 'libre').sum())
+        ).reset_index()
+        df = df.merge(port_agg, left_on="id_zone", right_on="zone_id", how="left").drop(columns=["zone_id"], errors="ignore")
+
+    # ====================== COLONNES FINALES ======================
+    colonnes =[
+        "code_client", "id_batiment", "id_zone",
+        "lat_abonne", "lon_abonne", "etage", "porte",
+        "FAT_relative", "usage",
+        "lat_fat", "lon_fat", "nb_abonnes_sim", "distance_FAT_m",
+        "nom_FDT", "lat_fdt", "lon_fdt", "distance_olt_m",
+        "lat_olt", "lon_olt", "nb_cartes", "nb_ports_total", "nb_ports_utilises", "carte_position",
+        "nb_etages_bat", "nb_log_etage",
+        "num_de_groupe",
+        "nom", "batiment_pav", "quartier", "commune"
+    ]
+
+    colonnes = [col for col in colonnes if col in df.columns]
+
+    df_final = df[colonnes].sort_values(by=["id_batiment", "etage", "code_client"]).reset_index(drop=True)
+    df_final.to_csv(r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee/dataset_fusionnee_final.csv", index=False, encoding="utf-8-sig")
+
+    print(f"\n✅ dataset_final.csv créé avec succès !")
+    print(f"   → {len(df_final):,} lignes")
+    print(f"   → Colonnes : {list(df_final.columns)}")
+    return df_final
+if __name__ == "__main__":
     print("=" * 70)
     print(f"SIMULATION DONNÉES FTTH MASSIVE — ALGÉRIE TÉLÉCOM")
     print(f"→ Wilaya : {WILAYA} — {wilaya_nom}")
     print("=" * 70)
 
+
     bats = charger_batiments()
     bats = estimer_logements(bats)
     tables = generer_tables(bats)
-
     for nom, df in tables.items():
-        path = os.path.join("data", f"{nom}.csv")
+        path = os.path.join(r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee", f"{nom}.csv")
         df.to_csv(path, index=False, encoding="utf-8-sig")
         print(f"  ✓ {nom:15s} {len(df):7d} lignes")
-"""
-"""
-MERGE DATASET FTTH — Création du grand dataset_final.csv
-Utilise uniquement les fichiers CSV déjà générés dans le dossier data/
-"""
+    merge_all_tables()
 
-"""
-MERGE DATASET FTTH — TOUTES LES TABLES
-Crée un seul grand fichier dataset_final.csv avec TOUTES les informations
-(inclut carte et port)
-"""
+
+
 
 import pandas as pd
 import os
@@ -482,121 +597,5 @@ MERGE DATASET FTTH — TOUTES LES TABLES (version corrigée)
 Résout l'erreur de colonnes 'id_x' en double
 """
 
-import pandas as pd
-import os
 
 
-def merge_all_tables():
-    print("🔄 Lecture de toutes les tables depuis data/...")
-
-    # Charger toutes les tables
-    abonnes = pd.read_csv("data/abonnes.csv")
-    client = pd.read_csv("data/client.csv")
-    fat = pd.read_csv("data/fat.csv")
-    numero = pd.read_csv("data/numero.csv")
-    adresse = pd.read_csv("data/adresse.csv")
-    zone = pd.read_csv("data/zone.csv")
-    equipement = pd.read_csv("data/equipement.csv")
-    fdt = pd.read_csv("data/fdt.csv")
-    carte = pd.read_csv("data/carte.csv")
-    port = pd.read_csv("data/port.csv")
-
-    print(f"   → {len(abonnes):,} abonnés chargés")
-
-    # ====================== FUSION PRINCIPALE ======================
-    df = abonnes.merge(client, on="code_client", how="left")
-
-    # FAT
-    df = df.merge(
-        fat[["id", "latitude", "longitude", "usage", "nb_ports", "nb_abonnes_sim", "distance_fdt_m", "nom_FDT"]],
-        left_on="FAT_relative", right_on="id", how="left"
-    ).drop(columns=["id"], errors="ignore")  # <-- suppression du id en double
-
-    df = df.rename(columns={
-        "latitude": "lat_fat",
-        "longitude": "lon_fat"
-    })
-
-    # Numéro + Adresse
-    df = df.merge(numero[["code_client", "num_de_groupe"]], on="code_client", how="left")
-    df = df.merge(adresse, on="code_client", how="left")
-
-    # Zone
-    df = df.merge(
-        zone[["id", "commune", "zone_geographique"]],
-        left_on="id_zone", right_on="id", how="left"
-    ).drop(columns=["id"], errors="ignore")
-
-    # OLT (equipement)
-    df = df.merge(
-        equipement[["id", "nom", "type", "ip"]],
-        left_on="id_zone", right_on="id", how="left"
-    ).drop(columns=["id"], errors="ignore")
-    df = df.rename(columns={"nom": "nom_OLT", "type": "type_OLT"})
-
-    # FDT
-    df = df.merge(
-        fdt[["id", "latitude", "longitude", "distance_olt_m"]],
-        left_on="nom_FDT", right_on="id", how="left"
-    ).drop(columns=["id"], errors="ignore")
-    df = df.rename(columns={"latitude": "lat_fdt", "longitude": "lon_fdt"})
-
-    # Carte (agrégation)
-    if not carte.empty:
-        carte_agg = carte.groupby("id_equipement").agg(
-            nb_cartes=('id', 'count'),
-            cartes_positions=('position', lambda x: ', '.join(x.astype(str)))
-        ).reset_index()
-        df = df.merge(carte_agg, left_on="id_zone", right_on="id_equipement", how="left").drop(
-            columns=["id_equipement"], errors="ignore")
-
-    # Port (agrégation)
-    if not port.empty:
-        port_agg = port.groupby("zone_id").agg(
-            nb_ports_total=('id', 'count'),
-            nb_ports_utilises=('etat', lambda x: (x == 'utilisé').sum()),
-            nb_ports_libres=('etat', lambda x: (x == 'libre').sum())
-        ).reset_index()
-        df = df.merge(port_agg, left_on="id_zone", right_on="zone_id", how="left").drop(columns=["zone_id"],
-                                                                                        errors="ignore")
-
-    # ====================== COLONNES FINALES ======================
-    colonnes_finales = [
-        "code_client", "nom", "contact",
-        "lat_abonne", "lon_abonne", "etage", "porte", "id_batiment",
-        "FAT_relative", "lat_fat", "lon_fat", "usage", "nb_ports", "nb_abonnes_sim",
-        "nom_FDT", "lat_fdt", "lon_fdt", "distance_fdt_m",
-        "nom_OLT", "type_OLT", "ip",
-        "nb_cartes", "cartes_positions",
-        "nb_ports_total", "nb_ports_utilises", "nb_ports_libres",
-        "num_de_groupe",
-        "batiment_pav", "voie", "quartier", "commune", "wilaya", "zone_geographique", "id_zone"
-    ]
-
-    # Garder uniquement les colonnes qui existent
-    colonnes_finales = [col for col in colonnes_finales if col in df.columns]
-
-    df_final = df[colonnes_finales].copy()
-    df_final = df_final.sort_values(by=["id_batiment", "etage", "code_client"]).reset_index(drop=True)
-
-    # Sauvegarde
-    output_path = "data/dataset_final.csv"
-    df_final.to_csv(output_path, index=False, encoding="utf-8-sig")
-
-    print(f"\n✅ dataset_final.csv créé avec succès !")
-    print(f"   → {len(df_final):,} lignes")
-    print(f"   → Fichier : {output_path}")
-    print(f"   → Colonnes : {len(df_final.columns)}")
-
-    return df_final
-
-
-if __name__ == "__main__":
-    print("=" * 70)
-    print("MERGE COMPLET DE TOUTES LES TABLES FTTH")
-    print("→ Inclut : abonnes, client, fat, numero, adresse, zone, equipement, fdt, carte, port")
-    print("=" * 70)
-
-    merge_all_tables()
-
-    print("\n🎉 Terminé ! Le fichier data/dataset_final.csv est prêt.")
