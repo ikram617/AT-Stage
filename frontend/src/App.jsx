@@ -3,12 +3,12 @@ import { useState, useEffect, useRef, useCallback } from "react";
 /* ============================================================
    FTTH SMART PLANNER — React · Light Theme · Algérie Télécom
    Palette: AT Blue #005BAA + Orange #F7941D + White
+   FULL SCREEN VERSION — 100vw × 100vh (laptop ready)
    ============================================================ */
 
 const AT_BLUE = "#005BAA";
 const AT_BLUE_DARK = "#004080";
 const AT_BLUE_LIGHT = "#E8F1FA";
-const AT_BLUE_MID = "#1a6fc4";
 const AT_ORANGE = "#F7941D";
 const AT_ORANGE_LIGHT = "#FEF3E6";
 const GRAY_50 = "#F9FAFB";
@@ -142,11 +142,8 @@ const BuildingPlan = ({ etages, logements, residence }) => {
   else if (fatsNeeded === 2) { fatFloors.push(Math.floor(etages * 0.7)); fatFloors.push(Math.floor(etages * 0.25)); }
   else { for (let i = 0; i < fatsNeeded; i++) fatFloors.push(Math.round(i * (etages - 1) / (fatsNeeded - 1))); }
 
-  let fatIdx = 0;
-
   return (
     <div style={{ padding: 20, overflowX: "auto" }}>
-      {/* Building label */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
         <span style={{ fontSize: 20 }}>🏢</span>
         <div>
@@ -155,14 +152,6 @@ const BuildingPlan = ({ etages, logements, residence }) => {
         </div>
       </div>
 
-      {/* Floors — top (roof) to bottom */}
-      {Array.from({ length: etages + 1 }, (_, i) => etages - i).map((e) => {
-        const isFatFloor = fatFloors.includes(e);
-        const currentFatIdx = isFatFloor ? fatIdx++ - 1 : null; // will be incremented below
-        return null; // handled below
-      })}
-
-      {/* Re-render properly */}
       {(() => {
         let fi = 0;
         return Array.from({ length: etages + 1 }, (_, i) => etages - i).map((e) => {
@@ -172,9 +161,7 @@ const BuildingPlan = ({ etages, logements, residence }) => {
 
           return (
             <div key={e} style={{ marginBottom: 2 }}>
-              {/* Floor row */}
               <div style={{ display: "flex", alignItems: "stretch", gap: 0 }}>
-                {/* Floor label */}
                 <div style={{
                   width: 64, flexShrink: 0,
                   display: "flex", alignItems: "center", justifyContent: "flex-end",
@@ -183,11 +170,7 @@ const BuildingPlan = ({ etages, logements, residence }) => {
                 }}>
                   {e === 0 ? "RDC" : `ÉT. ${e}`}
                 </div>
-
-                {/* Outer wall left */}
                 <div style={{ width: 6, background: AT_BLUE, borderRadius: "4px 0 0 4px", opacity: 0.7 }} />
-
-                {/* Units + corridors */}
                 <div style={{
                   flex: 1, display: "flex",
                   background: GRAY_50, border: `1px solid ${GRAY_200}`,
@@ -197,11 +180,9 @@ const BuildingPlan = ({ etages, logements, residence }) => {
                 }}>
                   {Array.from({ length: logements }).map((_, l) => {
                     const isLastUnit = l === logements - 1;
-                    const isFatBetween = isFatFloor && l === fatCol; // FAT between unit l and l+1
-
+                    const isFatBetween = isFatFloor && l === fatCol;
                     return (
                       <div key={l} style={{ display: "flex", flex: 1, alignItems: "stretch" }}>
-                        {/* Apartment unit */}
                         <div style={{
                           flex: 1, display: "flex", flexDirection: "column",
                           alignItems: "center", justifyContent: "center",
@@ -212,16 +193,9 @@ const BuildingPlan = ({ etages, logements, residence }) => {
                           minWidth: 56,
                         }}>
                           <div style={{ fontSize: 14 }}>🚪</div>
-                          <div style={{ fontSize: 9, fontWeight: 700, color: GRAY_600, fontFamily: "monospace" }}>
-                            L.{l + 1}
-                          </div>
-                          <div style={{
-                            width: 6, height: 6, borderRadius: "50%",
-                            background: AT_BLUE, boxShadow: `0 0 4px ${AT_BLUE}55`,
-                          }} />
+                          <div style={{ fontSize: 9, fontWeight: 700, color: GRAY_600, fontFamily: "monospace" }}>L.{l + 1}</div>
+                          <div style={{ width: 6, height: 6, borderRadius: "50%", background: AT_BLUE, boxShadow: `0 0 4px ${AT_BLUE}55` }} />
                         </div>
-
-                        {/* Corridor between units (FAT goes here) */}
                         {!isLastUnit && (
                           <div style={{
                             width: isFatBetween ? 100 : 12,
@@ -230,23 +204,16 @@ const BuildingPlan = ({ etages, logements, residence }) => {
                             background: isFatBetween ? AT_ORANGE_LIGHT : GRAY_100,
                             borderLeft: `1px dashed ${GRAY_200}`,
                             borderRight: `1px dashed ${GRAY_200}`,
-                            transition: "width 0.3s",
                             position: "relative",
                             flexShrink: 0,
                           }}>
-                            {isFatBetween && fatId !== null && (
-                              <FATNode id={fatId} />
-                            )}
-                            {!isFatBetween && (
-                              <div style={{ width: 1, height: "100%", background: GRAY_300, opacity: 0.5 }} />
-                            )}
+                            {isFatBetween && fatId !== null && <FATNode id={fatId} />}
+                            {!isFatBetween && <div style={{ width: 1, height: "100%", background: GRAY_300, opacity: 0.5 }} />}
                           </div>
                         )}
                       </div>
                     );
                   })}
-
-                  {/* Fiber vertical connector */}
                   {e > 0 && (
                     <div style={{
                       position: "absolute", left: "50%", top: -12,
@@ -256,8 +223,6 @@ const BuildingPlan = ({ etages, logements, residence }) => {
                     }} />
                   )}
                 </div>
-
-                {/* Outer wall right */}
                 <div style={{ width: 6, background: AT_BLUE, borderRadius: "0 4px 4px 0", opacity: 0.7 }} />
               </div>
             </div>
@@ -265,13 +230,11 @@ const BuildingPlan = ({ etages, logements, residence }) => {
         });
       })()}
 
-      {/* Ground line */}
       <div style={{ display: "flex", alignItems: "center", paddingLeft: 70, marginTop: 4 }}>
         <div style={{ flex: 1, height: 8, background: `linear-gradient(90deg, ${GRAY_400}, ${GRAY_300})`, borderRadius: 4 }} />
       </div>
       <div style={{ textAlign: "center", fontSize: 10, color: GRAY_400, marginTop: 4 }}>VOIRIE / RUE</div>
 
-      {/* Legend */}
       <div style={{ display: "flex", gap: 16, marginTop: 16, flexWrap: "wrap" }}>
         {[
           { color: AT_BLUE, label: "Mur porteur" },
@@ -280,13 +243,9 @@ const BuildingPlan = ({ etages, logements, residence }) => {
           { color: `${AT_ORANGE}88`, dashed: true, label: "Liaison fibre verticale" },
         ].map((l, i) => (
           <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 10, color: GRAY_600 }}>
-            {l.dot ? (
-              <div style={{ width: 8, height: 8, borderRadius: "50%", background: l.color }} />
-            ) : l.dashed ? (
-              <div style={{ width: 16, height: 0, borderTop: `2px dashed ${l.color}` }} />
-            ) : (
-              <div style={{ width: 12, height: 8, background: l.color, borderRadius: 2 }} />
-            )}
+            {l.dot ? <div style={{ width: 8, height: 8, borderRadius: "50%", background: l.color }} /> :
+             l.dashed ? <div style={{ width: 16, height: 0, borderTop: `2px dashed ${l.color}` }} /> :
+             <div style={{ width: 12, height: 8, background: l.color, borderRadius: 2 }} />}
             {l.label}
           </div>
         ))}
@@ -295,7 +254,7 @@ const BuildingPlan = ({ etages, logements, residence }) => {
   );
 };
 
-// ── Leaflet Map component (injected as iframe-like div) ─────
+// ── Leaflet Map component ────────────────────────────────────
 const LeafletMap = ({ residence }) => {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -303,7 +262,6 @@ const LeafletMap = ({ residence }) => {
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
-    // Load Leaflet dynamically
     const link = document.createElement("link");
     link.rel = "stylesheet";
     link.href = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css";
@@ -318,29 +276,20 @@ const LeafletMap = ({ residence }) => {
         attribution: '© OpenStreetMap',
         maxZoom: 19,
       }).addTo(map);
-
-      // Oran center
       map.setView([35.697, -0.634], 15);
 
-      // Sample AADL building markers
       const buildings = [
         { name: "Rés. Les Falaises", lat: 35.6980, lng: -0.6330, type: "selected" },
-        { name: "El Bahia Tower",    lat: 35.6955, lng: -0.6350, type: "neighbor" },
-        { name: "Rés. Atlas",        lat: 35.6998, lng: -0.6310, type: "neighbor" },
-        { name: "Cité AADL B4",      lat: 35.6965, lng: -0.6375, type: "neighbor" },
-        { name: "Cité AADL B5",      lat: 35.6942, lng: -0.6295, type: "neighbor" },
+        { name: "El Bahia Tower", lat: 35.6955, lng: -0.6350, type: "neighbor" },
+        { name: "Rés. Atlas", lat: 35.6998, lng: -0.6310, type: "neighbor" },
+        { name: "Cité AADL B4", lat: 35.6965, lng: -0.6375, type: "neighbor" },
+        { name: "Cité AADL B5", lat: 35.6942, lng: -0.6295, type: "neighbor" },
       ];
 
       buildings.forEach(b => {
         const color = b.type === "selected" ? AT_BLUE : "#666";
         const icon = L.divIcon({
-          html: `<div style="
-            background:${color};color:white;
-            border:2px solid white;border-radius:6px;
-            padding:3px 6px;font-size:9px;font-weight:700;
-            white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.25);
-            font-family:sans-serif;
-          ">🏢 ${b.name}</div>`,
+          html: `<div style="background:${color};color:white;border:2px solid white;border-radius:6px;padding:3px 6px;font-size:9px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.25);font-family:sans-serif;">🏢 ${b.name}</div>`,
           className: "",
           iconAnchor: [0, 0],
         });
@@ -351,7 +300,6 @@ const LeafletMap = ({ residence }) => {
       mapInstanceRef.current = map;
     };
     document.head.appendChild(script);
-
     return () => {};
   }, []);
 
@@ -363,17 +311,16 @@ const LeafletMap = ({ residence }) => {
 };
 
 // ══════════════════════════════════════════════════════════════
-//  MAIN APP
+//  MAIN APP — FULL SCREEN VERSION
 // ══════════════════════════════════════════════════════════════
 export default function FTTHSmartPlanner() {
-  const [screen, setScreen] = useState("login"); // login | dashboard | archive
+  const [screen, setScreen] = useState("login");
   const [activeTab, setActiveTab] = useState("planner");
   const [notif, setNotif] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [loginData, setLoginData] = useState({ id: "k.benali@at.dz", password: "atdz2026" });
   const [loginLoading, setLoginLoading] = useState(false);
 
-  // Planner state
   const [ville, setVille] = useState("oran");
   const [quartier, setQuartier] = useState("seddikia");
   const [residence, setResidence] = useState("falaises");
@@ -384,13 +331,10 @@ export default function FTTHSmartPlanner() {
   const [osmLoading, setOsmLoading] = useState(false);
   const [planGenerated, setPlanGenerated] = useState(false);
   const [kpis, setKpis] = useState(null);
-
-  // Archive
   const [archiveSearch, setArchiveSearch] = useState("");
 
   const notify = useCallback((type, title, sub) => setNotif({ type, title, sub }), []);
 
-  // Login
   const login = () => {
     setLoginLoading(true);
     setTimeout(() => {
@@ -400,7 +344,6 @@ export default function FTTHSmartPlanner() {
     }, 1200);
   };
 
-  // Import OSM
   const importOSM = () => {
     if (!ville || !quartier || !residence) { notify("error", "Données manquantes", "Sélectionnez ville, quartier et résidence"); return; }
     setOsmLoading(true);
@@ -411,7 +354,6 @@ export default function FTTHSmartPlanner() {
     }, 1600);
   };
 
-  // Launch sectorisation
   const lancerSectorisation = () => {
     if (!osmLoaded) { notify("info", "Import requis", "Importez d'abord les données OSM"); return; }
     const totalAbonnes = etages * logements;
@@ -433,7 +375,6 @@ export default function FTTHSmartPlanner() {
     p.ville.toLowerCase().includes(archiveSearch.toLowerCase())
   );
 
-  // ── Styles ────────────────────────────────────────────────
   const inputStyle = {
     width: "100%", padding: "10px 14px",
     background: "white", border: `1.5px solid ${GRAY_200}`,
@@ -457,35 +398,49 @@ export default function FTTHSmartPlanner() {
     transition: "all 0.2s",
   };
 
-  // ════════════════════════════════════════════════
-  // LOGIN SCREEN
-  // ════════════════════════════════════════════════
+  // Global full-screen reset
+  const globalStyle = `
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+    @keyframes slideUp { from { opacity:0;transform:translateY(20px) } to { opacity:1;transform:translateY(0) } }
+    @keyframes shimmer { 0%,100%{opacity:0.6} 50%{opacity:1} }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    html, body, #root {
+      margin: 0 !important;
+      padding: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      overflow: hidden !important;
+    }
+    * { box-sizing: border-box; }
+  `;
+
+  // ─────────────────────────────────────────────────────────────
+  // LOGIN SCREEN — FULL SCREEN
+  // ─────────────────────────────────────────────────────────────
   if (screen === "login") return (
     <div style={{
-      minHeight: "100vh", background: `linear-gradient(135deg, ${AT_BLUE_LIGHT} 0%, white 50%, ${AT_ORANGE_LIGHT} 100%)`,
-      display: "flex", alignItems: "center", justifyContent: "center",
+      width: "100vw",
+      height: "100vh",
+      background: `linear-gradient(135deg, ${AT_BLUE_LIGHT} 0%, white 50%, ${AT_ORANGE_LIGHT} 100%)`,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
       fontFamily: "'Outfit', 'Segoe UI', sans-serif",
+      position: "fixed",
+      top: 0,
+      left: 0,
+      overflow: "hidden",
     }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
-        @keyframes slideUp { from { opacity:0;transform:translateY(20px) } to { opacity:1;transform:translateY(0) } }
-        @keyframes shimmer { 0%,100%{opacity:0.6} 50%{opacity:1} }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        input:focus { border-color: ${AT_BLUE} !important; box-shadow: 0 0 0 3px ${AT_BLUE}22 !important; }
-        select:focus { border-color: ${AT_BLUE} !important; box-shadow: 0 0 0 3px ${AT_BLUE}22 !important; }
-        button:hover { filter: brightness(1.05); }
-      `}</style>
+      <style>{globalStyle}</style>
 
-      {/* Decorative circles */}
-      <div style={{ position: "fixed", top: -120, left: -120, width: 400, height: 400, borderRadius: "50%", background: `${AT_BLUE}08`, pointerEvents: "none" }} />
-      <div style={{ position: "fixed", bottom: -80, right: -80, width: 320, height: 320, borderRadius: "50%", background: `${AT_ORANGE}08`, pointerEvents: "none" }} />
+      <div style={{ position: "fixed", top: -120, left: -120, width: 400, height: 400, borderRadius: "50%", background: `${AT_BLUE}08` }} />
+      <div style={{ position: "fixed", bottom: -80, right: -80, width: 320, height: 320, borderRadius: "50%", background: `${AT_ORANGE}08` }} />
 
       <div style={{
         background: "white", borderRadius: 20, padding: 48, width: 440,
         boxShadow: "0 24px 80px rgba(0,91,170,0.15)",
         border: `1px solid ${GRAY_100}`,
       }}>
-        {/* Logo */}
         <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 36 }}>
           <ATLogo size={52} />
           <div>
@@ -501,7 +456,6 @@ export default function FTTHSmartPlanner() {
         <div style={{ fontSize: 24, fontWeight: 800, color: GRAY_800, marginBottom: 6, letterSpacing: "-0.5px" }}>Connexion Sécurisée</div>
         <div style={{ fontSize: 13, color: GRAY_400, marginBottom: 32 }}>Accès réservé aux ingénieurs réseau autorisés</div>
 
-        {/* ID */}
         <div style={{ marginBottom: 18 }}>
           <label style={labelStyle}>Identifiant Agent</label>
           <input style={inputStyle} type="text" value={loginData.id}
@@ -509,7 +463,6 @@ export default function FTTHSmartPlanner() {
             placeholder="ex: k.benali@at.dz" />
         </div>
 
-        {/* Password with toggle */}
         <div style={{ marginBottom: 24 }}>
           <label style={labelStyle}>Mot de passe</label>
           <div style={{ position: "relative" }}>
@@ -522,12 +475,9 @@ export default function FTTHSmartPlanner() {
               position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
               background: "none", border: "none", cursor: "pointer", color: GRAY_400,
               fontSize: 16, padding: 4,
-            }} title={showPassword ? "Masquer" : "Afficher mot de passe"}>
+            }}>
               {showPassword ? "🙈" : "👁"}
             </button>
-          </div>
-          <div style={{ fontSize: 10, color: GRAY_400, marginTop: 5, textAlign: "right" }}>
-            {showPassword ? "Mot de passe visible" : "Afficher mot de passe"}
           </div>
         </div>
 
@@ -544,29 +494,32 @@ export default function FTTHSmartPlanner() {
             borderRadius: 20, padding: "4px 12px",
             fontSize: 10, fontWeight: 700, color: GREEN,
           }}>
-            <span style={{ width: 5, height: 5, borderRadius: "50%", background: GREEN, display: "inline-block" }} />
+            <span style={{ width: 5, height: 5, borderRadius: "50%", background: GREEN }} />
             SERVEUR EN LIGNE · TLS 1.3
           </span>
         </div>
       </div>
 
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       {notif && <Notification notif={notif} onClose={() => setNotif(null)} />}
     </div>
   );
 
-  // ════════════════════════════════════════════════
-  // ARCHIVE SCREEN
-  // ════════════════════════════════════════════════
+  // ─────────────────────────────────────────────────────────────
+  // ARCHIVE SCREEN — FULL SCREEN
+  // ─────────────────────────────────────────────────────────────
   if (screen === "archive") return (
-    <div style={{ minHeight: "100vh", background: GRAY_50, fontFamily: "'Outfit','Segoe UI',sans-serif" }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
-        @keyframes slideUp { from { opacity:0;transform:translateY(20px) } to { opacity:1;transform:translateY(0) } }
-        * { box-sizing: border-box; }
-      `}</style>
+    <div style={{
+      width: "100vw",
+      height: "100vh",
+      background: GRAY_50,
+      fontFamily: "'Outfit','Segoe UI',sans-serif",
+      overflow: "hidden",
+      position: "fixed",
+      top: 0,
+      left: 0,
+    }}>
+      <style>{globalStyle}</style>
 
-      {/* Nav */}
       <nav style={{
         height: 60, background: "white", borderBottom: `1px solid ${GRAY_200}`,
         display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -584,14 +537,12 @@ export default function FTTHSmartPlanner() {
         <div style={{ fontSize: 12, color: GRAY_400 }}>Khaled B. — Ingénieur Réseau</div>
       </nav>
 
-      <div style={{ maxWidth: 900, margin: "32px auto", padding: "0 24px" }}>
-        {/* Header */}
+      <div style={{ height: "calc(100vh - 60px)", padding: "32px 24px", overflow: "auto", maxWidth: 900, margin: "0 auto" }}>
         <div style={{ marginBottom: 24 }}>
           <div style={{ fontSize: 26, fontWeight: 800, color: GRAY_800, letterSpacing: "-0.5px" }}>Tous les projets</div>
           <div style={{ fontSize: 13, color: GRAY_400, marginTop: 4 }}>{PROJECTS_ARCHIVE.length} projets · triés par date décroissante</div>
         </div>
 
-        {/* Search */}
         <div style={{ position: "relative", marginBottom: 24 }}>
           <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: GRAY_400, fontSize: 16 }}>🔍</span>
           <input style={{ ...inputStyle, paddingLeft: 40, borderRadius: 10 }}
@@ -600,58 +551,28 @@ export default function FTTHSmartPlanner() {
             onChange={e => setArchiveSearch(e.target.value)} />
         </div>
 
-        {/* Project list */}
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {filteredProjects.map((p, i) => (
             <div key={p.id} style={{
               ...cardStyle,
               display: "flex", alignItems: "center", gap: 16,
               cursor: "pointer", transition: "box-shadow 0.2s, transform 0.15s",
-              animation: `slideUp 0.3s ease ${i * 0.04}s both`,
             }}
               onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 4px 20px ${AT_BLUE}22`; e.currentTarget.style.transform = "translateY(-1px)"; }}
               onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 1px 4px rgba(0,0,0,0.05)"; e.currentTarget.style.transform = "none"; }}>
-              {/* Icon */}
-              <div style={{
-                width: 48, height: 48, borderRadius: 10,
-                background: AT_BLUE_LIGHT, display: "flex",
-                alignItems: "center", justifyContent: "center",
-                fontSize: 22, flexShrink: 0,
-              }}>🏢</div>
-
-              {/* Info */}
+              <div style={{ width: 48, height: 48, borderRadius: 10, background: AT_BLUE_LIGHT, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>🏢</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 700, fontSize: 14, color: GRAY_800 }}>{p.name}</div>
-                <div style={{ fontSize: 11, color: GRAY_400, marginTop: 3 }}>
-                  {p.ville} · {p.quartier} · {p.etages} étages · {p.logements} log/ét.
-                </div>
+                <div style={{ fontSize: 11, color: GRAY_400, marginTop: 3 }}>{p.ville} · {p.quartier} · {p.etages} étages · {p.logements} log/ét.</div>
               </div>
-
-              {/* Date badge */}
-              <div style={{
-                background: AT_BLUE_LIGHT, color: AT_BLUE,
-                borderRadius: 8, padding: "6px 14px",
-                fontSize: 12, fontWeight: 700, fontFamily: "monospace",
-                flexShrink: 0,
-              }}>
-                📅 {p.date}
-              </div>
-
-              {/* Open button */}
+              <div style={{ background: AT_BLUE_LIGHT, color: AT_BLUE, borderRadius: 8, padding: "6px 14px", fontSize: 12, fontWeight: 700, fontFamily: "monospace", flexShrink: 0 }}>📅 {p.date}</div>
               <button onClick={() => {
                 setResidence("falaises");
                 setOsmLoaded(true);
                 setPlanGenerated(false);
                 setScreen("dashboard");
                 notify("info", "Projet chargé", `${p.name} · ${p.ville}`);
-              }} style={{
-                background: AT_BLUE, color: "white", border: "none",
-                borderRadius: 8, padding: "8px 16px",
-                fontSize: 12, fontWeight: 700, cursor: "pointer",
-                flexShrink: 0,
-              }}>
-                Ouvrir →
-              </button>
+              }} style={{ background: AT_BLUE, color: "white", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", flexShrink: 0 }}>Ouvrir →</button>
             </div>
           ))}
         </div>
@@ -661,31 +582,30 @@ export default function FTTHSmartPlanner() {
     </div>
   );
 
-  // ════════════════════════════════════════════════
-  // DASHBOARD SCREEN
-  // ════════════════════════════════════════════════
+  // ─────────────────────────────────────────────────────────────
+  // DASHBOARD SCREEN — FULL SCREEN (100vw × 100vh)
+  // ─────────────────────────────────────────────────────────────
   return (
-    <div style={{ minHeight: "100vh", background: GRAY_50, fontFamily: "'Outfit','Segoe UI',sans-serif" }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
-        @keyframes slideUp { from { opacity:0;transform:translateY(20px) } to { opacity:1;transform:translateY(0) } }
-        @keyframes shimmer { 0%,100%{opacity:0.6} 50%{opacity:1} }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        * { box-sizing: border-box; }
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-track { background: ${GRAY_100}; }
-        ::-webkit-scrollbar-thumb { background: ${GRAY_300}; border-radius: 3px; }
-        input:focus, select:focus { border-color: ${AT_BLUE} !important; box-shadow: 0 0 0 3px ${AT_BLUE}22 !important; outline: none; }
-      `}</style>
+    <div style={{
+      width: "100vw",
+      height: "100vh",
+      background: GRAY_50,
+      fontFamily: "'Outfit','Segoe UI',sans-serif",
+      display: "flex",
+      flexDirection: "column",
+      overflow: "hidden",
+      position: "fixed",
+      top: 0,
+      left: 0,
+    }}>
+      <style>{globalStyle}</style>
 
-      {/* ── TOP NAV ── */}
+      {/* TOP NAV */}
       <nav style={{
         height: 60, background: "white", borderBottom: `1px solid ${GRAY_200}`,
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "0 20px", position: "sticky", top: 0, zIndex: 100,
-        boxShadow: "0 1px 6px rgba(0,0,0,0.06)",
+        padding: "0 20px", zIndex: 100, boxShadow: "0 1px 6px rgba(0,0,0,0.06)",
       }}>
-        {/* Logo */}
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <ATLogo size={34} />
           <div style={{ fontSize: 14, fontWeight: 800, color: GRAY_800, letterSpacing: "-0.3px" }}>
@@ -693,7 +613,6 @@ export default function FTTHSmartPlanner() {
           </div>
         </div>
 
-        {/* Tabs */}
         <div style={{ display: "flex", gap: 4, background: GRAY_100, borderRadius: 8, padding: 4 }}>
           {[["planner", "🗺 Planificateur"], ["results", "📊 Résultats FAT"], ["settings", "⚙ Capacités"]].map(([id, label]) => (
             <button key={id} onClick={() => setActiveTab(id)} style={{
@@ -702,12 +621,10 @@ export default function FTTHSmartPlanner() {
               background: activeTab === id ? "white" : "transparent",
               color: activeTab === id ? AT_BLUE : GRAY_600,
               boxShadow: activeTab === id ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
-              transition: "all 0.2s",
             }}>{label}</button>
           ))}
         </div>
 
-        {/* Right */}
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 6,
@@ -715,16 +632,14 @@ export default function FTTHSmartPlanner() {
             borderRadius: 20, padding: "4px 12px",
             fontSize: 10, fontWeight: 700, color: PURPLE,
           }}>
-            <span style={{ width: 5, height: 5, borderRadius: "50%", background: PURPLE, display: "inline-block", animation: "shimmer 1.5s infinite" }} />
+            <span style={{ width: 5, height: 5, borderRadius: "50%", background: PURPLE, animation: "shimmer 1.5s infinite" }} />
             IA Active · K-Means
           </div>
 
-          {/* Profile → archive */}
           <button onClick={() => setScreen("archive")} style={{
             display: "flex", alignItems: "center", gap: 8,
             background: "none", border: `1.5px solid ${GRAY_200}`,
             borderRadius: 8, padding: "6px 12px", cursor: "pointer",
-            transition: "all 0.2s",
           }}
             onMouseEnter={e => { e.currentTarget.style.background = AT_BLUE_LIGHT; e.currentTarget.style.borderColor = AT_BLUE; }}
             onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.borderColor = GRAY_200; }}>
@@ -742,7 +657,7 @@ export default function FTTHSmartPlanner() {
         </div>
       </nav>
 
-      {/* ── STATUS BAR ── */}
+      {/* STATUS BAR */}
       <div style={{
         background: "white", borderBottom: `1px solid ${GRAY_100}`,
         display: "flex", alignItems: "center", gap: 16,
@@ -757,12 +672,12 @@ export default function FTTHSmartPlanner() {
         <span>·</span>
         <span style={{ fontFamily: "monospace" }}>Sync: 27/03/2026 · 11:42</span>
         <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6, color: PURPLE, fontWeight: 700 }}>
-          <span style={{ width: 5, height: 5, borderRadius: "50%", background: PURPLE, animation: "shimmer 1.5s infinite", display: "inline-block" }} />
+          <span style={{ width: 5, height: 5, borderRadius: "50%", background: PURPLE, animation: "shimmer 1.5s infinite" }} />
           Algorithme: K-Means clustering
         </span>
       </div>
 
-      {/* ── KPI ROW ── */}
+      {/* KPI ROW */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, padding: "16px 20px", background: GRAY_50, borderBottom: `1px solid ${GRAY_200}` }}>
         <KPICard label="Abonnés Estimés" value={kpis?.totalAbonnes ?? null} sub={kpis ? `${etages} étages × ${logements} log/ét.` : "—"} color="blue" icon="👥" />
         <KPICard label="FATs Proposées" value={kpis?.fatsNeeded ?? null} sub={kpis ? "16 ports/FAT · AT standard" : "—"} color="orange" icon="📡" />
@@ -770,13 +685,18 @@ export default function FTTHSmartPlanner() {
         <KPICard label="Ports Utilisés" value={kpis?.fatsPortsUsed ?? null} suffix="%" sub="Taux d'utilisation FAT" color="green" icon="📶" />
       </div>
 
-      {/* ── DASHBOARD BODY ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", minHeight: "calc(100vh - 180px)" }}>
+      {/* MAIN FLEX LAYOUT — FULL REMAINING HEIGHT */}
+      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
 
-        {/* ── SIDEBAR ── */}
+        {/* SIDEBAR */}
         <aside style={{
-          background: "white", borderRight: `1px solid ${GRAY_200}`,
-          padding: 20, display: "flex", flexDirection: "column", gap: 16,
+          width: 300,
+          background: "white",
+          borderRight: `1px solid ${GRAY_200}`,
+          padding: 20,
+          display: "flex",
+          flexDirection: "column",
+          gap: 16,
           overflowY: "auto",
         }}>
 
@@ -786,28 +706,24 @@ export default function FTTHSmartPlanner() {
               <span style={{ width: 28, height: 28, background: AT_BLUE_LIGHT, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>📍</span>
               <span style={{ fontWeight: 700, fontSize: 13, color: GRAY_800 }}>Localisation</span>
             </div>
-
             {[
-              { label: "Ville / Wilaya", id: "ville", val: ville, set: setVille, opts: [["oran","Oran"],["alger","Alger"],["constantine","Constantine"],["annaba","Annaba"]] },
-              { label: "Quartier", id: "q", val: quartier, set: setQuartier, opts: [["seddikia","Seddikia"],["haî-nedjma","Haï Nedjma"],["carteaux","Carteaux"],["victor-hugo","Victor Hugo"]] },
-              { label: "Résidence", id: "r", val: residence, set: setResidence, opts: [["falaises","Rés. Les Falaises"],["bahia","El Bahia Tower"],["yasmine","Rés. Yasmine"],["atlas","Rés. Atlas"]] },
+              { label: "Ville / Wilaya", val: ville, set: setVille, opts: [["oran","Oran"],["alger","Alger"],["constantine","Constantine"],["annaba","Annaba"]] },
+              { label: "Quartier", val: quartier, set: setQuartier, opts: [["seddikia","Seddikia"],["haî-nedjma","Haï Nedjma"],["carteaux","Carteaux"],["victor-hugo","Victor Hugo"]] },
+              { label: "Résidence", val: residence, set: setResidence, opts: [["falaises","Rés. Les Falaises"],["bahia","El Bahia Tower"],["yasmine","Rés. Yasmine"],["atlas","Rés. Atlas"]] },
             ].map(f => (
-              <div key={f.id} style={{ marginBottom: 10 }}>
+              <div key={f.label} style={{ marginBottom: 10 }}>
                 <label style={labelStyle}>{f.label}</label>
-                <select style={{ ...inputStyle, appearance: "none", cursor: "pointer", backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 12px center" }}
-                  value={f.val} onChange={e => f.set(e.target.value)}>
+                <select style={{ ...inputStyle, appearance: "none", cursor: "pointer" }} value={f.val} onChange={e => f.set(e.target.value)}>
                   <option value="">Sélectionner...</option>
                   {f.opts.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                 </select>
               </div>
             ))}
-
             <button style={{ ...btnPrimary, background: osmLoaded ? `linear-gradient(135deg,${GREEN},#059669)` : btnPrimary.background }} onClick={importOSM}>
               {osmLoading ? (
                 <div style={{ width: 16, height: 16, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
               ) : osmLoaded ? "✓ OSM Synchronisé" : "🔍 Import Data OSM"}
             </button>
-
             {osmLoaded && (
               <div style={{ marginTop: 10, background: GREEN_LIGHT, border: `1px solid ${GREEN}44`, borderRadius: 7, padding: "8px 12px" }}>
                 <div style={{ fontSize: 9, fontWeight: 700, color: GREEN, letterSpacing: "1px", textTransform: "uppercase" }}>✓ Données OSM chargées</div>
@@ -822,19 +738,15 @@ export default function FTTHSmartPlanner() {
               <span style={{ width: 28, height: 28, background: GREEN_LIGHT, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>🏗</span>
               <span style={{ fontWeight: 700, fontSize: 13, color: GRAY_800 }}>Structure Bâtiment</span>
             </div>
-
             {[
-              { label: "Nombre d'Étages", id: "etages", val: etages, set: setEtages, min: 1, max: 30 },
-              { label: "Logements / Étage", id: "log", val: logements, set: setLogements, min: 2, max: 20 },
+              { label: "Nombre d'Étages", val: etages, set: setEtages, min: 1, max: 30 },
+              { label: "Logements / Étage", val: logements, set: setLogements, min: 2, max: 20 },
             ].map(f => (
-              <div key={f.id} style={{ marginBottom: 10 }}>
+              <div key={f.label} style={{ marginBottom: 10 }}>
                 <label style={labelStyle}>{f.label}</label>
-                <input type="number" style={inputStyle} value={f.val}
-                  min={f.min} max={f.max}
-                  onChange={e => f.set(parseInt(e.target.value) || f.min)} />
+                <input type="number" style={inputStyle} value={f.val} min={f.min} max={f.max} onChange={e => f.set(parseInt(e.target.value) || f.min)} />
               </div>
             ))}
-
             <div style={{ marginBottom: 14 }}>
               <label style={labelStyle}>Capacité FAT (ports)</label>
               <select style={{ ...inputStyle, appearance: "none", cursor: "pointer" }} value={fatCap} onChange={e => setFatCap(parseInt(e.target.value))}>
@@ -843,13 +755,12 @@ export default function FTTHSmartPlanner() {
                 <option value={32}>32 ports</option>
               </select>
             </div>
-
             <button style={{ ...btnPrimary, background: `linear-gradient(135deg,${AT_ORANGE},#d97706)` }} onClick={lancerSectorisation}>
               ▶ Lancer Sectorisation
             </button>
           </div>
 
-          {/* Export box */}
+          {/* Export */}
           <div style={{ ...cardStyle, opacity: planGenerated ? 1 : 0.4, pointerEvents: planGenerated ? "auto" : "none", transition: "opacity 0.3s" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
               <span style={{ width: 28, height: 28, background: AT_BLUE_LIGHT, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>📤</span>
@@ -868,7 +779,7 @@ export default function FTTHSmartPlanner() {
             </button>
           </div>
 
-          {/* Projets Récents — below export */}
+          {/* Projets Récents */}
           <div style={cardStyle}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
               <span style={{ width: 28, height: 28, background: PURPLE_LIGHT, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>🗂</span>
@@ -888,32 +799,22 @@ export default function FTTHSmartPlanner() {
           </div>
         </aside>
 
-        {/* ── MAIN CONTENT ── */}
-        <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 16, overflow: "auto" }}>
+        {/* MAIN CONTENT AREA */}
+        <div style={{ flex: 1, padding: 20, overflow: "auto", background: GRAY_50 }}>
 
           {/* PLANNER TAB */}
           {activeTab === "planner" && (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, flex: 1 }}>
-
-              {/* Building Plan */}
               <div style={{ ...cardStyle, gridColumn: "1 / 2" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
                   <div style={{ fontWeight: 700, fontSize: 14, color: GRAY_800, display: "flex", alignItems: "center", gap: 8 }}>
                     Plan de Sectorisation
-                    {planGenerated && (
-                      <span style={{ background: AT_BLUE_LIGHT, color: AT_BLUE, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20 }}>
-                        {residenceLabel}
-                      </span>
-                    )}
+                    {planGenerated && <span style={{ background: AT_BLUE_LIGHT, color: AT_BLUE, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20 }}>{residenceLabel}</span>}
                   </div>
                   {planGenerated && (
-                    <button onClick={() => { setPlanGenerated(false); setKpis(null); }}
-                      style={{ background: GRAY_100, border: "none", borderRadius: 6, padding: "5px 10px", fontSize: 11, cursor: "pointer", color: GRAY_600 }}>
-                      ↺ Reset
-                    </button>
+                    <button onClick={() => { setPlanGenerated(false); setKpis(null); }} style={{ background: GRAY_100, border: "none", borderRadius: 6, padding: "5px 10px", fontSize: 11, cursor: "pointer", color: GRAY_600 }}>↺ Reset</button>
                   )}
                 </div>
-
                 {!planGenerated ? (
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 340, gap: 12, color: GRAY_400 }}>
                     <div style={{ fontSize: 56 }}>🏢</div>
@@ -925,19 +826,16 @@ export default function FTTHSmartPlanner() {
                 )}
               </div>
 
-              {/* Map */}
               <div style={{ ...cardStyle, display: "flex", flexDirection: "column" }}>
                 <div style={{ fontWeight: 700, fontSize: 14, color: GRAY_800, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
                   🗺 Carte OpenStreetMap — Bâtiments de la zone
-                  <span style={{ background: AT_ORANGE_LIGHT, color: AT_ORANGE, fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 20, textTransform: "uppercase" }}>
-                    AADL Cluster
-                  </span>
+                  <span style={{ background: AT_ORANGE_LIGHT, color: AT_ORANGE, fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 20, textTransform: "uppercase" }}>AADL Cluster</span>
                 </div>
                 <div style={{ flex: 1, minHeight: 400, borderRadius: 10, overflow: "hidden", border: `1px solid ${GRAY_200}` }}>
                   <LeafletMap residence={residenceLabel} />
                 </div>
                 <div style={{ fontSize: 10, color: GRAY_400, marginTop: 8 }}>
-                  © OpenStreetMap contributors · Zoom avec la molette désactivé · Cliquez sur un marqueur pour les détails
+                  © OpenStreetMap contributors · Zoom avec la molette désactivé
                 </div>
               </div>
             </div>
@@ -952,12 +850,11 @@ export default function FTTHSmartPlanner() {
                   <div style={{ fontSize: 12, color: GRAY_400, marginTop: 2 }}>Algorithme K-Means · {residenceLabel} · Oran/Seddikia</div>
                 </div>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 6, background: PURPLE_LIGHT, border: `1px solid ${PURPLE}33`, borderRadius: 20, padding: "6px 14px", fontSize: 11, fontWeight: 700, color: PURPLE }}>
-                  <span style={{ width: 5, height: 5, borderRadius: "50%", background: PURPLE, animation: "shimmer 1.5s infinite", display: "inline-block" }} />
+                  <span style={{ width: 5, height: 5, borderRadius: "50%", background: PURPLE, animation: "shimmer 1.5s infinite" }} />
                   Analyse complète · Confiance 94%
                 </span>
               </div>
 
-              {/* Recap */}
               <div style={cardStyle}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
                   <span style={{ fontSize: 18 }}>📊</span>
@@ -978,7 +875,6 @@ export default function FTTHSmartPlanner() {
                 ))}
               </div>
 
-              {/* FAT table */}
               <div style={cardStyle}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
                   <span style={{ fontSize: 18 }}>📡</span>
@@ -1006,7 +902,6 @@ export default function FTTHSmartPlanner() {
                 </table>
               </div>
 
-              {/* Port usage bars */}
               <div style={{ ...cardStyle, gridColumn: "1 / -1" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
                   <span style={{ fontSize: 18 }}>📈</span>
@@ -1022,7 +917,7 @@ export default function FTTHSmartPlanner() {
                           <span style={{ fontSize: 11, color: GRAY_400 }}>{Math.round(kpis.totalAbonnes / kpis.fatsNeeded)}/{fatCap} ports · Ét.{Math.round((i + 1) * etages / (kpis.fatsNeeded + 1))}</span>
                         </div>
                         <div style={{ height: 10, background: GRAY_200, borderRadius: 5, overflow: "hidden" }}>
-                          <div style={{ height: "100%", width: `${pct}%`, background: `linear-gradient(90deg, ${AT_BLUE}, ${GREEN})`, borderRadius: 5, transition: "width 1s ease" }} />
+                          <div style={{ height: "100%", width: `${pct}%`, background: `linear-gradient(90deg, ${AT_BLUE}, ${GREEN})`, borderRadius: 5 }} />
                         </div>
                         <div style={{ fontSize: 10, color: GRAY_400, marginTop: 3 }}>{pct}% d'utilisation</div>
                       </div>
@@ -1037,32 +932,11 @@ export default function FTTHSmartPlanner() {
           {activeTab === "settings" && (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               <div style={{ fontSize: 20, fontWeight: 800, color: GRAY_800, gridColumn: "1/-1" }}>⚙ Paramètres & Capacités</div>
-
               {[
-                { title: "Paramètres FAT", icon: AT_ORANGE, rows: [
-                  ["Capacité standard", "16 ports"],
-                  ["Taux max utilisation", "80%"],
-                  ["Distance max", "150m"],
-                  ["Redondance", "Activée ✓"],
-                ]},
-                { title: "Algorithme IA", icon: PURPLE, rows: [
-                  ["Méthode clustering", "K-Means"],
-                  ["Itérations max", "300"],
-                  ["Tolérance convergence", "0.0001"],
-                  ["Seed aléatoire", "42"],
-                ]},
-                { title: "🗺 OSM & Cartographie", icon: AT_BLUE, rows: [
-                  ["API OSM", "Nominatim v1"],
-                  ["Format export carte", "GeoJSON"],
-                  ["Système coord.", "WGS84"],
-                  ["Mise à jour auto", "Activée ✓"],
-                ]},
-                { title: "Export", icon: GREEN, rows: [
-                  ["Format PDF", "A3 paysage"],
-                  ["Format Excel", "XLSX 2007+"],
-                  ["Format cartographique", "KMZ/KML"],
-                  ["Compression JSON", "Gzip"],
-                ]},
+                { title: "Paramètres FAT", icon: AT_ORANGE, rows: [["Capacité standard", "16 ports"],["Taux max utilisation", "80%"],["Distance max", "150m"],["Redondance", "Activée ✓"]] },
+                { title: "Algorithme IA", icon: PURPLE, rows: [["Méthode clustering", "K-Means"],["Itérations max", "300"],["Tolérance convergence", "0.0001"],["Seed aléatoire", "42"]] },
+                { title: "🗺 OSM & Cartographie", icon: AT_BLUE, rows: [["API OSM", "Nominatim v1"],["Format export carte", "GeoJSON"],["Système coord.", "WGS84"],["Mise à jour auto", "Activée ✓"]] },
+                { title: "Export", icon: GREEN, rows: [["Format PDF", "A3 paysage"],["Format Excel", "XLSX 2007+"],["Format cartographique", "KMZ/KML"],["Compression JSON", "Gzip"]] },
               ].map(s => (
                 <div key={s.title} style={cardStyle}>
                   <div style={{ fontWeight: 700, fontSize: 13, color: GRAY_800, marginBottom: 14, borderLeft: `3px solid ${s.icon}`, paddingLeft: 10 }}>{s.title}</div>
