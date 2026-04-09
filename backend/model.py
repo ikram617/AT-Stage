@@ -22,7 +22,7 @@
 #   Infra     : nom_FDT, lat_fdt, lon_fdt (assignation FDT)
 #   Validation: nb_abonnes_sim, distance_FAT_m, usage
 # =============================================================================
-
+import joblib
 import numpy as np
 import pandas as pd
 from math import ceil, radians, cos, sin, asin, sqrt
@@ -582,7 +582,7 @@ if __name__ == "__main__":
     import sys
     import os
 
-    DATASET_PATH = r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee\dataset_fusionnee_final.csv"
+    DATASET_PATH = r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee_diversed_BatimentIdFixed\dataset_fusionnee_final.csv"
 
     print(f"📂 Chargement {DATASET_PATH}...")
     df = pd.read_csv(DATASET_PATH, encoding="utf-8-sig")
