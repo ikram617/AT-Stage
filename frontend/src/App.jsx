@@ -115,18 +115,25 @@ const KPICard = ({ label, value, suffix = "", sub, color, icon }) => {
 };
 
 // ── FAT node ────────────────────────────────────────────────
-const FATNode = ({ id }) => (
-  <div style={{
-    background: "white", border: `2px solid ${AT_ORANGE}`,
-    borderRadius: 8, padding: "5px 8px",
-    boxShadow: `0 2px 8px rgba(247,148,29,0.25)`,
-    minWidth: 90, textAlign: "center",
-  }}>
+const FATNode = ({ id, connected, totalPorts, onHover, onLeave }) => (
+  <div 
+    onMouseEnter={onHover}
+    onMouseLeave={onLeave}
+    style={{
+      background: "white", border: `2px solid ${AT_ORANGE}`,
+      borderRadius: 8, padding: "5px 8px", cursor: "pointer",
+      boxShadow: `0 2px 8px rgba(247,148,29,0.25)`,
+      minWidth: 90, textAlign: "center",
+      transition: "transform 0.2s"
+    }}
+    onMouseOver={(e) => e.currentTarget.style.transform = "scale(1.05)"}
+    onMouseOut={(e) => e.currentTarget.style.transform = "none"}
+  >
     <div style={{ fontSize: 8, fontWeight: 800, color: AT_ORANGE, letterSpacing: "0.5px", textTransform: "uppercase" }}>POINT FAT</div>
     <div style={{ fontSize: 9, fontWeight: 700, color: GRAY_700, fontFamily: "monospace", marginTop: 2 }}>FAT-ORA-{String(100 + id).padStart(3, "0")}</div>
     <div style={{ display: "flex", gap: 2, justifyContent: "center", marginTop: 3, flexWrap: "wrap" }}>
-      {Array.from({ length: 8 }).map((_, i) => (
-        <div key={i} style={{ width: 5, height: 5, borderRadius: "50%", background: i < 5 ? AT_BLUE : GRAY_200 }} />
+      {Array.from({ length: totalPorts || 8 }).map((_, i) => (
+        <div key={i} style={{ width: 5, height: 5, borderRadius: "50%", background: i < connected ? GREEN : AT_BLUE }} />
       ))}
     </div>
   </div>
@@ -134,8 +141,10 @@ const FATNode = ({ id }) => (
 
 // ── Building floor plan ─────────────────────────────────────
 const BuildingPlan = ({ etages, logements, residence }) => {
+  const [hoveredFatId, setHoveredFatId] = useState(null);
   const totalAbonnes = etages * logements;
   const fatsNeeded = Math.ceil(totalAbonnes / 10);
+  const limitPerFat = Math.ceil(totalAbonnes / fatsNeeded);
 
   const fatFloors = [];
   if (fatsNeeded === 1) fatFloors.push(Math.floor(etages / 2));
@@ -145,7 +154,6 @@ const BuildingPlan = ({ etages, logements, residence }) => {
   return (
     <div style={{ padding: 20, overflowX: "auto" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-        <span style={{ fontSize: 20 }}>🏢</span>
         <div>
           <div style={{ fontWeight: 700, fontSize: 14, color: GRAY_800 }}>{residence || "Résidence AADL"}</div>
           <div style={{ fontSize: 11, color: GRAY_400 }}>{etages} étages · {logements} logements/étage · {fatsNeeded} FAT(s)</div>
@@ -156,7 +164,8 @@ const BuildingPlan = ({ etages, logements, residence }) => {
         let fi = 0;
         return Array.from({ length: etages + 1 }, (_, i) => etages - i).map((e) => {
           const isFatFloor = fatFloors.includes(e);
-          const fatId = isFatFloor ? fi++ : null;
+          const rawFatId = isFatFloor ? fi++ : null;
+          const logicalFatId = isFatFloor ? fatsNeeded - 1 - rawFatId : null;
           const fatCol = Math.floor(logements / 2) - 1;
 
           return (
@@ -181,20 +190,23 @@ const BuildingPlan = ({ etages, logements, residence }) => {
                   {Array.from({ length: logements }).map((_, l) => {
                     const isLastUnit = l === logements - 1;
                     const isFatBetween = isFatFloor && l === fatCol;
+                    const doorNumber = e * logements + l + 1;
+                    const fatAssignId = Math.floor((doorNumber - 1) / limitPerFat);
+                    const isHovered = hoveredFatId !== null && hoveredFatId === fatAssignId;
+
                     return (
                       <div key={l} style={{ display: "flex", flex: 1, alignItems: "stretch" }}>
                         <div style={{
                           flex: 1, display: "flex", flexDirection: "column",
                           alignItems: "center", justifyContent: "center",
                           padding: "8px 4px", gap: 4,
-                          background: "white",
-                          border: `1px solid ${GRAY_200}`,
+                          background: isHovered ? AT_ORANGE_LIGHT : "white",
+                          border: isHovered ? `2px solid ${AT_ORANGE}` : `1px solid ${GRAY_200}`,
                           borderRadius: 4, margin: "4px 2px",
                           minWidth: 56,
                         }}>
-                          <div style={{ fontSize: 14 }}>🚪</div>
-                          <div style={{ fontSize: 9, fontWeight: 700, color: GRAY_600, fontFamily: "monospace" }}>L.{l + 1}</div>
-                          <div style={{ width: 6, height: 6, borderRadius: "50%", background: AT_BLUE, boxShadow: `0 0 4px ${AT_BLUE}55` }} />
+                          <div style={{ fontSize: 9, fontWeight: 700, color: GRAY_600, fontFamily: "monospace" }}>P.{doorNumber}</div>
+                          <div style={{ width: 6, height: 6, borderRadius: "50%", background: isHovered ? AT_ORANGE : AT_BLUE, boxShadow: `0 0 4px ${isHovered ? AT_ORANGE : AT_BLUE}55` }} />
                         </div>
                         {!isLastUnit && (
                           <div style={{
@@ -202,12 +214,20 @@ const BuildingPlan = ({ etages, logements, residence }) => {
                             display: "flex", flexDirection: "column",
                             alignItems: "center", justifyContent: "center",
                             background: isFatBetween ? AT_ORANGE_LIGHT : GRAY_100,
-                            borderLeft: `1px dashed ${GRAY_200}`,
-                            borderRight: `1px dashed ${GRAY_200}`,
+                            borderLeft: `1px dashed ${isHovered ? AT_ORANGE : GRAY_200}`,
+                            borderRight: `1px dashed ${isHovered ? AT_ORANGE : GRAY_200}`,
                             position: "relative",
                             flexShrink: 0,
                           }}>
-                            {isFatBetween && fatId !== null && <FATNode id={fatId} />}
+                            {isFatBetween && logicalFatId !== null && (
+                              <FATNode 
+                                id={logicalFatId} 
+                                connected={Math.min(limitPerFat, totalAbonnes - logicalFatId * limitPerFat)}
+                                totalPorts={limitPerFat}
+                                onHover={() => setHoveredFatId(logicalFatId)}
+                                onLeave={() => setHoveredFatId(null)}
+                              />
+                            )}
                             {!isFatBetween && <div style={{ width: 1, height: "100%", background: GRAY_300, opacity: 0.5 }} />}
                           </div>
                         )}
@@ -255,53 +275,90 @@ const BuildingPlan = ({ etages, logements, residence }) => {
 };
 
 // ── Leaflet Map component ────────────────────────────────────
-const LeafletMap = ({ residence }) => {
+const LeafletMap = ({ buildingsGeoJson, fatResults }) => {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
 
+  // Initialize map once
   useEffect(() => {
-    if (!mapRef.current || mapInstanceRef.current) return;
+    if (!mapRef.current) return;
 
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css";
-    document.head.appendChild(link);
-
-    const script = document.createElement("script");
-    script.src = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";
-    script.onload = () => {
+    const initMap = () => {
+      // Destroy any existing instance to avoid "already initialized" error
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
       const L = window.L;
-      const map = L.map(mapRef.current, { zoomControl: true, scrollWheelZoom: false });
+      if (!L || !mapRef.current) return;
+
+      const map = L.map(mapRef.current, { zoomControl: true, scrollWheelZoom: true });
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: '© OpenStreetMap',
         maxZoom: 19,
       }).addTo(map);
-      map.setView([35.697, -0.634], 15);
-
-      const buildings = [
-        { name: "Rés. Les Falaises", lat: 35.6980, lng: -0.6330, type: "selected" },
-        { name: "El Bahia Tower", lat: 35.6955, lng: -0.6350, type: "neighbor" },
-        { name: "Rés. Atlas", lat: 35.6998, lng: -0.6310, type: "neighbor" },
-        { name: "Cité AADL B4", lat: 35.6965, lng: -0.6375, type: "neighbor" },
-        { name: "Cité AADL B5", lat: 35.6942, lng: -0.6295, type: "neighbor" },
-      ];
-
-      buildings.forEach(b => {
-        const color = b.type === "selected" ? AT_BLUE : "#666";
-        const icon = L.divIcon({
-          html: `<div style="background:${color};color:white;border:2px solid white;border-radius:6px;padding:3px 6px;font-size:9px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.25);font-family:sans-serif;">🏢 ${b.name}</div>`,
-          className: "",
-          iconAnchor: [0, 0],
-        });
-        L.marker([b.lat, b.lng], { icon }).addTo(map)
-          .bindPopup(`<b>${b.name}</b><br>Résidence AADL<br><small>Oran · Seddikia</small>`);
-      });
-
+      map.setView([36.7, 3.05], 12);
       mapInstanceRef.current = map;
     };
-    document.head.appendChild(script);
-    return () => {};
+
+    if (window.L) {
+      initMap();
+    } else {
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css";
+      if (!document.querySelector('link[href*="leaflet"]')) document.head.appendChild(link);
+
+      const script = document.createElement("script");
+      script.src = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";
+      script.onload = initMap;
+      if (!document.querySelector('script[src*="leaflet"]')) document.head.appendChild(script);
+      else script.onload();
+    }
+
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+    };
   }, []);
+
+  // Update buildings layer when GeoJSON changes
+  useEffect(() => {
+    const L = window.L;
+    const map = mapInstanceRef.current;
+    if (!L || !map || !buildingsGeoJson) return;
+
+    try {
+      const geoData = typeof buildingsGeoJson === "string" ? JSON.parse(buildingsGeoJson) : buildingsGeoJson;
+      const layer = L.geoJSON(geoData, {
+        style: { color: AT_BLUE, weight: 2, fillColor: AT_BLUE_LIGHT, fillOpacity: 0.45 },
+        onEachFeature: (feature, lyr) => {
+          const name = feature.properties?.id_batiment || "Bâtiment";
+          lyr.bindPopup(`<b> ${name}</b>`);
+        }
+      }).addTo(map);
+      if (layer.getBounds().isValid()) map.fitBounds(layer.getBounds(), { padding: [20, 20] });
+    } catch(e) { console.error("GeoJSON parse error", e); }
+  }, [buildingsGeoJson]);
+
+  // Overlay FAT markers
+  useEffect(() => {
+    const L = window.L;
+    const map = mapInstanceRef.current;
+    if (!L || !map) return;
+    fatResults.forEach(fat => {
+      if (!fat.centroid_lat || !fat.centroid_lon) return;
+      const icon = L.divIcon({
+        html: `<div style="background:${AT_ORANGE};color:white;border:2px solid white;border-radius:6px;padding:3px 7px;font-size:9px;font-weight:800;white-space:nowrap;box-shadow:0 2px 8px rgba(247,148,29,0.5);font-family:monospace;">📡 ${fat.fat_id || "FAT"}</div>`,
+        className: "", iconAnchor: [0, 0],
+      });
+      L.marker([fat.centroid_lat, fat.centroid_lon], { icon })
+        .addTo(map)
+        .bindPopup(`<b>${fat.fat_id_AT || fat.fat_id}</b><br>${fat.n_subscribers} abonnés<br>${fat.capacity_ok ? "✓ Conforme" : "✗ Dépassement"}`);
+    });
+  }, [fatResults]);
 
   return (
     <div style={{ height: "100%", minHeight: 280, borderRadius: 10, overflow: "hidden" }}>
@@ -321,17 +378,48 @@ export default function FTTHSmartPlanner() {
   const [loginData, setLoginData] = useState({ id: "k.benali@at.dz", password: "atdz2026" });
   const [loginLoading, setLoginLoading] = useState(false);
 
-  const [ville, setVille] = useState("oran");
-  const [quartier, setQuartier] = useState("seddikia");
-  const [residence, setResidence] = useState("falaises");
+  const [ville, setVille] = useState("");
+  const [quartier, setQuartier] = useState("");
+  const [residence, setResidence] = useState("");
+  
+  const [villesOpts, setVillesOpts] = useState([]);
+  const [quartiersOpts, setQuartiersOpts] = useState([]);
+  const [residencesOpts, setResidencesOpts] = useState([]);
+
   const [etages, setEtages] = useState(5);
   const [logements, setLogements] = useState(4);
-  const [fatCap, setFatCap] = useState(16);
+  const [fatCap, setFatCap] = useState(8);
   const [osmLoaded, setOsmLoaded] = useState(false);
   const [osmLoading, setOsmLoading] = useState(false);
   const [planGenerated, setPlanGenerated] = useState(false);
+  
   const [kpis, setKpis] = useState(null);
   const [archiveSearch, setArchiveSearch] = useState("");
+  
+  const [rawBuildings, setRawBuildings] = useState(null);
+  const [subscribersData, setSubscribersData] = useState([]);
+  const [fatResults, setFatResults] = useState([]);
+
+  // API Calls pour OSM
+  useEffect(() => {
+    fetch("http://localhost:8000/api/ville").then(r => r.json())
+      .then(d => setVillesOpts((d.villes || []).map(v => [v, v])))
+      .catch(e => console.error(e));
+  }, []);
+
+  useEffect(() => {
+    if (!ville) { setQuartiersOpts([]); return; }
+    fetch(`http://localhost:8000/api/quartier?ville=${ville}`).then(r => r.json())
+      .then(d => setQuartiersOpts((d.quartiers || []).map(q => [q, q])))
+      .catch(e => console.error(e));
+  }, [ville]);
+
+  useEffect(() => {
+    if (!ville || !quartier) { setResidencesOpts([]); return; }
+    fetch(`http://localhost:8000/api/residence?ville=${ville}&quartier=${quartier}`).then(r => r.json())
+      .then(d => setResidencesOpts((d.residences || []).map(r => [r, r])))
+      .catch(e => console.error(e));
+  }, [ville, quartier]);
 
   const notify = useCallback((type, title, sub) => setNotif({ type, title, sub }), []);
 
@@ -344,31 +432,66 @@ export default function FTTHSmartPlanner() {
     }, 1200);
   };
 
-  const importOSM = () => {
+  const importOSM = async () => {
     if (!ville || !quartier || !residence) { notify("error", "Données manquantes", "Sélectionnez ville, quartier et résidence"); return; }
     setOsmLoading(true);
-    setTimeout(() => {
-      setOsmLoading(false);
+    try {
+      const resp = await fetch("http://localhost:8000/api/importOSM", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ ville, quartier, residence, nombre_etages: etages, logements_par_etage: logements, commerce: false })
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.detail || "Erreur Import");
+      setRawBuildings(data.buildings_geojson);
+      setSubscribersData(data.subscribers);
       setOsmLoaded(true);
-      notify("success", "OSM Synchronisé", "Données importées pour la résidence sélectionnée");
-    }, 1600);
+      notify("success", "OSM Synchronisé", `${data.count} polygones importés avec succès`);
+    } catch (err) {
+      notify("error", "Erreur réseau", err.message);
+    } finally {
+      setOsmLoading(false);
+    }
   };
 
-  const lancerSectorisation = () => {
+  const lancerSectorisation = async () => {
     if (!osmLoaded) { notify("info", "Import requis", "Importez d'abord les données OSM"); return; }
-    const totalAbonnes = etages * logements;
-    const fatsNeeded = Math.ceil(totalAbonnes / 10);
-    const fatsPortsUsed = Math.round((totalAbonnes / (fatsNeeded * fatCap)) * 100);
-    const lineaire = Math.round(etages * 3.2 * logements * 1.8);
-    setKpis({ totalAbonnes, fatsNeeded, fatsPortsUsed, lineaire });
-    setPlanGenerated(true);
-    notify("success", "Sectorisation terminée !", `${fatsNeeded} FAT(s) proposée(s) pour ${totalAbonnes} abonnés`);
+    notify("info", "IA K-Means", "Positionnement en cours, veuillez patienter...");
+    
+    try {
+      // 1. Modèle IA
+      const req1 = await fetch("http://localhost:8000/api/emplacementFATs", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ subscribers: subscribersData })
+      });
+      const data1 = await req1.json();
+      if (!req1.ok) throw new Error(data1.detail || "Erreur clustering");
+
+      // 2. Noms AT
+      const req2 = await fetch("http://localhost:8000/api/nomFAT", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ fat_candidates: data1.fat_candidates, subscribers: subscribersData })
+      });
+      const data2 = await req2.json();
+      if (!req2.ok) throw new Error(data2.detail || "Erreur Nommage");
+      
+      const finalFats = data2.fat_candidates_with_ids || [];
+      setFatResults(finalFats);
+      
+      const totalAbonnes = subscribersData.length;
+      const fatsNeeded = finalFats.length;
+      const fatsPortsUsed = Math.round((totalAbonnes / (fatsNeeded * fatCap || 1)) * 100);
+      const lineaire = Math.round(finalFats.reduce((acc, f) => acc + (f.cable_m_to_fdt_real || 0), 0));
+      
+      setKpis({ totalAbonnes, fatsNeeded, fatsPortsUsed, lineaire });
+      setPlanGenerated(true);
+      notify("success", "Sectorisation terminée !", `${fatsNeeded} FAT(s) générées`);
+      setActiveTab("results");
+    } catch (err) {
+      notify("error", "Erreur secteur", err.message);
+    }
   };
 
-  const residenceLabel = {
-    falaises: "Rés. Les Falaises", bahia: "El Bahia Tower",
-    yasmine: "Rés. Yasmine", atlas: "Rés. Atlas",
-  }[residence] || "";
+  const residenceLabel = residence || "Résidence non sélectionnée";
 
   const filteredProjects = PROJECTS_ARCHIVE.filter(p =>
     p.name.toLowerCase().includes(archiveSearch.toLowerCase()) ||
@@ -614,7 +737,7 @@ export default function FTTHSmartPlanner() {
         </div>
 
         <div style={{ display: "flex", gap: 4, background: GRAY_100, borderRadius: 8, padding: 4 }}>
-          {[["planner", "🗺 Planificateur"], ["results", "📊 Résultats FAT"], ["settings", "⚙ Capacités"]].map(([id, label]) => (
+          {[["planner", "🗺 Planificateur"], ["settings", "⚙ Capacités"]].map(([id, label]) => (
             <button key={id} onClick={() => setActiveTab(id)} style={{
               padding: "6px 16px", borderRadius: 6, border: "none",
               fontSize: 12, fontWeight: 600, cursor: "pointer",
@@ -707,9 +830,9 @@ export default function FTTHSmartPlanner() {
               <span style={{ fontWeight: 700, fontSize: 13, color: GRAY_800 }}>Localisation</span>
             </div>
             {[
-              { label: "Ville / Wilaya", val: ville, set: setVille, opts: [["oran","Oran"],["alger","Alger"],["constantine","Constantine"],["annaba","Annaba"]] },
-              { label: "Quartier", val: quartier, set: setQuartier, opts: [["seddikia","Seddikia"],["haî-nedjma","Haï Nedjma"],["carteaux","Carteaux"],["victor-hugo","Victor Hugo"]] },
-              { label: "Résidence", val: residence, set: setResidence, opts: [["falaises","Rés. Les Falaises"],["bahia","El Bahia Tower"],["yasmine","Rés. Yasmine"],["atlas","Rés. Atlas"]] },
+              { label: "Ville / Wilaya", val: ville, set: setVille, opts: villesOpts },
+              { label: "Quartier", val: quartier, set: setQuartier, opts: quartiersOpts },
+              { label: "Résidence", val: residence, set: setResidence, opts: residencesOpts },
             ].map(f => (
               <div key={f.label} style={{ marginBottom: 10 }}>
                 <label style={labelStyle}>{f.label}</label>
@@ -804,127 +927,96 @@ export default function FTTHSmartPlanner() {
 
           {/* PLANNER TAB */}
           {activeTab === "planner" && (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, flex: 1 }}>
-              <div style={{ ...cardStyle, gridColumn: "1 / 2" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-                  <div style={{ fontWeight: 700, fontSize: 14, color: GRAY_800, display: "flex", alignItems: "center", gap: 8 }}>
-                    Plan de Sectorisation
-                    {planGenerated && <span style={{ background: AT_BLUE_LIGHT, color: AT_BLUE, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20 }}>{residenceLabel}</span>}
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+              {/* Carte + Plan de séctorisation côte-à-côte */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <div style={{ ...cardStyle }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: GRAY_800, display: "flex", alignItems: "center", gap: 8 }}>
+                      Plan de Sectorisation
+                      {planGenerated && <span style={{ background: AT_BLUE_LIGHT, color: AT_BLUE, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20 }}>{residenceLabel}</span>}
+                    </div>
+                    {planGenerated && (
+                      <button onClick={() => { setPlanGenerated(false); setKpis(null); setFatResults([]); setRawBuildings(null); }} style={{ background: GRAY_100, border: "none", borderRadius: 6, padding: "5px 10px", fontSize: 11, cursor: "pointer", color: GRAY_600 }}>↺ Reset</button>
+                    )}
                   </div>
-                  {planGenerated && (
-                    <button onClick={() => { setPlanGenerated(false); setKpis(null); }} style={{ background: GRAY_100, border: "none", borderRadius: 6, padding: "5px 10px", fontSize: 11, cursor: "pointer", color: GRAY_600 }}>↺ Reset</button>
+                  {!planGenerated ? (
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 340, gap: 12, color: GRAY_400 }}>
+                      <div style={{ fontSize: 56 }}>🏢</div>
+                      <div style={{ fontWeight: 600, fontSize: 14, color: GRAY_600 }}>Veuillez importer les données de la résidence</div>
+                      <div style={{ fontSize: 12 }}>Sélectionnez une ville, un quartier, puis lancez la sectorisation</div>
+                    </div>
+                  ) : (
+                    <BuildingPlan etages={etages} logements={logements} residence={residenceLabel} />
                   )}
                 </div>
-                {!planGenerated ? (
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 340, gap: 12, color: GRAY_400 }}>
-                    <div style={{ fontSize: 56 }}>🏢</div>
-                    <div style={{ fontWeight: 600, fontSize: 14, color: GRAY_600 }}>Veuillez importer les données de la résidence</div>
-                    <div style={{ fontSize: 12 }}>Sélectionnez une ville, un quartier, puis lancez la sectorisation</div>
+
+                <div style={{ ...cardStyle, display: "flex", flexDirection: "column" }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: GRAY_800, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+                    🗺 Carte OpenStreetMap — Bâtiments de la zone
+                    <span style={{ background: AT_ORANGE_LIGHT, color: AT_ORANGE, fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 20, textTransform: "uppercase" }}>AADL Cluster</span>
                   </div>
-                ) : (
-                  <BuildingPlan etages={etages} logements={logements} residence={residenceLabel} />
-                )}
-              </div>
-
-              <div style={{ ...cardStyle, display: "flex", flexDirection: "column" }}>
-                <div style={{ fontWeight: 700, fontSize: 14, color: GRAY_800, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
-                  🗺 Carte OpenStreetMap — Bâtiments de la zone
-                  <span style={{ background: AT_ORANGE_LIGHT, color: AT_ORANGE, fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 20, textTransform: "uppercase" }}>AADL Cluster</span>
-                </div>
-                <div style={{ flex: 1, minHeight: 400, borderRadius: 10, overflow: "hidden", border: `1px solid ${GRAY_200}` }}>
-                  <LeafletMap residence={residenceLabel} />
-                </div>
-                <div style={{ fontSize: 10, color: GRAY_400, marginTop: 8 }}>
-                  © OpenStreetMap contributors · Zoom avec la molette désactivé
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* RESULTS TAB */}
-          {activeTab === "results" && (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gridColumn: "1 / -1", marginBottom: 4 }}>
-                <div>
-                  <div style={{ fontSize: 20, fontWeight: 800, color: GRAY_800 }}>Résultats IA — Sectorisation FAT</div>
-                  <div style={{ fontSize: 12, color: GRAY_400, marginTop: 2 }}>Algorithme K-Means · {residenceLabel} · Oran/Seddikia</div>
-                </div>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 6, background: PURPLE_LIGHT, border: `1px solid ${PURPLE}33`, borderRadius: 20, padding: "6px 14px", fontSize: 11, fontWeight: 700, color: PURPLE }}>
-                  <span style={{ width: 5, height: 5, borderRadius: "50%", background: PURPLE, animation: "shimmer 1.5s infinite" }} />
-                  Analyse complète · Confiance 94%
-                </span>
-              </div>
-
-              <div style={cardStyle}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-                  <span style={{ fontSize: 18 }}>📊</span>
-                  <span style={{ fontWeight: 700, fontSize: 13 }}>Récapitulatif IA</span>
-                </div>
-                {[
-                  ["Algorithme", "K-Means Clustering", AT_BLUE],
-                  ["Total Abonnés", kpis?.totalAbonnes ?? "—", AT_BLUE],
-                  ["FATs Nécessaires", kpis?.fatsNeeded ?? "—", AT_ORANGE],
-                  ["Capacité FAT", `${fatCap} ports`, GRAY_700],
-                  ["Taux d'utilisation", kpis ? `${kpis.fatsPortsUsed}%` : "—", GREEN],
-                  ["Linéaire estimé", kpis ? `${kpis.lineaire}m` : "—", GRAY_700],
-                ].map(([k, v, c]) => (
-                  <div key={k} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderBottom: `1px solid ${GRAY_100}` }}>
-                    <span style={{ fontSize: 13, color: GRAY_600 }}>{k}</span>
-                    <span style={{ fontSize: 12, fontFamily: "monospace", fontWeight: 700, color: c }}>{v}</span>
+                  <div style={{ flex: 1, minHeight: 400, borderRadius: 10, overflow: "hidden", border: `1px solid ${GRAY_200}` }}>
+                    <LeafletMap buildingsGeoJson={rawBuildings} fatResults={fatResults} />
                   </div>
-                ))}
+                  <div style={{ fontSize: 10, color: GRAY_400, marginTop: 8 }}>
+                    © OpenStreetMap contributors · Molette pour zoomer
+                  </div>
+                </div>
               </div>
 
-              <div style={cardStyle}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-                  <span style={{ fontSize: 18 }}>📡</span>
-                  <span style={{ fontWeight: 700, fontSize: 13 }}>Points FAT Proposés</span>
-                </div>
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                  <thead>
-                    <tr>
-                      {["ID FAT","Étage","Position","Abonnés","Statut"].map(h => (
-                        <th key={h} style={{ textAlign: "left", padding: "8px 10px", fontSize: 10, fontWeight: 700, letterSpacing: "0.8px", textTransform: "uppercase", color: GRAY_400, borderBottom: `1px solid ${GRAY_200}` }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {kpis && Array.from({ length: kpis.fatsNeeded }).map((_, i) => (
-                      <tr key={i} style={{ background: i % 2 === 0 ? "white" : GRAY_50 }}>
-                        <td style={{ padding: "9px 10px", fontSize: 12, fontFamily: "monospace", fontWeight: 700, color: AT_ORANGE }}>FAT-ORA-{100 + i}</td>
-                        <td style={{ padding: "9px 10px", fontSize: 12 }}>Ét.{Math.round((i + 1) * etages / (kpis.fatsNeeded + 1))}</td>
-                        <td style={{ padding: "9px 10px", fontSize: 12 }}>Couloir L.{Math.floor(logements / 2)}-{Math.floor(logements / 2) + 1}</td>
-                        <td style={{ padding: "9px 10px", fontSize: 12 }}>{Math.round(kpis.totalAbonnes / kpis.fatsNeeded)}</td>
-                        <td style={{ padding: "9px 10px" }}><span style={{ background: GREEN_LIGHT, color: GREEN, fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 20 }}>✓ OPTIMAL</span></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              {/* ─── Tableau FAT (affiché en dessous dès que la sectorisation est lancée) ─── */}
+              {planGenerated && fatResults.length > 0 && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
 
-              <div style={{ ...cardStyle, gridColumn: "1 / -1" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-                  <span style={{ fontSize: 18 }}>📈</span>
-                  <span style={{ fontWeight: 700, fontSize: 13 }}>Utilisation des Ports par FAT</span>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                  {kpis && Array.from({ length: kpis.fatsNeeded }).map((_, i) => {
-                    const pct = Math.round((kpis.totalAbonnes / kpis.fatsNeeded) / fatCap * 100);
-                    return (
-                      <div key={i}>
-                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 7 }}>
-                          <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "monospace", color: AT_ORANGE }}>FAT-ORA-{100 + i}</span>
-                          <span style={{ fontSize: 11, color: GRAY_400 }}>{Math.round(kpis.totalAbonnes / kpis.fatsNeeded)}/{fatCap} ports · Ét.{Math.round((i + 1) * etages / (kpis.fatsNeeded + 1))}</span>
-                        </div>
-                        <div style={{ height: 10, background: GRAY_200, borderRadius: 5, overflow: "hidden" }}>
-                          <div style={{ height: "100%", width: `${pct}%`, background: `linear-gradient(90deg, ${AT_BLUE}, ${GREEN})`, borderRadius: 5 }} />
-                        </div>
-                        <div style={{ fontSize: 10, color: GRAY_400, marginTop: 3 }}>{pct}% d'utilisation</div>
+                  {/* Table des FATs */}
+                  <div style={cardStyle}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontWeight: 700, fontSize: 13 }}>Points FAT Proposés</span>
                       </div>
-                    );
-                  })}
+                      <span style={{ background: AT_BLUE_LIGHT, color: AT_BLUE, fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20 }}>
+                        {fatResults.length} FAT·s · K-Means 2D
+                      </span>
+                    </div>
+                    <div style={{ overflowX: "auto" }}>
+                      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                        <thead>
+                          <tr style={{ background: GRAY_50 }}>
+                            {["ID FAT AT", "Bâtiment", "Distance FDT", "Abonnés", "Statut"].map(h => (
+                              <th key={h} style={{ textAlign: "left", padding: "8px 10px", fontSize: 10, fontWeight: 700, letterSpacing: "0.6px", textTransform: "uppercase", color: GRAY_400, borderBottom: `2px solid ${GRAY_200}` }}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {fatResults.map((fat, i) => (
+                            <tr key={i} style={{ background: i % 2 === 0 ? "white" : GRAY_50, transition: "background 0.1s" }}
+                              onMouseEnter={e => e.currentTarget.style.background = AT_BLUE_LIGHT}
+                              onMouseLeave={e => e.currentTarget.style.background = i % 2 === 0 ? "white" : GRAY_50}>
+                              <td style={{ padding: "9px 10px", fontFamily: "monospace", fontWeight: 700, color: AT_ORANGE, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={fat.fat_id_AT}>
+                                {fat.fat_id_AT || `FAT-TEMP-${i}`}
+                              </td>
+                              <td style={{ padding: "9px 10px", color: GRAY_700, maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={fat.id_batiment}>
+                                {fat.id_batiment}
+                              </td>
+                              <td style={{ padding: "9px 10px", color: GRAY_600 }}>{Math.round(fat.cable_m_to_fdt_real || 0)} m</td>
+                              <td style={{ padding: "9px 10px", fontWeight: 700, color: GRAY_800 }}>{fat.n_subscribers} / {fatCap}</td>
+                              <td style={{ padding: "9px 10px" }}>
+                                {fat.capacity_ok
+                                  ? <span style={{ background: GREEN_LIGHT, color: GREEN, fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 20 }}>CONFORME</span>
+                                  : <span style={{ background: "#FEE2E2", color: RED, fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 20 }}>DÉPASSEMENT</span>}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
                 </div>
-              </div>
+              )}
+
             </div>
           )}
 
