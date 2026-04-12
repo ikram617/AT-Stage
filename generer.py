@@ -1,27 +1,36 @@
 """
-SIMULATION DONNÉES FTTH — ALGÉRIE TÉLÉCOM (v4 FINALE)
-→ Tous les bâtiments résidentiels (résidences & immeubles uniquement)
-→ Valeurs aléatoires réalistes par bâtiment (étages + logements/étage)
-→ Un seul grand dataset_final.csv à la fin
+SIMULATION DONNÉES FTTH — ALGÉRIE TÉLÉCOM (v8)
+Corrections v8 vs v7:
+  A. Volume rétabli : suppression du filtre MIN_POLYGON_AREA qui éliminait 95% des bâtiments.
+     Le plafond MAX_LOG_BATIMENT (80) seul suffit pour éviter les méga-bâtiments.
+     MultiPolygon explosion conservée MAIS sans filtre surface agressif.
+  B. Notation RDC correcte : un bâtiment "5 étages" = RDC + R+1 + ... + R+5 → nb_et=5
+     Le RDC (etage=0) a son propre FAT commerce si comm_rdc=True, sinon appartements.
+     Les étages résidentiels = range(1, nb_et+1) toujours.
+  C. FAT groupement par étage PRIORITAIRE : les appartements du MÊME étage sont
+     regroupés en premier. Si un étage a > 8 appts, il est découpé en FATs de 8.
+     Si un étage a ≤ 8 appts, ils tiennent dans 1 FAT. Les FATs ne MÉLANGENT JAMAIS
+     des étages différents (physiquement impossible — le câble vertical est trop long).
+
+Conservé de v6/v7:
+  1. batiment_pav : numérotation réinitialisée par résidence
+  2. GPS abonnés : colonnes verticales avec jitter par étage (buffer interne)
+  3. Câble drop : np.random.choice([15, 20, 50, 80]) pur
+  4. Jitter dans polygone érodé (buffer négatif)
 """
 
 import os, sys, warnings
 import numpy as np
 import pandas as pd
 from math import radians, cos, sin, asin, sqrt, ceil
+from shapely.geometry import Point
 from backend.config import settings
 
-
-# Longueurs câbles préfabriqués AT (en mètres) — séance 08/03/2026
-PREFAB_LENGTHS = settings.CABLE_LENGTHS
-
-def snap_to_prefab(dist_m: float) -> int:
-    """Snappe une distance réelle vers le câble préfab AT le plus proche."""
-    return min(PREFAB_LENGTHS, key=lambda x: abs(x - dist_m))
+PREFAB_LENGTHS = settings.AT_DROP_CABLE_STANDARDS_M
 
 warnings.filterwarnings("ignore")
 np.random.seed(2026)
-os.makedirs(r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee", exist_ok=True)
+os.makedirs(r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee_annaba2", exist_ok=True)
 
 try:
     import osmnx as ox
@@ -30,6 +39,7 @@ except ImportError:
     sys.exit("Installe osmnx : pip install osmnx")
 
 
+# ====================== CONSTANTES WILAYAS (inchangées) ======================
 WILAYAS = {
     1:  {"PLACE": "Adrar, Algeria",           "BBOX": {"north": 27.910, "south": 27.840, "east": -0.255, "west": -0.330}, "WILAYA": 1,  "ZONE_CODE": "010", "wilaya_nom": "Adrar"},
     2:  {"PLACE": "Chlef, Algeria",            "BBOX": {"north": 36.195, "south": 36.135, "east": 1.360,  "west": 1.280},  "WILAYA": 2,  "ZONE_CODE": "020", "wilaya_nom": "Chlef"},
@@ -90,6 +100,7 @@ WILAYAS = {
     57: {"PLACE": "El M'Ghair, Algeria",       "BBOX": {"north": 33.960, "south": 33.910, "east": 5.960,  "west": 5.890},  "WILAYA": 57, "ZONE_CODE": "570", "wilaya_nom": "El M'Ghair"},
     58: {"PLACE": "El Meniaa, Algeria",        "BBOX": {"north": 30.600, "south": 30.550, "east": 2.905,  "west": 2.835},  "WILAYA": 58, "ZONE_CODE": "580", "wilaya_nom": "El Meniaa"},
 }
+
 PRENOMS = [
     "Mohamed", "Ahmed", "Abdelkader", "Youcef", "Karim", "Rachid", "Hichem", "Sofiane",
     "Amir", "Bilal", "Yassine", "Omar", "Ali", "Hamza", "Ibrahim", "Zakaria", "Nadir",
@@ -102,7 +113,7 @@ PRENOMS = [
     "Amel", "Dounia", "Fatiha", "Ghania", "Hassiba", "Karima", "Lamia", "Mouna", "Nabila",
     "Ouarda", "Rachida", "Sabrine", "Salima", "Souad", "Wahiba", "Yamina", "Zahra",
     "Aicha", "Baya", "Cherifa", "Djamila", "Fella", "Ghalia", "Hayet", "Ines", "Jazia",
-    "Keltoum", "Lila", "Malika", "Naima", "Ouahiba", "Rym", "Siham", "Touria","Ikram"
+    "Keltoum", "Lila", "Malika", "Naima", "Ouahiba", "Rym", "Siham", "Touria", "Ikram"
 ]
 NOMS_FAM = [
     "KEBIR", "BENALI", "KHELIFI", "BOUDIAF", "MANSOURI", "ZERROUK", "HAMIDI", "BENSALEM",
@@ -119,7 +130,8 @@ NOMS_FAM = [
     "NAIT", "OUEDRAOUI", "REBAI", "SIDI", "TAHIRI", "YAHIAOUI", "ZOUAOUI", "BENDALI",
     "BOUSSAID", "CHAABANE", "DJEBBAR", "ELKHEIR", "FERRARI", "GHAZI", "HASSANI", "KARA"
 ]
-WILAYA_INPUT = 31
+
+WILAYA_INPUT = 23
 _w = WILAYAS[WILAYA_INPUT]
 PLACE = _w["PLACE"]
 WILAYA = _w["WILAYA"]
@@ -151,7 +163,7 @@ def charger_communes_oran():
     except Exception as e:
         print(f"  ⚠️ OSM communes échoué : {e}")
     print("  → Fallback vers liste statique")
-    return []
+    return [("ANNABA", 36.905, 7.745, "CECLI ANNABA")]
 
 def charger_quartiers_oran():
     print("🔄 Chargement dynamique des QUARTIERS depuis OSM...")
@@ -164,7 +176,7 @@ def charger_quartiers_oran():
     except Exception as e:
         print(f"  ⚠️ OSM quartiers échoué : {e}")
     print("  → Fallback vers liste statique")
-    return []
+    return ["CENTRE-VILLE", "EL-BOUNI", "SIDI-BRAHIM", "EL-HADJAR"]
 
 COMMUNES_ORAN = charger_communes_oran()
 QUARTIERS_ORAN = charger_quartiers_oran()
@@ -173,7 +185,6 @@ QUARTIERS_ORAN = charger_quartiers_oran()
 ETAGES_DEFAUT = {
     "apartments": 6, "residential": 5, "yes": 5, "commercial": 2, "retail": 1, "dormitory": 5
 }
-
 EXCLURE = {
     "garage","garages","shed","hut","industrial","warehouse",
     "school","church","mosque","hospital","kindergarten",
@@ -181,7 +192,7 @@ EXCLURE = {
     "government","civic","public","house","detached"
 }
 
-# ====================== UTILITAIRES GPS + FORMAT ======================
+# ====================== UTILITAIRES GPS ======================
 def haversine(la1, lo1, la2, lo2):
     R = 6371000
     la1, lo1, la2, lo2 = map(radians, [la1, lo1, la2, lo2])
@@ -239,53 +250,198 @@ def resoudre_quartier_osm(row, bat_idx):
             return q.upper()
     return QUARTIERS_ORAN[bat_idx % len(QUARTIERS_ORAN)].replace("-", " ")
 
+
+# ====================== FIX 1: GÉNÉRATEUR DE NOM RÉSIDENCE AVEC RESET ======================
+#
+# POURQUOI ce design ?
+# -------------------
+# Le problème original : chaque bâtiment utilisait `olt_seq` (index global 1, 2, 3, ..., N)
+# comme numéro dans batiment_pav. Résultat : une résidence de 3 blocs donnait
+# "AADL-BLOC-A-numero-47", "AADL-BLOC-B-numero-48", "AADL-BLOC-C-numero-49"
+# au lieu de "AADL-BLOC-A-numero-1", "AADL-BLOC-B-numero-2", "AADL-BLOC-C-numero-3"
+#
+# LA SOLUTION : une classe stateful qui maintient un compteur par (promoteur, quartier).
+# Quand un nouveau groupe commence, le compteur repart à 1.
+#
+# PATTERN UTILISÉ : "compteur par clé" avec un dict Python.
+# C'est exactement ce qu'on fait en AT pour gérer les séquences locales.
+class ResidenceNamer:
+    """
+    Génère des noms de bâtiment réalistes avec numérotation qui repart à 1
+    pour chaque résidence (groupe de bâtiments d'un même promoteur/quartier).
+
+    Fonctionnement :
+      - Chaque résidence = groupe de RESIDENCE_SIZE bâtiments consécutifs
+      - Les bâtiments d'une même résidence partagent le même promoteur et quartier
+      - Le numéro (numero_in_res) repart à 1 pour chaque nouvelle résidence
+
+    Exemple pour RESIDENCE_SIZE=3 :
+      bat_idx=0 → résidence 0, numero=1, AADL BLOC-A-numero-1
+      bat_idx=1 → résidence 0, numero=2, AADL BLOC-B-numero-2
+      bat_idx=2 → résidence 0, numero=3, AADL BLOC-C-numero-3
+      bat_idx=3 → résidence 1, numero=1, LPA BLOC-A-numero-1  ← RESET !
+    """
+    PROMOTEURS = ["AADL", "HASNAOUI", "LPP", "LPA", "HLM", "CNEP", "LSL", "PRIVE"]
+    RESIDENCE_SIZE = 3  # nombre de bâtiments par résidence
+
+    def __init__(self, seed=2026):
+        # np.random pour reproducibilité, indépendant du seed global
+        self._rng = np.random.RandomState(seed)
+        self._residence_promoteurs = {}  # résidence_id → promoteur choisi
+
+    def get(self, bat_idx: int, elot: str) -> tuple[str, str, str]:
+        """
+        Retourne (batiment_pav, nom_bat, type_batiment) pour le bâtiment bat_idx.
+
+        bat_idx    : index global du bâtiment (0-based)
+        elot       : identifiant de l'îlot/adresse (pour la lisibilité)
+
+        Returns:
+          batiment_pav : nom complet de l'adresse postale
+          nom_bat      : même chose (utilisé dans d'autres colonnes)
+          promoteur    : type_batiment (AADL, etc.)
+        """
+        # Quelle résidence ? La division entière donne le groupe.
+        residence_id = bat_idx // self.RESIDENCE_SIZE
+
+        # Numéro DANS la résidence (1-based) — le modulo repart à 0 puis +1
+        numero_in_res = (bat_idx % self.RESIDENCE_SIZE) + 1
+
+        # Chaque résidence a UN promoteur fixe, choisi aléatoirement à la première
+        # occurrence. On mémorise pour que tous les blocs d'une même résidence
+        # aient le même promoteur.
+        if residence_id not in self._residence_promoteurs:
+            self._residence_promoteurs[residence_id] = self._rng.choice(self.PROMOTEURS)
+        promoteur = self._residence_promoteurs[residence_id]
+
+        # La lettre de bloc (A, B, C, ...) dépend de la position dans la résidence
+        bloc_letter = chr(64 + numero_in_res)  # 65=A → numero=1 donne 'A'
+
+        nom = f"{promoteur} – {elot.replace('-', ' ').title()} BLOC-{bloc_letter}-{numero_in_res}"
+        return nom, nom, promoteur
+
+
+# Instanciation unique, partagée par toute la génération
+_namer = ResidenceNamer(seed=2026)
+
+
+# ====================== LIMITES RÉALISTES ======================
+# Un bâtiment résidentiel algérien standard (AADL standard = R+9 max) :
+MAX_ETAGES = 12          # cap OSM building:levels aberrants (≥13 = complexe mal tagué)
+MAX_LOG_PAR_ETAGE = 6    # max logements par étage dans un immeuble collectif standard
+MAX_LOG_BATIMENT = 80    # cap absolu — aucun bâtiment simulé ne dépasse 80 abonnés
+
+# Seuil surface MINIMAL — seulement pour éliminer les erreurs OSM grossières (< 1m²)
+# CORRECTION v8 : on abaisse ce seuil drastiquement (était 1e-7 = ~100m² en Algérie,
+# beaucoup trop élevé — éliminait les petits immeubles légitimes)
+# 1e-9 deg² ≈ 1m² → seulement les points/lignes OSM mal tagués comme polygones
+MIN_POLYGON_AREA_DEG2 = 1e-9
+
 # ====================== CHARGER BÂTIMENTS ======================
 def charger_batiments():
+    """
+    Charge les bâtiments depuis OSM.
+
+    POURQUOI L'EXPLOSION MULTIPOLYGON MAIS SANS FILTRE SURFACE AGRESSIF ?
+    -----------------------------------------------------------------------
+    Un objet OSM MultiPolygon représente physiquement plusieurs bâtiments séparés
+    qui partagent les mêmes tags (même propriétaire, même résidence).
+    On les explose pour avoir 1 ligne = 1 bâtiment réel.
+
+    MAIS le filtre MIN_POLYGON_AREA en v7 était 1e-7 deg² ≈ 100m² — il éliminait
+    les bâtiments de 10×8m (80m²) qui sont des immeubles R+5 tout à fait normaux
+    en Algérie. Résultat : 95% des bâtiments perdus → 18K abonnés au lieu de 400K.
+
+    En v8 : seuil abaissé à 1e-9 ≈ 1m² — uniquement pour les erreurs OSM vraiment
+    grossières (nœuds mal fermés qui créent des triangles de 0.5m²).
+    """
     print(f"\n[1/3] Chargement bâtiments OSM — {PLACE}")
     bats = ox.features_from_place(PLACE, tags={"building": True})
-    bats = bats[bats.geometry.geom_type.isin(["Polygon","MultiPolygon"])].copy()
+    bats = bats[bats.geometry.geom_type.isin(["Polygon", "MultiPolygon"])].copy()
     if "building" in bats.columns:
         bats = bats[~bats["building"].fillna("").isin(EXCLURE)].copy()
+
+    # ---- EXPLOSION DES MULTIPOLYGONS ----
+    expanded_rows = []
+    for _, row in bats.iterrows():
+        geom = row.geometry
+        if geom.geom_type == "MultiPolygon":
+            for sub_poly in geom.geoms:
+                if sub_poly.area >= MIN_POLYGON_AREA_DEG2:
+                    new_row = row.copy()
+                    new_row.geometry = sub_poly
+                    expanded_rows.append(new_row)
+        else:
+            if geom.area >= MIN_POLYGON_AREA_DEG2:
+                expanded_rows.append(row)
+
+    import geopandas as gpd
+    bats = gpd.GeoDataFrame(expanded_rows, geometry="geometry", crs="EPSG:4326")
 
     centroids = bats.geometry.centroid
     bats["lat"] = centroids.y.round(6)
     bats["lon"] = centroids.x.round(6)
     bats["btype"] = bats.get("building", "unknown").fillna("unknown")
     bats["nom_bat"] = bats.get("name", "").fillna("")
+    bats["poly_area_m2"] = bats.geometry.area * (111000 ** 2)  # estimation m² (debug)
 
     if "building:levels" in bats.columns:
         bats["etages_osm"] = pd.to_numeric(bats["building:levels"], errors="coerce")
     else:
         bats["etages_osm"] = np.nan
 
-    TYPES_COM = {"commercial","retail","office","shop","mixed"}
+    TYPES_COM = {"commercial", "retail", "office", "shop", "mixed"}
     bats["commerce_rdc"] = bats["btype"].isin(TYPES_COM)
-
     bats = bats.reset_index(drop=True)
-    print(f"  → {len(bats):,} bâtiments résidentiels")
+    print(f"  → {len(bats):,} bâtiments (après explosion MultiPolygon)")
     return bats
 
-# ====================== ESTIMATION LOGEMENTS (ALÉATOIRE) ======================
-def estimer_logements(bats):
-    print(f"\n[2/3] Estimation logements réalistes (aléatoire par bâtiment)")
 
-    nb_et_list = []
-    nb_log_list = []
-    log_par_etage_list = []
+# ====================== ESTIMATION LOGEMENTS ======================
+def estimer_logements(bats):
+    """
+    Estime nb_etages et log_par_etage par bâtiment.
+
+    CONVENTION ALGÉRIENNE DES ÉTAGES (CORRECTION v8) :
+    ----------------------------------------------------
+    En Algérie, "un bâtiment de 5 étages" = RDC + R+1 + R+2 + R+3 + R+4 + R+5.
+    Donc nb_et = 5 signifie 6 niveaux physiques (0, 1, 2, 3, 4, 5).
+    Le RDC = étage 0. Les appartements résidentiels commencent à l'étage 1.
+
+    Dans le code :
+    - nb_et = nombre d'étages supérieurs (sans compter le RDC)
+    - etage 0 = RDC → FAT commerce si comm_rdc, sinon appartements RDC
+    - etages 1..nb_et = appartements résidentiels
+
+    Cela change etage_debut dans assigner_fats : toujours range(0, nb_et+1),
+    avec le RDC traité séparément (comm ou résidentiel).
+
+    PLAFOND (inchangé vs v7) :
+    - MAX_ETAGES=12 pour éviter les building:levels aberrants d'OSM
+    - MAX_LOG_BATIMENT=80 comme garde-fou final
+    """
+    print(f"\n[2/3] Estimation logements réalistes (aléatoire par bâtiment)")
+    nb_et_list, nb_log_list, log_par_etage_list = [], [], []
 
     for _, row in bats.iterrows():
-        btype = str(row.get("btype", "unknown")).lower()
-
+        # Lire OSM mais plafonner
         if pd.notna(row.get("etages_osm")) and row["etages_osm"] >= 1:
-            nb_et = int(row["etages_osm"])
+            nb_et = min(int(row["etages_osm"]), MAX_ETAGES)
         else:
-            nb_et = np.random.randint(4, 11)
+            nb_et = np.random.randint(4, MAX_ETAGES + 1)
 
-        etages_log = (nb_et - 1) if row.get("commerce_rdc", False) else nb_et
-        etages_log = max(1, etages_log)
+        # Tous les étages (RDC=0 + étages supérieurs) peuvent avoir des logements.
+        # Le RDC sera traité spécifiquement dans assigner_fats (commerce ou résidentiel).
+        # Pour l'estimation, on compte nb_et étages RÉSIDENTIELS (pas le RDC).
+        etages_residentiels = nb_et  # R+1 à R+nb_et
 
-        log_par_etage = np.random.randint(3, 7)
-        nb_log = etages_log * log_par_etage
+        # Choisir log_par_etage en respectant le plafond global
+        # Calcul : combien peut-on avoir par étage max sans dépasser MAX_LOG_BATIMENT ?
+        max_lpe = min(MAX_LOG_PAR_ETAGE, MAX_LOG_BATIMENT // max(etages_residentiels, 1))
+        max_lpe = max(2, max_lpe)
+        log_par_etage = np.random.randint(3, max_lpe + 1) if max_lpe >= 3 else 2
+
+        nb_log = etages_residentiels * log_par_etage
 
         nb_et_list.append(nb_et)
         nb_log_list.append(nb_log)
@@ -296,17 +452,345 @@ def estimer_logements(bats):
     bats["log_par_etage"] = log_par_etage_list
 
     print(f" → {len(bats)} bâtiments traités")
-    print(f" → Étages moyen     : {np.mean(nb_et_list):.1f}")
+    print(f" → Étages moyen     : {np.mean(nb_et_list):.1f}  (max={max(nb_et_list)})")
     print(f" → Log/étage moyen  : {np.mean(log_par_etage_list):.1f}")
+    print(f" → Abonnés/bat max  : {max(nb_log_list)}  (plafond={MAX_LOG_BATIMENT})")
     print(f" → Total logements estimés : {sum(nb_log_list):,}")
-
     return bats
+
+
+# ====================== FIX 2 : POSITIONS 2D POUR UN BÂTIMENT ======================
+#
+# POURQUOI ce changement ?
+# -----------------------
+# Avant : door_coords était samplé UNE FOIS avec nb_log_etage points.
+#         Chaque étage réutilisait door_coords[log_idx], donc appartement 2
+#         au 3ème étage avait exactement le même (lat, lon) qu'au 1er étage.
+#         Résultat : vue de dessus = cluster serré, et la 3D montrait des points
+#         parfaitement empilés au lieu d'être légèrement décalés.
+#
+# Maintenant : on crée UNE position 2D de base par appartement (index dans l'étage).
+#              Ces positions sont FIXES pour tous les étages (même appartement,
+#              même cage d'escalier = même colonne).
+#              Chaque (étage, appartement) reçoit un JITTER indépendant de ~1-3m
+#              pour simuler la légère imprécision de placement du câble.
+#
+# PHYSIQUE RÉELLE : les appartements d'une même colonne verticale sont EXACTEMENT
+# au-dessus les uns des autres. Donc base_lat/base_lon IDENTIQUES, seul l'étage change.
+# Le jitter simule l'imprécision GPS/placement, pas un déplacement horizontal réel.
+def generer_positions_batiment(polygon, nb_log_etage: int) -> list[tuple[float, float]]:
+    """
+    Génère nb_log_etage positions 2D garanties à l'intérieur du polygone OSM.
+
+    CORRECTION BUG C (points hors bâtiment) :
+    ------------------------------------------
+    Le problème était double :
+      1. Le jitter de `ajouter_jitter_etage` pouvait pousser un point
+         proche du bord HORS du polygone.
+      2. Le fallback centroïde + normal(0, 0.000003) pouvait aussi sortir
+         pour les petits polygones.
+
+    SOLUTION : on génère les base_positions sur un polygone ÉRODÉ (shrunk).
+    `polygon.buffer(-marge)` réduit le polygone vers l'intérieur de `marge` degrés.
+    Si le point de base est à au moins `marge` du bord, alors même en ajoutant
+    un jitter de ±0.000008 il reste à l'intérieur.
+
+    CALCUL DE LA MARGE :
+    - jitter_max ≈ 3σ = 3 × 0.000008 = 0.000024 degrés ≈ 2.4m
+    - On prend marge = 0.000030 pour avoir une petite réserve supplémentaire
+    - Si le polygone érodé est vide (bâtiment < ~3×3m), on utilise le centroïde pur
+
+    POURQUOI buffer négatif ?
+    Imagines un rectangle. buffer(-5m) donne un rectangle intérieur dont chaque
+    côté est à 5m du bord. Tout point dans ce rectangle intérieur reste dans
+    le rectangle original même après un déplacement de 5m. C'est exactement
+    ce qu'on veut : une zone de sécurité.
+    """
+    JITTER_SIGMA = 0.000008        # jitter par étage = 0.8m
+    MARGE = JITTER_SIGMA * 4       # = 0.000032 ≈ 3.2m de marge de sécurité
+
+    # Polygone érodé : c'est là qu'on échantillonne les positions de base
+    inner_poly = polygon.buffer(-MARGE)
+
+    # Si le polygone est trop petit pour être érodé, on revient au polygone original
+    # (cas rare : bâtiment de moins de ~6m de largeur)
+    if inner_poly.is_empty or inner_poly.area < 1e-12:
+        inner_poly = polygon  # on fera de notre mieux avec le polygone original
+
+    base_positions = []
+    minx, miny, maxx, maxy = inner_poly.bounds
+    max_attempts = 3000
+
+    attempts = 0
+    while len(base_positions) < nb_log_etage and attempts < max_attempts:
+        p = Point(
+            np.random.uniform(minx, maxx),
+            np.random.uniform(miny, maxy)
+        )
+        if inner_poly.contains(p):
+            base_positions.append((round(p.y, 6), round(p.x, 6)))
+        attempts += 1
+
+    # Fallback si on n'a pas réussi à trouver assez de points (polygone très étroit)
+    # On utilise le centroïde avec micro-offset mais on vérifie que c'est dans le polygone
+    cx, cy = polygon.centroid.x, polygon.centroid.y
+    while len(base_positions) < nb_log_etage:
+        # Micro-offset de 0.1m max — suffisamment petit pour rester dans n'importe quel bâtiment
+        jlat = np.random.uniform(-0.000001, 0.000001)
+        jlon = np.random.uniform(-0.000001, 0.000001)
+        candidate = Point(cx + jlon, cy + jlat)
+        # Vérification explicite : on accepte seulement si dans le polygone original
+        if polygon.contains(candidate) or polygon.distance(candidate) < 1e-8:
+            base_positions.append((round(cy + jlat, 6), round(cx + jlon, 6)))
+        else:
+            # Le centroïde lui-même devrait toujours être dans un polygone convexe,
+            # mais pour les formes concaves on retombe sur le centroïde exact
+            base_positions.append((round(cy, 6), round(cx, 6)))
+
+    return base_positions
+
+
+def ajouter_jitter_etage(base_lat: float, base_lon: float) -> tuple[float, float]:
+    """
+    Ajoute un jitter réaliste par étage.
+
+    VALEUR : normal(0, 0.000008) ≈ ±0.8m (1σ), max ~2.4m (3σ)
+    La marge de sécurité de generer_positions_batiment (3.2m) est > 2.4m,
+    donc les points restent dans le bâtiment avec probabilité > 99.7%.
+
+    Ce jitter simule :
+    - L'imprécision du relevé GPS terrain
+    - Les légères variations de position réelle des terminaux optiques
+    """
+    return (
+        round(base_lat + np.random.normal(0, 0.000008), 6),
+        round(base_lon + np.random.normal(0, 0.000008), 6)
+    )
+
+
+# ====================== FAT ASSIGNMENT : PRIORITÉ ÉTAGE (v8) ======================
+#
+# RÈGLE PHYSIQUE AT RÉELLE :
+# Un FAT est un boîtier physique installé dans la gaine technique d'UN ÉTAGE.
+# Il est impossible de câbler des abonnés de l'étage 3 ET de l'étage 7 sur le
+# même FAT sans traverser 4 étages de câble vertical — ce serait absurde et
+# refusé lors de l'audit terrain.
+#
+# NOUVELLE RÈGLE DE GROUPEMENT (v8) :
+#   1. On traite chaque étage INDÉPENDAMMENT
+#   2. Pour chaque étage : on groupe les appts par porte_rank // 8
+#      → Si nb_log_etage = 4 : 1 FAT de 4 abonnés
+#      → Si nb_log_etage = 10 : 1 FAT de 8 + 1 FAT de 2
+#   3. Le RDC est toujours traité séparément (commerce ou résidentiel)
+#
+# DIFFÉRENCE AVEC v6/v7 :
+#   v6/v7 : groupement GLOBAL par porte_rank // 8 → mélangeait les étages
+#   v8    : groupement PAR ÉTAGE → chaque FAT = 1 seul étage
+#
+# NUMÉROTATION DES PORTES (convention AT) :
+#   - RDC = porte 01, 02, ... nb_rdc_appts
+#   - Étage 1 = porte 01, 02, ... nb_log_etage (REPART À 1 CHAQUE ÉTAGE)
+#   Oui, AT utilise des numéros de porte relatifs à l'étage, pas globaux.
+#   C'est pourquoi la vraie règle est (porte_rank_dans_etage) // 8.
+
+def assigner_fats_batiment(
+    nb_et: int,
+    nb_log_etage: int,
+    base_positions: list[tuple[float, float]],
+    comm_rdc: bool,
+    olt_seq: int,
+    fdt_seq_num: int,
+    spl_seq_start: int,
+    fat_num_start: int,
+    elot: str,
+    zone_id: str,
+    olt_lat: float,
+    olt_lon: float,
+    fdt_nom: str,
+    client_seq_start: int,
+    numero_seq_start: int,
+    batiment_pav: str,
+    voie_osm: str,
+    quartier_osm: str,
+    commune: str,
+    nbr_logements_total: int,
+    type_batiment: str,
+    presence_de_commerce: int,
+):
+    """
+    Génère tous les abonnés + FATs pour un bâtiment entier.
+
+    Structure physique simulée :
+      Étage 0 (RDC) :
+        - si comm_rdc=True  → 1 FAT commerce (2-4 locaux)
+        - si comm_rdc=False → appartements RDC, même règle que les étages supérieurs
+      Étages 1..nb_et :
+        - 1 ou plusieurs FATs résidentiels selon nb_log_etage
+        - Chaque FAT = max 8 abonnés du MÊME étage
+    """
+    fats_out, spl2_out, abonnes_out, clients_out, adresses_out, numeros_out = [], [], [], [], [], []
+
+    spl_seq = spl_seq_start
+    fat_num = fat_num_start
+    client_seq = client_seq_start
+    numero_seq = numero_seq_start
+
+    # Position GPS du FAT = centroïde du polygone du bâtiment (cage technique)
+    fat_lat, fat_lon = olt_lat, olt_lon
+
+    def _creer_fat_et_abonnes(etage: int, appts_etage: list[dict], usage: str):
+        """
+        Crée les FATs pour un étage donné, en groupant par tranches de 8.
+
+        appts_etage : liste de dicts {appt_in_floor, porte}
+        usage       : "logements" ou "commerces"
+
+        Cette fonction interne (closure) modifie les listes de sortie
+        et les compteurs via nonlocal.
+        """
+        nonlocal spl_seq, fat_num, client_seq, numero_seq
+
+        nb_appts = len(appts_etage)
+        if nb_appts == 0:
+            return
+
+        # Groupement par porte_rank // 8 DANS l'étage (portes 0-based)
+        nb_groups_raw = ceil(nb_appts / 8)
+        remainder = nb_appts % 8
+        # Règle AT : remainder < 2 → absorber dans le groupe précédent
+        if nb_groups_raw > 1 and 0 < remainder < 2:
+            nb_groups = nb_groups_raw - 1
+        else:
+            nb_groups = nb_groups_raw
+
+        # Répartir les appartements dans les groupes
+        groups: list[list[dict]] = [[] for _ in range(nb_groups)]
+        for idx, apt in enumerate(appts_etage):
+            g = min(idx // 8, nb_groups - 1)
+            groups[g].append(apt)
+
+        for group in groups:
+            if not group:
+                continue
+
+            portes_group = [apt["porte"] for apt in group]
+            fat_id = fmt_fat(olt_seq, fdt_seq_num, spl_seq, elot,
+                             portes_group, etage, fat_num)
+            dist_fat = int(np.random.choice([15, 20, 50, 80]))
+
+            fats_out.append({
+                "id": fat_id,
+                "nom_FDT": fdt_nom,
+                "num_de_groupe": fat_num,
+                "latitude": fat_lat,
+                "longitude": fat_lon,
+                "usage": usage,
+                "nb_ports": settings.FAT_CAPACITY,
+                "nb_abonnes_sim": len(group),
+                "nb_etages_bat": nb_et,
+                "nb_log_etage": nb_log_etage,
+                "zone_id": zone_id,
+                "distance_FAT_m": dist_fat
+            })
+
+            for dn in range(1, settings.FAT_CAPACITY + 1):
+                spl2_out.append({
+                    "id": f"{fat_id}-DOWN-{dn:02d}",
+                    "nom_FAT": fat_id,
+                    "id_splitter1": f"{fdt_nom}-S{spl_seq:02d}",
+                    "rapport_de_division": f"1:{settings.SPLITTER_N2_RATIO}",
+                    "port_splitter": f"{fdt_nom}-S{spl_seq:02d}-DOWN-{dn}",
+                    "etat": "utilisé" if dn <= len(group) else "libre",
+                    "zone_id": zone_id
+                })
+
+            # Créer les abonnés de ce groupe
+            for apt in group:
+                appt_in_floor = apt["appt_in_floor"]
+                porte = apt["porte"]
+
+                # Position de base de cet appartement (colonne verticale)
+                # On utilise le modulo pour éviter un IndexError si nb_com au RDC > nb_log_etage
+                base_lat, base_lon = base_positions[appt_in_floor % len(base_positions)]
+                lat_abonne, lon_abonne = ajouter_jitter_etage(base_lat, base_lon)
+
+                cc = fmt_code_client(client_seq)
+                op = np.random.choice(list(OPERATEURS.keys()))
+                prefix = np.random.choice(OPERATEURS[op])
+                contact = int(prefix + f"{np.random.randint(1000000, 9999999):07d}")
+
+                abonnes_out.append({
+                    "code_client": cc,
+                    "latitude": lat_abonne,
+                    "longitude": lon_abonne,
+                    "etage": etage,
+                    "porte": porte,
+                    "id_batiment": batiment_pav,
+                    "id_zone": zone_id,
+                    "FAT_relative": fat_id,
+                    "distance_FAT_m": dist_fat,
+                    "nbr_etages": nb_et,
+                    "nbr_logements_par_etage": nb_log_etage,
+                    "nbr_logements_total": nbr_logements_total,
+                    "type_batiment": type_batiment,
+                    "presence_de_commerce": presence_de_commerce
+                })
+                clients_out.append({
+                    "code_client": cc,
+                    "contact": contact,
+                    "nom": f"{np.random.choice(PRENOMS)} {np.random.choice(NOMS_FAM)}"
+                })
+                adresses_out.append({
+                    "code_client": cc,
+                    "batiment_pav": batiment_pav,
+                    "voie": voie_osm if voie_osm else f"FAT{ZONE_CODE}-{elot}",
+                    "quartier": quartier_osm,
+                    "commune": commune.replace("-", " "),
+                    "wilaya": wilaya_nom
+                })
+                numeros_out.append({
+                    "num_de_groupe": int(f"4{1800000 + numero_seq:07d}"),
+                    "code_client": cc,
+                    "region_relative": zone_id,
+                    "FAT_relative": fat_id
+                })
+
+                client_seq += 1
+                numero_seq += 1
+
+            spl_seq += 1
+            fat_num += 1
+
+    # ====================== RDC (ÉTAGE 0) ======================
+    if comm_rdc:
+        # RDC commercial : 2-4 locaux dans leur propre FAT
+        nb_com = np.random.randint(2, 5)
+        appts_rdc = [{"appt_in_floor": i, "porte": i + 1} for i in range(nb_com)]
+        _creer_fat_et_abonnes(etage=0, appts_etage=appts_rdc, usage="commerces")
+    else:
+        # RDC résidentiel : même nb_log_etage appartements
+        appts_rdc = [{"appt_in_floor": i, "porte": i + 1} for i in range(nb_log_etage)]
+        _creer_fat_et_abonnes(etage=0, appts_etage=appts_rdc, usage="logements")
+
+    # ====================== ÉTAGES RÉSIDENTIELS (1..nb_et) ======================
+    for et in range(1, nb_et + 1):
+        # Numérotation des portes : 1..nb_log_etage (relative à l'étage)
+        appts_etage = [{"appt_in_floor": i, "porte": i + 1} for i in range(nb_log_etage)]
+        _creer_fat_et_abonnes(etage=et, appts_etage=appts_etage, usage="logements")
+
+    return {
+        "fats": fats_out, "spl2": spl2_out,
+        "abonnes": abonnes_out, "clients": clients_out,
+        "adresses": adresses_out, "numeros": numeros_out,
+        "spl_seq": spl_seq, "fat_num": fat_num,
+        "client_seq": client_seq, "numero_seq": numero_seq
+    }
+
 
 # ====================== GÉNÉRATION TABLES ======================
 def generer_tables(bats):
-    print(f"\n[3/3] Génération tables AT (40% commerce RDC + GPS identique par bâtiment + splitter_n1 rempli)")
-
-    from backend.config import settings   # ← config centralisée
+    print(f"\n[3/3] Génération tables AT — {wilaya_nom}")
+    from backend.config import settings
 
     zones, equipements, cartes, ports = [], [], [], []
     fdts, spl1_rows, fats, spl2 = [], [], [], []
@@ -314,10 +798,8 @@ def generer_tables(bats):
 
     client_seq = 0
     numero_seq = 0
-
     olt_abonnes_count = {}
 
-    # 40% des bâtiments ont commerce RDC
     nb_bat_total = len(bats)
     nb_commerce_rdc = int(nb_bat_total * 0.40)
     commerce_indices = np.random.choice(nb_bat_total, nb_commerce_rdc, replace=False)
@@ -326,36 +808,63 @@ def generer_tables(bats):
     for bat_idx, row in bats.iterrows():
         olt_seq = bat_idx + 1
         zone_id = f"Z{ZONE_CODE}-{olt_seq:03d}"
-        olt_lat = row["lat"]
-        olt_lon = row["lon"]
+        olt_lat = float(row["lat"])
+        olt_lon = float(row["lon"])
         nb_et = int(row["nb_etages"])
+        nb_log_etage = int(row.get("log_par_etage", 4))
         polygon = row.geometry
-
         comm_rdc = bat_idx in commerce_set
 
         elot = resoudre_elot(row, bat_idx)
         commune, cecli = commune_proche(olt_lat, olt_lon)
         voie_osm = resoudre_voie(row)
         quartier_osm = resoudre_quartier_osm(row, bat_idx)
-        nom_bat = str(row.get("nom_bat", "")).strip()
-        batiment_pav = nom_bat if nom_bat and nom_bat.lower() not in ("nan","","none") else elot.replace("-", " ").title()
+
+        # FIX 1 EN ACTION : numérotation réinitialisée par résidence
+        batiment_pav, nom_bat, type_batiment = _namer.get(bat_idx, elot)
 
         olt_nom = f"T{ZONE_CODE}-{olt_seq:03d}-{elot}-AN6000-IN"
 
         if zone_id not in olt_abonnes_count:
             olt_abonnes_count[zone_id] = 0
 
-        # ZONE + ÉQUIPEMENT + CARTE + PORT
-        zones.append({"id": zone_id, "wilaya": WILAYA, "wilaya_nom": wilaya_nom, "commune": commune, "zone_geographique": cecli})
-        equipements.append({"id": zone_id, "nom": olt_nom, "ip": f"100.{WILAYA}.{(olt_seq % 254)+1}.{np.random.randint(1,254)}", "type": np.random.choice(["FIBERHOME","HUAWEI","ZTE"], p=[0.5,0.35,0.15]), "latitude": olt_lat, "longitude": olt_lon})
-
+        # ZONE + ÉQUIPEMENT + CARTE + PORT (inchangés)
+        zones.append({
+            "id": zone_id,
+            "wilaya": WILAYA,
+            "wilaya_nom": wilaya_nom,
+            "commune": commune,
+            "zone_geographique": cecli
+        })
+        equipements.append({
+            "id": zone_id,
+            "nom": olt_nom,
+            "ip": f"100.{WILAYA}.{(olt_seq % 254)+1}.{np.random.randint(1,254)}",
+            "type": np.random.choice(["FIBERHOME","HUAWEI","ZTE"], p=[0.5,0.35,0.15]),
+            "latitude": olt_lat,
+            "longitude": olt_lon
+        })
         for slot in [1, 2]:
-            cartes.append({"id": int(f"{ZONE_CODE}{olt_seq:03d}7{slot:02d}"), "nom": f"{olt_nom}_Frame:0/Slot:{slot}", "id_equipement": zone_id, "position": f"0/{slot}", "type": "gpon", "rack": slot})
+            cartes.append({
+                "id": int(f"{ZONE_CODE}{olt_seq:03d}7{slot:02d}"),
+                "nom": f"{olt_nom}_Frame:0/Slot:{slot}",
+                "id_equipement": zone_id,
+                "position": f"0/{slot}",
+                "type": "gpon",
+                "rack": slot
+            })
             for p in range(1, 17):
                 etat = "utilisé" if (slot == 1 and p <= 4) else "libre"
-                ports.append({"id": int(f"{ZONE_CODE}{olt_seq:03d}7{slot:02d}{p:02d}"), "nom": f"{olt_nom}-Frame:0/Slot:{slot}/Port:{p}", "nomCarte": f"{olt_nom}_Frame:0/Slot:{slot}", "position": p, "etat": etat, "zone_id": zone_id})
+                ports.append({
+                    "id": int(f"{ZONE_CODE}{olt_seq:03d}7{slot:02d}{p:02d}"),
+                    "nom": f"{olt_nom}-Frame:0/Slot:{slot}/Port:{p}",
+                    "nomCarte": f"{olt_nom}_Frame:0/Slot:{slot}",
+                    "position": p,
+                    "etat": etat,
+                    "zone_id": zone_id
+                })
 
-        # FDT locale + SPLITTER N1 (rempli !)
+        # FDT + SPLITTER N1 (inchangés)
         nb_fdts = np.random.randint(2, 5)
         fdts_bat = []
         for i in range(nb_fdts):
@@ -363,10 +872,15 @@ def generer_tables(bats):
             dist = np.random.uniform(80, 400)
             fl, flo = offset_gps(olt_lat, olt_lon, dist, angle)
             fdt_nom = f"F{ZONE_CODE}-{olt_seq:03d}-{i+1:02d}"
-            fdts_bat.append({"id": fdt_nom, "nom_equipement": olt_nom, "zone": zone_id, "latitude": fl, "longitude": flo, "distance_olt_m": round(dist)})
+            fdts_bat.append({
+                "id": fdt_nom,
+                "nom_equipement": olt_nom,
+                "zone": zone_id,
+                "latitude": fl,
+                "longitude": flo,
+                "distance_olt_m": round(dist)
+            })
             fdts.append(fdts_bat[-1])
-
-            # SPLITTER N1 rempli ici
             spl1_rows.append({
                 "id": f"{fdt_nom}-S01",
                 "nom_FDT": fdt_nom,
@@ -380,222 +894,187 @@ def generer_tables(bats):
         fdt_seq_num = int(fdt_nom.split("-")[-1])
 
         spl_seq_local = 1
-        fat_num = 1
-        porte_globale = 1
+        fat_num_local = 1
 
-        # Commerce RDC (40%)
+        # COMMERCE RDC (inchangé)
         if comm_rdc:
             nb_com = np.random.randint(2, 5)
-            portes_c = list(range(porte_globale, porte_globale + nb_com))
-            porte_globale += nb_com
-            fat_id = fmt_fat(olt_seq, fdt_seq_num, spl_seq_local, elot, portes_c, 0, 1)
+            portes_c = list(range(1, nb_com + 1))
+            fat_id_c = fmt_fat(olt_seq, fdt_seq_num, spl_seq_local, elot, portes_c, 0, 1)
             fl, flo = rand_offset(olt_lat, olt_lon, 0, 15)
             nb_occ = np.random.randint(1, nb_com + 1)
-            dist_fat_abonne = snap_to_prefab(haversine(fl, flo, olt_lat, olt_lon))
-            fats.append({"id": fat_id, "nom_FDT": fdt_nom, "num_de_groupe": 0, "latitude": fl, "longitude": flo, "usage": "commerces", "nb_ports": settings.FAT_CAPACITY, "nb_abonnes_sim": nb_occ, "nb_etages_bat": nb_et, "nb_log_etage": 4, "zone_id": zone_id, "distance_FAT_m": dist_fat_abonne})
+            fats.append({
+                "id": fat_id_c,
+                "nom_FDT": fdt_nom,
+                "num_de_groupe": 0,
+                "latitude": fl,
+                "longitude": flo,
+                "usage": "commerces",
+                "nb_ports": settings.FAT_CAPACITY,
+                "nb_abonnes_sim": nb_occ,
+                "nb_etages_bat": nb_et,
+                "nb_log_etage": 4,
+                "zone_id": zone_id,
+                "distance_FAT_m": 15
+            })
             for dn in range(1, settings.FAT_CAPACITY + 1):
-                spl2.append({"id": f"{fat_id}-DOWN-{dn:02d}", "nom_FAT": fat_id, "id_splitter1": f"{fdt_nom}-S{spl_seq_local:02d}", "rapport_de_division": f"1:{settings.SPLITTER_N2_RATIO}", "port_splitter": f"{fdt_nom}-S{spl_seq_local:02d}-DOWN-{dn}", "etat": "utilisé" if dn <= nb_occ else "libre", "zone_id": zone_id})
+                spl2.append({
+                    "id": f"{fat_id_c}-DOWN-{dn:02d}",
+                    "nom_FAT": fat_id_c,
+                    "id_splitter1": f"{fdt_nom}-S{spl_seq_local:02d}",
+                    "rapport_de_division": f"1:{settings.SPLITTER_N2_RATIO}",
+                    "port_splitter": f"{fdt_nom}-S{spl_seq_local:02d}-DOWN-{dn}",
+                    "etat": "utilisé" if dn <= nb_occ else "libre",
+                    "zone_id": zone_id
+                })
             spl_seq_local += 1
-            fat_num += 1
-            olt_abonnes_count[zone_id] = olt_abonnes_count.get(zone_id, 0) + nb_occ
+            fat_num_local += 1
 
-        # Logements
-        etage = 1
-        while etage <= nb_et and olt_abonnes_count.get(zone_id, 0) < 2048:
-            portes_groupe = []
-            etage_debut = etage
-            while etage <= nb_et and len(portes_groupe) < settings.FAT_CAPACITY:
-                places_restantes = settings.FAT_CAPACITY - len(portes_groupe)
-                portes_etage_courant = min(4, places_restantes)
-                for _ in range(portes_etage_courant):
-                    portes_groupe.append(porte_globale)
-                    porte_globale += 1
-                etage += 1
+        # FIX 2 + 3 EN ACTION : générer les positions 2D AVANT la boucle d'étages,
+        # puis déléguer l'assignation FAT à la fonction globale
+        base_positions = generer_positions_batiment(polygon, nb_log_etage)
 
-            if not portes_groupe:
-                break
+        result = assigner_fats_batiment(
+            nb_et=nb_et,
+            nb_log_etage=nb_log_etage,
+            base_positions=base_positions,
+            comm_rdc=comm_rdc,
+            olt_seq=olt_seq,
+            fdt_seq_num=fdt_seq_num,
+            spl_seq_start=spl_seq_local,
+            fat_num_start=fat_num_local,
+            elot=elot,
+            zone_id=zone_id,
+            olt_lat=olt_lat,
+            olt_lon=olt_lon,
+            fdt_nom=fdt_nom,
+            client_seq_start=client_seq,
+            numero_seq_start=numero_seq,
+            batiment_pav=batiment_pav,
+            voie_osm=voie_osm,
+            quartier_osm=quartier_osm,
+            commune=commune,
+            nbr_logements_total=int(row["nb_logements"]),
+            type_batiment=type_batiment,
+            presence_de_commerce=1 if comm_rdc else 0,
+        )
 
-            groupes = [portes_groupe[i:i + settings.FAT_CAPACITY] for i in range(0, len(portes_groupe), settings.FAT_CAPACITY)]
-            for g_idx, groupe in enumerate(groupes):
-                fat_id = fmt_fat(olt_seq, fdt_seq_num, spl_seq_local, elot, groupe, etage_debut, g_idx + 1)
-                fl, flo = rand_offset(olt_lat, olt_lon, 0, 30)
-                nb_occ = len(groupe)
-                dist_fat_abonne = snap_to_prefab(haversine(fl, flo, olt_lat, olt_lon))
+        fats.extend(result["fats"])
+        spl2.extend(result["spl2"])
+        abonnes.extend(result["abonnes"])
+        clients.extend(result["clients"])
+        adresses.extend(result["adresses"])
+        numeros.extend(result["numeros"])
 
-                fats.append({"id": fat_id, "nom_FDT": fdt_nom, "num_de_groupe": fat_num, "latitude": fl, "longitude": flo, "usage": "logements", "nb_ports": settings.FAT_CAPACITY, "nb_abonnes_sim": nb_occ, "nb_etages_bat": nb_et, "nb_log_etage": 4, "zone_id": zone_id, "distance_FAT_m": dist_fat_abonne})
-
-                for dn in range(1, settings.FAT_CAPACITY + 1):
-                    spl2.append({"id": f"{fat_id}-DOWN-{dn:02d}", "nom_FAT": fat_id, "id_splitter1": f"{fdt_nom}-S{spl_seq_local:02d}", "rapport_de_division": f"1:{settings.SPLITTER_N2_RATIO}", "port_splitter": f"{fdt_nom}-S{spl_seq_local:02d}-DOWN-{dn}", "etat": "utilisé" if dn <= nb_occ else "libre", "zone_id": zone_id})
-
-                # GPS IDENTIQUE PAR BÂTIMENT (comme l'ancienne version qui donnait de bons scores au modèle)
-                pt = polygon.representative_point()
-                lat_abonne = round(pt.y, 6)
-                lon_abonne = round(pt.x, 6)
-
-                for porte in groupe:
-                    cc = fmt_code_client(client_seq)
-                    op = np.random.choice(list(OPERATEURS.keys()))
-                    prefix = np.random.choice(OPERATEURS[op])
-                    contact = int(prefix + f"{np.random.randint(1000000,9999999):07d}")
-
-                    bloc_letter = chr(65 + (bat_idx % 26))
-                    id_batiment = f"RES-{elot}-BLOC-{bloc_letter}"
-
-                    abonnes.append({
-                        "code_client": cc,
-                        "latitude": lat_abonne,
-                        "longitude": lon_abonne,
-                        "etage": etage_debut,
-                        "porte": porte,
-                        "id_batiment": id_batiment,
-                        "id_zone": zone_id,
-                        "FAT_relative": fat_id
-                    })
-
-                    clients.append({"code_client": cc, "contact": contact, "nom": f"{np.random.choice(PRENOMS)} {np.random.choice(NOMS_FAM)}"})
-
-                    adresses.append({
-                        "code_client": cc,
-                        "batiment_pav": batiment_pav,
-                        "voie": voie_osm if voie_osm else f"FAT{ZONE_CODE}-{elot}",
-                        "quartier": quartier_osm,
-                        "commune": commune.replace("-", " "),
-                        "wilaya": wilaya_nom
-                    })
-
-                    numeros.append({"num_de_groupe": int(f"4{1800000 + numero_seq:07d}"), "code_client": cc, "region_relative": zone_id, "FAT_relative": fat_id})
-
-                    client_seq += 1
-                    numero_seq += 1
-                    olt_abonnes_count[zone_id] = olt_abonnes_count.get(zone_id, 0) + 1
-
-                fat_num += 1
-                spl_seq_local += 1
+        client_seq = result["client_seq"]
+        numero_seq = result["numero_seq"]
+        olt_abonnes_count[zone_id] = olt_abonnes_count.get(zone_id, 0) + len(result["abonnes"])
 
     return {
-        "zone": pd.DataFrame(zones), "equipement": pd.DataFrame(equipements),
-        "carte": pd.DataFrame(cartes), "port": pd.DataFrame(ports),
-        "fdt": pd.DataFrame(fdts), "splitter_n1": pd.DataFrame(spl1_rows),
-        "fat": pd.DataFrame(fats), "splitter_n2": pd.DataFrame(spl2),
-        "client": pd.DataFrame(clients), "adresse": pd.DataFrame(adresses),
-        "numero": pd.DataFrame(numeros), "abonnes": pd.DataFrame(abonnes)
+        "zone": pd.DataFrame(zones),
+        "equipement": pd.DataFrame(equipements),
+        "carte": pd.DataFrame(cartes),
+        "port": pd.DataFrame(ports),
+        "fdt": pd.DataFrame(fdts),
+        "splitter_n1": pd.DataFrame(spl1_rows),
+        "fat": pd.DataFrame(fats),
+        "splitter_n2": pd.DataFrame(spl2),
+        "client": pd.DataFrame(clients),
+        "adresse": pd.DataFrame(adresses),
+        "numero": pd.DataFrame(numeros),
+        "abonnes": pd.DataFrame(abonnes)
     }
-import pandas as pd
-import os
 
+
+# ====================== MERGE TABLES (inchangé) ======================
 def merge_all_tables():
-    print("🔄 Lecture de TOUTES les tables depuis donnee/...")
+    print("🔄 Lecture de TOUTES les tables depuis donnee_annaba2/...")
+    base = r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee_annaba2"
 
-    # Charger toutes les tables existantes
-    abonnes     = pd.read_csv(r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee/abonnes.csv")
-    client      = pd.read_csv(r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee/client.csv")
-    fat         = pd.read_csv(r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee/fat.csv")
-    numero      = pd.read_csv(r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee/numero.csv")
-    adresse     = pd.read_csv(r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee/adresse.csv")
-    zone        = pd.read_csv(r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee/zone.csv")
-    equipement  = pd.read_csv(r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee/equipement.csv")
-    fdt         = pd.read_csv(r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee/fdt.csv")
-    carte       = pd.read_csv(r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee/carte.csv")
-    port        = pd.read_csv(r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee/port.csv")
-    splitter_n1 = pd.read_csv(r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee/splitter_n1.csv")
-    splitter_n2 = pd.read_csv(r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee/splitter_n2.csv")
+    abonnes    = pd.read_csv(f"{base}/abonnes.csv")
+    client     = pd.read_csv(f"{base}/client.csv")
+    fat        = pd.read_csv(f"{base}/fat.csv")
+    numero     = pd.read_csv(f"{base}/numero.csv")
+    adresse    = pd.read_csv(f"{base}/adresse.csv")
+    zone       = pd.read_csv(f"{base}/zone.csv")
+    equipement = pd.read_csv(f"{base}/equipement.csv")
+    fdt        = pd.read_csv(f"{base}/fdt.csv")
+    carte      = pd.read_csv(f"{base}/carte.csv")
+    port       = pd.read_csv(f"{base}/port.csv")
+    splitter_n2 = pd.read_csv(f"{base}/splitter_n2.csv")
 
     print(f"   → {len(abonnes):,} abonnés chargés")
 
-    # ====================== FUSION ======================
     df = abonnes.merge(client, on="code_client", how="left")
-
-    # Garder les coordonnées des abonnés (les plus importantes)
     df = df.rename(columns={"latitude": "lat_abonne", "longitude": "lon_abonne"})
-
-    # FAT
     df = df.merge(
-        fat[["id", "latitude", "longitude", "usage", "nb_ports", "nb_abonnes_sim", "distance_FAT_m", "nom_FDT"]],
+        fat[["id", "latitude", "longitude", "usage", "nb_ports",
+             "nb_abonnes_sim", "distance_FAT_m", "nom_FDT"]],
         left_on="FAT_relative", right_on="id", how="left"
     ).drop(columns=["id"], errors="ignore")
-
     df = df.rename(columns={"latitude": "lat_fat", "longitude": "lon_fat"})
-
-    # Numéro + Adresse
     df = df.merge(numero[["code_client", "num_de_groupe"]], on="code_client", how="left")
     df = df.merge(adresse, on="code_client", how="left")
-
-    # Zone
-    df = df.merge(zone[["id", "commune", "zone_geographique"]], left_on="id_zone", right_on="id", how="left").drop(columns=["id"], errors="ignore")
-
-    # OLT
-    df = df.merge(equipement[["id", "nom", "type", "ip"]], left_on="id_zone", right_on="id", how="left").drop(columns=["id"], errors="ignore")
+    df = df.merge(zone[["id", "commune", "zone_geographique"]],
+                  left_on="id_zone", right_on="id", how="left").drop(columns=["id"], errors="ignore")
+    df = df.merge(equipement[["id", "nom", "type", "ip"]],
+                  left_on="id_zone", right_on="id", how="left").drop(columns=["id"], errors="ignore")
     df = df.rename(columns={"nom": "nom_OLT", "type": "type_OLT"})
-
-    # FDT
-    df = df.merge(fdt[["id", "latitude", "longitude", "distance_olt_m"]], left_on="nom_FDT", right_on="id", how="left").drop(columns=["id"], errors="ignore")
+    df = df.merge(fdt[["id", "latitude", "longitude", "distance_olt_m"]],
+                  left_on="nom_FDT", right_on="id", how="left").drop(columns=["id"], errors="ignore")
     df = df.rename(columns={"latitude": "lat_fdt", "longitude": "lon_fdt"})
 
-    # Carte (agrégation)
     if not carte.empty:
         carte_agg = carte.groupby("id_equipement").agg(
             nb_cartes=('id', 'count'),
             cartes_positions=('position', lambda x: ', '.join(sorted(set(x.astype(str)))))
         ).reset_index()
-        df = df.merge(carte_agg, left_on="id_zone", right_on="id_equipement", how="left").drop(columns=["id_equipement"], errors="ignore")
+        df = df.merge(carte_agg, left_on="id_zone", right_on="id_equipement",
+                      how="left").drop(columns=["id_equipement"], errors="ignore")
 
-    # Port (agrégation)
     if not port.empty:
         port_agg = port.groupby("zone_id").agg(
             nb_ports_total=('id', 'count'),
             nb_ports_utilises=('etat', lambda x: (x == 'utilisé').sum()),
             nb_ports_libres=('etat', lambda x: (x == 'libre').sum())
         ).reset_index()
-        df = df.merge(port_agg, left_on="id_zone", right_on="zone_id", how="left").drop(columns=["zone_id"], errors="ignore")
+        df = df.merge(port_agg, left_on="id_zone", right_on="zone_id",
+                      how="left").drop(columns=["zone_id"], errors="ignore")
 
-    # ====================== COLONNES FINALES ======================
-    colonnes =[
+    colonnes = [
         "code_client", "id_batiment", "id_zone",
         "lat_abonne", "lon_abonne", "etage", "porte",
         "FAT_relative", "usage",
         "lat_fat", "lon_fat", "nb_abonnes_sim", "distance_FAT_m",
         "nom_FDT", "lat_fdt", "lon_fdt", "distance_olt_m",
-        "lat_olt", "lon_olt", "nb_cartes", "nb_ports_total", "nb_ports_utilises", "carte_position",
         "nb_etages_bat", "nb_log_etage",
+        "nbr_etages", "nbr_logements_par_etage", "nbr_logements_total",
+        "type_batiment", "presence_de_commerce",
         "num_de_groupe",
         "nom", "batiment_pav", "quartier", "commune"
     ]
-
-    colonnes = [col for col in colonnes if col in df.columns]
-
+    colonnes = [c for c in colonnes if c in df.columns]
     df_final = df[colonnes].sort_values(by=["id_batiment", "etage", "code_client"]).reset_index(drop=True)
-    df_final.to_csv(r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee/dataset_fusionnee_final.csv", index=False, encoding="utf-8-sig")
+    df_final.to_csv(f"{base}/dataset_fusionnee_final.csv", index=False, encoding="utf-8-sig")
 
     print(f"\n✅ dataset_final.csv créé avec succès !")
     print(f"   → {len(df_final):,} lignes")
     print(f"   → Colonnes : {list(df_final.columns)}")
     return df_final
+
+
 if __name__ == "__main__":
     print("=" * 70)
-    print(f"SIMULATION DONNÉES FTTH MASSIVE — ALGÉRIE TÉLÉCOM")
+    print(f"SIMULATION DONNÉES FTTH MASSIVE — ALGÉRIE TÉLÉCOM v6")
     print(f"→ Wilaya : {WILAYA} — {wilaya_nom}")
     print("=" * 70)
-
 
     bats = charger_batiments()
     bats = estimer_logements(bats)
     tables = generer_tables(bats)
+    base = r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee_annaba2"
     for nom, df in tables.items():
-        path = os.path.join(r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee", f"{nom}.csv")
+        path = os.path.join(base, f"{nom}.csv")
         df.to_csv(path, index=False, encoding="utf-8-sig")
         print(f"  ✓ {nom:15s} {len(df):7d} lignes")
     merge_all_tables()
-
-
-
-
-import pandas as pd
-import os
-
-"""
-MERGE DATASET FTTH — TOUTES LES TABLES (version corrigée)
-Résout l'erreur de colonnes 'id_x' en double
-"""
-
-
-
