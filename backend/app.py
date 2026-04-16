@@ -1,4 +1,6 @@
-from fastapi import FastAPI, HTTPException, Query, BackgroundTasks
+from contextlib import asynccontextmanager
+import joblib
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -8,21 +10,20 @@ import geopandas as gpd
 import osmnx as ox
 from shapely.geometry import Point
 import numpy as np
-import os
 import types
 import sys
 import asyncio
 import json
-import time
 import re
-import sqlite3
-import threading
-from pathlib import Path
 import httpx
+from pathlib import Path
+from dataclasses import dataclass
 
-# ====================== IMPORT MODÈLE ======================
+from id_generator import ATIDGenerator
+
+# ====================== CONFIG ======================
 config_module = types.ModuleType("config")
-
+FAT_CAPACITY = 8
 
 class _Settings:
     FAT_CAPACITY = 8
@@ -33,145 +34,285 @@ class _Settings:
 config_module.settings = _Settings()
 sys.modules["config"] = config_module
 
-from model2D import FATSmartPlanner
-from id_generator import ATIDGenerator
 
-# ====================== CACHE SQLite + STALE-WHILE-REVALIDATE ======================
-_CACHE_DIR = Path("osm_cache")
-_CACHE_DIR.mkdir(exist_ok=True)
-_CACHE_DB = _CACHE_DIR / "osm_cache.db"
-
-ox.settings.use_cache = True
-ox.settings.cache_folder = str(_CACHE_DIR / "osmnx_http")
-ox.settings.timeout = 60
-ox.settings.overpass_rate_limit = True
-
-# TTL : 24h = frais, 7j = stale acceptable, > 7j = supprimé
-_FRESH_TTL = 86400     # 24 heures
-_STALE_TTL = 604800    # 7 jours
-
-# Mémoire RAM (1er niveau, le plus rapide)
-_mem_cache: dict = {}
-_db_lock = threading.Lock()
+# ====================== INJECTION DES CLASSES ======================
+@dataclass
+class FATCandidate:
+    fat_id: str
+    cluster_label: int
+    centroid_lat: float
+    centroid_lon: float
+    subscriber_ids: list
+    n_subscribers: int
+    usage: str
+    fdt_assigned: str
+    capacity_ok: bool = True
+    cable_m_to_fdt_real: float = 0.0
+    cable_snap: int = 0
+    radius_deg: float = 0.0
+    max_dist_to_sub_m: float = 0.0
 
 
-def _init_cache_db():
-    """Crée la table de cache SQLite si elle n'existe pas."""
-    with _db_lock:
-        with sqlite3.connect(str(_CACHE_DB)) as conn:
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS cache (
-                    key   TEXT PRIMARY KEY,
-                    value TEXT NOT NULL,
-                    ts    REAL NOT NULL
-                )
-            """)
-            conn.execute("""CREATE INDEX IF NOT EXISTS idx_cache_ts ON cache(ts)""")
+@dataclass
+class BuildingKMeansResult:
+    id_batiment: str
+    id_zone: str
+    n_subscribers_total: int
+    fat_candidates: list
+    n_fats_proposed: int
+    n_fats_ground_truth: int
+    ari_score: float = 0.0
+    silhouette_score: float = 0.0
+    r2_score: float = 0.0
+    capacity_compliance_pct: float = 100.0
+    mae_m: float = 0.0
+    mse_m2: float = 0.0
+    rmse_m: float = 0.0
+    max_distance_m: float = 0.0
 
 
-_init_cache_db()
+sys.modules["__main__"].FATCandidate = FATCandidate
+sys.modules["__main__"].BuildingKMeansResult = BuildingKMeansResult
+sys.modules["__main__"].FATSmartPlanner = type("FATSmartPlanner", (), {})
+
+# ====================== JOBLIB MODEL ======================
+MODEL_PATH = Path("model/fat_pipeline_2d_annaba.joblib")
+fat_model = None
 
 
-def cache_get(key: str):
-    """Lecture cache : RAM → SQLite. Retourne (value, needs_refresh)."""
-    # 1) RAM (instantané)
-    if key in _mem_cache:
-        val, ts = _mem_cache[key]
-        age = time.time() - ts
-        if age < _FRESH_TTL:
-            return val, False      # frais
-        if age < _STALE_TTL:
-            return val, True       # stale → répondre + refresh en background
-        del _mem_cache[key]        # trop vieux
-
-    # 2) SQLite (rapide, persistant)
-    try:
-        with _db_lock:
-            with sqlite3.connect(str(_CACHE_DB)) as conn:
-                row = conn.execute(
-                    "SELECT value, ts FROM cache WHERE key = ?", (key,)
-                ).fetchone()
-        if row:
-            value = json.loads(row[0])
-            age = time.time() - row[1]
-            _mem_cache[key] = (value, row[1])  # remplir RAM
-            if age < _FRESH_TTL:
-                return value, False
-            if age < _STALE_TTL:
-                return value, True
-            # trop vieux → purger
-            with _db_lock:
-                with sqlite3.connect(str(_CACHE_DB)) as conn:
-                    conn.execute("DELETE FROM cache WHERE key = ?", (key,))
-    except Exception:
-        pass
-
-    return None, True  # pas de cache → refresh obligatoire
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global fat_model
+    print("🔄 Démarrage - Chargement du modèle joblib...")
+    if not MODEL_PATH.exists():
+        print(f"⚠️ Modèle non trouvé : {MODEL_PATH}. Fonctionnement en mode Fallback K-Means.")
+    else:
+        try:
+            fat_model = joblib.load(MODEL_PATH)
+            print("✅ Modèle FAT 2D chargé avec succès !")
+        except Exception as e:
+            print(f"❌ Erreur de chargement modèle : {e}")
+    yield
+    print("🛑 Arrêt de l'application")
 
 
-def cache_get_value(key: str):
-    """Raccourci : retourne la valeur ou None (ignore needs_refresh)."""
-    val, _ = cache_get(key)
-    return val
-
-
-def cache_set(key: str, value):
-    """Écriture cache : RAM + SQLite."""
-    now = time.time()
-    _mem_cache[key] = (value, now)
-    try:
-        with _db_lock:
-            with sqlite3.connect(str(_CACHE_DB)) as conn:
-                conn.execute(
-                    "INSERT OR REPLACE INTO cache (key, value, ts) VALUES (?, ?, ?)",
-                    (key, json.dumps(value, ensure_ascii=False), now)
-                )
-    except Exception:
-        pass
-
-
-# ====================== FASTAPI APP ======================
 app = FastAPI(
     title="FTTH Smart Planner API - Algérie Télécom",
-    version="4.2",
-    description="API Découpée en 5 étapes (OSM GeoJSON, FAT Placement, AT ID) — Overpass optimisé sans timeout",
+    version="5.0",
+    description="Wilaya → Commune → Quartier → Résidence",
+    lifespan=lifespan
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
-from fastapi import Request
-from fastapi.responses import JSONResponse as _JSONResponse
-from starlette.middleware.base import BaseHTTPMiddleware
+_CACHE_DIR = Path("osm_cache")
+_CACHE_DIR.mkdir(exist_ok=True)
+ox.settings.use_cache = True
+ox.settings.cache_folder = str(_CACHE_DIR / "osmnx_http")
+
+JSON_CACHE_DIR = Path("osm_json_cache")
+JSON_CACHE_DIR.mkdir(exist_ok=True)
+
+_WILAYAS_58 = {
+    1: "Adrar", 2: "Chlef", 3: "Laghouat", 4: "Oum El Bouaghi", 5: "Batna", 6: "Béjaïa",
+    7: "Biskra", 8: "Béchar", 9: "Blida", 10: "Bouira", 11: "Tamanrasset", 12: "Tébessa",
+    13: "Tlemcen", 14: "Tiaret", 15: "Tizi Ouzou", 16: "Alger", 17: "Djelfa", 18: "Jijel",
+    19: "Sétif", 20: "Saïda", 21: "Skikda", 22: "Sidi Bel Abbès", 23: "Annaba", 24: "Guelma",
+    25: "Constantine", 26: "Médéa", 27: "Mostaganem", 28: "M'Sila", 29: "Mascara", 30: "Ouargla",
+    31: "Oran", 32: "El Bayadh", 33: "Illizi", 34: "Bordj Bou Arréridj", 35: "Boumèrdès",
+    36: "El Tarf", 37: "Tindouf", 38: "Tissemsilt", 39: "El Oued", 40: "Khenchela",
+    41: "Souk Ahras", 42: "Tipaza", 43: "Mila", 44: "Aïn Defla", 45: "Naâma", 46: "Aïn Témouchent",
+    47: "Ghardaïa", 48: "Relizane", 49: "Timimoun", 50: "Bordj Badji Mokhtar", 51: "Ouled Djellal",
+    52: "Béni Abbès", 53: "In Salah", 54: "In Guezzam", 55: "Touggourt", 56: "Djanet",
+    57: "El M'Ghair", 58: "El Meniaa"
+}
 
 
-class CORSOnErrorMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
+def _load_wilaya_cache(ville_label: str) -> dict | None:
+    parts = ville_label.split(" - ", 1)
+    if len(parts) == 2:
+        code_str, nom = parts[0].strip(), parts[1].strip()
+    else:
+        code_str, nom = None, ville_label.strip()
+        for c, n in _WILAYAS_58.items():
+            if n.lower() == nom.lower():
+                code_str = f"{c:02d}"
+                nom = n
+                break
+        if not code_str: return None
+    safe_nom = nom.replace(" ", "_").replace("'", "").replace("\u2019", "")
+    cache_file = JSON_CACHE_DIR / f"{code_str}-{safe_nom}.json"
+    if cache_file.exists():
         try:
-            response = await call_next(request)
-        except Exception as exc:
-            response = _JSONResponse(status_code=500, content={"detail": str(exc)})
-        response.headers["Access-Control-Allow-Origin"] = "*"
-        response.headers["Access-Control-Allow-Methods"] = "*"
-        response.headers["Access-Control-Allow-Headers"] = "*"
-        return response
+            with open(cache_file, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return None
 
 
-app.add_middleware(CORSOnErrorMiddleware)
+def load_from_json_cache(key: str):
+    path = JSON_CACHE_DIR / (key.replace("::", "__").replace(":", "_").replace(" ", "_") + ".json")
+    if path.exists():
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return None
 
 
-# ====================== MODÈLES PYDANTIC ======================
+# ====================== OVERPASS (RÉSIDENTIEL STRICT) ======================
+OVERPASS_SERVERS = [
+    "https://overpass-api.de/api/interpreter",
+    "https://lz4.overpass-api.de/api/interpreter",
+]
+
+
+async def _overpass_request(query: str, timeout: int = 35) -> dict:
+    async def _try(url: str):
+        try:
+            async with httpx.AsyncClient(timeout=float(timeout)) as c:
+                resp = await c.post(url, data={"data": query.strip()})
+                print(f"📡 Overpass Response from {url}: {resp.status_code}")
+                if resp.status_code == 200:
+                    data = resp.json()
+                    print(f"✅ Elements found: {len(data.get('elements', []))}")
+                    if data.get("elements"): return data
+        except Exception:
+            pass
+        return None
+
+    tasks = [asyncio.create_task(_try(url)) for url in OVERPASS_SERVERS]
+    for coro in asyncio.as_completed(tasks):
+        result = await coro
+        if result:
+            for t in tasks: t.cancel()
+            return result
+    for t in tasks: t.cancel()
+    return {"elements": []}
+
+
+def _format_building_name(tags: dict, index: int) -> dict:
+    name = tags.get("name", "").strip()
+    ref = tags.get("ref", "").strip()
+    addr_nb = tags.get("addr:housenumber", "").strip()
+    addr_st = tags.get("addr:street", "").strip()
+    levels = tags.get("building:levels", "").strip()
+    units = tags.get("building:units", "").strip() or tags.get("residential:units", "").strip()
+
+    if name:
+        display_name = name
+    elif ref:
+        display_name = f"Bât. {ref}"
+    elif addr_nb and addr_st:
+        display_name = f"N°{addr_nb} {addr_st}"
+    elif addr_nb:
+        display_name = f"N°{addr_nb}"
+    else:
+        display_name = f"Bâtiment {index}"
+
+    return {
+        "display_name": display_name,
+        "levels": int(levels) if levels.isdigit() else None,
+        "units": int(units) if units.isdigit() else None,
+    }
+
+
+async def fetch_residences_in_commune(commune: str, wilaya_name: str) -> List[Dict[str, Any]]:
+    # Extraction du nom pur de la wilaya (évite le code "31 - Oran")
+    wilaya_pure = wilaya_name.split(" - ")[1] if " - " in wilaya_name else wilaya_name
+    
+    # On utilise une approche hiérarchique : Wilaya -> Commune -> Résidences
+    # Cela évite les confusions entre communes homonymes
+    query = f"""
+    [out:json][timeout:60];
+    
+    // 1. Trouver la Wilaya (admin_level=4)
+    rel[name~"{wilaya_pure}",i][admin_level=4];
+    map_to_area -> .wilayaArea;
+    
+    // 2. Trouver la Commune (admin_level=8) dans la Wilaya
+    (
+      rel[name~"{commune}",i][admin_level=8](area.wilayaArea);
+      rel[name~"{commune}",i][boundary=administrative](area.wilayaArea);
+      // Fallback si la wilaya restrictive échoue
+      rel[name~"{commune}",i][admin_level=8];
+    )->.commune;
+    
+    .commune map_to_area -> .searchArea;
+
+    (
+      // Bâtiments nommés (Résidences, Tours, Batiments)
+      nwr["building"]["name"](area.searchArea);
+      
+      // Zones résidentielles (Cités, Résidences fermées)
+      nwr["landuse"="residential"]["name"](area.searchArea);
+      
+      // Lieux-dits et quartiers (très fréquents en Algérie)
+      nwr["place"~"neighbourhood|quarter|suburb|office|industrial|commercial"]["name"](area.searchArea);
+      
+      // Adresses avec un nom de résidence spécifique
+      nwr["addr:housename"](area.searchArea);
+    );
+    out tags center;
+    """
+    
+    print(f"🌐 Requête Overpass hiérarchique pour: {commune} ({wilaya_pure})")
+    data = await _overpass_request(query)
+    elements = data.get("elements", [])
+    
+    residences = []
+    seen_names = set()
+
+    for el in elements:
+        tags = el.get("tags", {})
+        # On récupère le nom le plus pertinent
+        name = tags.get("name") or tags.get("addr:housename") or tags.get("official_name")
+
+        if not name or len(name.strip()) < 2: continue
+        
+        # Filtre anti-digits simples (ex: "123")
+        if name.strip().isdigit(): continue
+
+        if name.lower() in seen_names: continue
+
+        center = el.get("center") or {}
+        # Fallback pour les nodes qui n'ont pas de champ "center" mais directement lat/lon
+        lat = center.get("lat") or el.get("lat")
+        lon = center.get("lon") or el.get("lon")
+        
+        if not lat: continue
+
+        # Détection du type pour l'icône dans le frontend
+        res_type = "Cité/Résidence"
+        if tags.get("building"): res_type = "Bâtiment"
+        if tags.get("place"): res_type = "Quartier/Zone"
+
+        residences.append({
+            "name": name,
+            "osm_id": str(el.get("id", "")),
+            "lat": round(lat, 6),
+            "lon": round(lon, 6),
+            "levels": tags.get("building:levels") or tags.get("levels"),
+            "units": tags.get("building:units") or tags.get("residential:units"),
+            "type": res_type
+        })
+        seen_names.add(name.lower())
+
+    print(f"✅ {len(residences)} résidences trouvées dans {commune}")
+    # Tri par nom
+    return sorted(residences, key=lambda x: x["name"])[:2000]
+
+# ====================== PYDANTIC ======================
 class ImportOSMRequest(BaseModel):
     ville: str
-    quartier: str
+    commune: str
     residence: str
-    nombre_etages: int = 8
-    logements_par_etage: int = 12
+    lat: Optional[float] = None
+    lon: Optional[float] = None
+    nombre_etages: int = 5
+    logements_par_etage: int = 4
     commerce: bool = False
 
 
@@ -184,368 +325,253 @@ class NamingFATRequest(BaseModel):
     subscribers: List[Dict[str, Any]]
 
 
-# ====================== LISTE WILAYAS ======================
-WILAYAS: List[str] = [
-    "01-Adrar", "02-Chlef", "03-Laghouat", "04-Oum El Bouaghi", "05-Batna",
-    "06-Béjaïa", "07-Biskra", "08-Béchar", "09-Blida", "10-Bouira",
-    "11-Tamanrasset", "12-Tébessa", "13-Tlemcen", "14-Tiaret", "15-Tizi Ouzou",
-    "16-Alger", "17-Djelfa", "18-Jijel", "19-Sétif", "20-Saïda",
-    "21-Skikda", "22-Sidi Bel Abbès", "23-Annaba", "24-Guelma", "25-Constantine",
-    "26-Médéa", "27-Mostaganem", "28-M'Sila", "29-Mascara", "30-Ouargla",
-    "31-Oran", "32-El Bayadh", "33-Illizi", "34-Bordj Bou Arréridj", "35-Boumèrdès",
-    "36-El Tarf", "37-Tindouf", "38-Tissemsilt", "39-El Oued", "40-Khenchela",
-    "41-Souk Ahras", "42-Tipaza", "43-Mila", "44-Aïn Defla", "45-Naâma",
-    "46-Aïn Témouchent", "47-Ghardaïa", "48-Relizane",
-    "49-Timimoun", "50-Bordj Badji Mokhtar", "51-Ouled Djellal", "52-Béni Abbès",
-    "53-In Salah", "54-In Guezzam", "55-Touggourt", "56-Djanet",
-    "57-El M'Ghair", "58-El Meniaa",
-]
-
-
-def _ville_sans_numero(ville: str) -> str:
-    m = re.match(r"^\d{2}-(.+)$", ville.strip())
-    return m.group(1) if m else ville.strip()
-
-
-# ====================== OVERPASS CONFIG (sans timeout global) ======================
-OVERPASS_SERVERS = [
-    "https://lz4.overpass-api.de/api/interpreter",  # souvent le plus rapide
-    "https://overpass-api.de/api/interpreter",
-    "https://overpass.private.coffee/api/interpreter",
-]
-
-
-async def _overpass_request(query: str) -> dict:
-    """Requête Overpass avec mode parallèle (race) et timeout strict."""
-    async def _try_server(url: str):
-        try:
-            async with httpx.AsyncClient(timeout=25.0) as client:
-                resp = await client.post(url, data={"data": query.strip()})
-                if resp.status_code == 200:
-                    return resp.json()
-        except Exception:
-            pass
-        return None
-
-    tasks = [asyncio.create_task(_try_server(url)) for url in OVERPASS_SERVERS]
-    for coro in asyncio.as_completed(tasks):
-        result = await coro
-        if result and result.get("elements"):
-            # On annule les autres requêtes dès qu'on a un résultat
-            for t in tasks:
-                t.cancel()
-            return result
-            
-    # Si tous ont échoué ou timeout
-    for t in tasks:
-        t.cancel()
-    return {"elements": []}
-
-
-# ====================== FONCTIONS OVERPASS LÉGÈRES ======================
-async def fetch_quartiers_overpass(ville_pure: str) -> List[str]:
-    query = f"""
-    [out:json][timeout:25];
-    area["name"="{ville_pure}"]["admin_level"="4"]->.searchArea;
-    (
-      relation["boundary"="administrative"]["admin_level"="8"](area.searchArea);
-      relation["place"~"neighbourhood|suburb|quarter"](area.searchArea);
-    );
-    out tags;
-    """
-    data = await _overpass_request(query)
-    names = [el.get("tags", {}).get("name") for el in data.get("elements", [])
-             if el.get("tags", {}).get("name")]
-    return sorted(set(filter(None, names)))
-
-
-async def fetch_residences_overpass(quartier: str, ville_pure: str) -> List[str]:
-    """Version ultra-légère : seulement les noms (out tags)."""
-    query = f"""
-    [out:json][timeout:25];
-    area[name="{quartier}"]->.a;
-    (
-      way["building"]["name"](area.a);
-      relation["building"]["name"](area.a);
-    );
-    out tags;
-    """
-    data = await _overpass_request(query)
-    elements = data.get("elements", [])
-
-    names = [el.get("tags", {}).get("name", "") for el in elements if el.get("tags", {}).get("name")]
-    keywords = ["résidence", "cité", "lotissement", "hai", "rés", "bloc",
-                "complexe", "appartements", "tower", "immeuble", "el ", "hay "]
-    filtered = [n for n in names if any(k in n.lower() for k in keywords)]
-    return sorted(set(filtered or names))[:100]
-
-
-# ====================== PREFETCH EN BACKGROUND ======================
-async def _warm_quartiers(ville: str):
-    key = f"q::{ville}"
-    val, needs_refresh = cache_get(key)
-    if val is not None and not needs_refresh:
-        return
-    ville_pure = _ville_sans_numero(ville)
-    result = await fetch_quartiers_overpass(ville_pure)
-    if result:
-        cache_set(key, result)
-
-
-async def _warm_residences(ville: str, quartier: str):
-    key = f"r::{ville}::{quartier}"
-    val, needs_refresh = cache_get(key)
-    if val is not None and not needs_refresh:
-        return
-    ville_pure = _ville_sans_numero(ville)
-    result = await fetch_residences_overpass(quartier, ville_pure)
-    if result:
-        cache_set(key, result)
-
-
-# ====================== ROUTES DÉCOUVERTE OSM ======================
+# ====================== ROUTES ======================
 @app.get("/api/ville")
 async def get_ville():
-    return {"villes": WILAYAS}
+    print("GET /api/ville")
+    cached = load_from_json_cache("villes")
+    if cached:
+        print(f"✅ Villes trouvées (cache): {len(cached)}")
+        return {"villes": cached, "source": "json_cache", "count": len(cached)}
+    print("⚠️ Aucune ville trouvée")
+    return {"villes": [], "source": "empty", "message": "Lancez VilleData.py d'abord"}
 
 
-@app.get("/api/ville/{ville}/prefetch")
-async def prefetch_ville(ville: str, background_tasks: BackgroundTasks):
-    background_tasks.add_task(_warm_quartiers, ville)
-    return {"status": "prefetching", "ville": ville}
-
-
-@app.get("/api/quartier/{ville}/prefetch")
-async def prefetch_quartier(ville: str, quartier: str, background_tasks: BackgroundTasks):
-    background_tasks.add_task(_warm_residences, ville, quartier)
-    return {"status": "prefetching", "quartier": quartier}
-
-
-@app.get("/api/quartier")
-async def get_quartier(ville: str = Query(...), background_tasks: BackgroundTasks = None):
-    key = f"q::{ville}"
-    cached, needs_refresh = cache_get(key)
-
-    if cached is not None:
-        # Stale-While-Revalidate : répondre immédiatement, refresh en background
-        if needs_refresh and background_tasks:
-            background_tasks.add_task(_warm_quartiers, ville)
-        return {"quartiers": cached, "source": "cache", "fresh": not needs_refresh}
-
-    # Pas de cache du tout → fetch synchrone
-    ville_pure = _ville_sans_numero(ville)
-    result = await fetch_quartiers_overpass(ville_pure)
-    quartiers = result or []
-    if quartiers:
-        cache_set(key, quartiers)
-    return {"quartiers": quartiers, "source": "overpass", "fresh": True}
+@app.get("/api/commune")
+async def get_commune(ville: str = Query(...)):
+    print(f"GET /api/commune (ville={ville})")
+    wilaya_data = _load_wilaya_cache(ville)
+    if wilaya_data and wilaya_data.get("communes"):
+        communes = [c["nom"] for c in wilaya_data["communes"]]
+        print(f"✅ Communes trouvées (unified): {len(communes)}")
+        return {"communes": communes, "source": "unified_cache", "count": len(communes)}
+    key = f"c::{ville}"
+    cached = load_from_json_cache(key)
+    if cached:
+        print(f"✅ Communes trouvées (legacy cache): {len(cached)}")
+        return {"communes": cached, "source": "json_cache_legacy", "count": len(cached)}
+    print("⚠️ Aucune commune trouvée")
+    return {"communes": [], "source": "no_cache", "message": "Cache manquant."}
 
 
 @app.get("/api/residence")
-async def get_residence(ville: str = Query(...), quartier: str = Query(...), background_tasks: BackgroundTasks = None):
-    key = f"r::{ville}::{quartier}"
-    cached, needs_refresh = cache_get(key)
-
-    if cached is not None:
-        # Stale-While-Revalidate : répondre immédiatement, refresh en background
-        if needs_refresh and background_tasks:
-            background_tasks.add_task(_warm_residences, ville, quartier)
-        return {"residences": cached, "source": "cache", "fresh": not needs_refresh}
-
-    # Pas de cache du tout → fetch synchrone
-    ville_pure = _ville_sans_numero(ville)
-    result = await fetch_residences_overpass(quartier, ville_pure)
-    residences = result or []
-    if residences:
-        cache_set(key, residences)
-    return {"residences": residences, "source": "overpass", "fresh": True}
+async def get_residence(ville: str = Query(...), commune: str = Query(...), search: str = Query(None)):
+    print(f"GET /api/residence (ville={ville}, commune={commune}, search={search})")
+    ville_pure = ville.split(" - ")[1] if " - " in ville else ville
+    residences = await fetch_residences_in_commune(commune, ville_pure)
+    if search and search.strip():
+        q = search.strip().lower()
+        residences = [r for r in residences if q in r["name"].lower()]
+    print(f"✅ Résidences trouvées: {len(residences)}")
+    return {
+        "residences": residences,
+        "source": "overpass_live",
+        "count": len(residences),
+        "commune": commune,
+    }
 
 
-# ====================== IMPORT OSM (bâtiments live) ======================
+# ====================== IMPORT OSM ======================
 def generate_random_point_in_polygon(poly, n: int):
-    if n <= 0 or poly.is_empty:
-        return []
+    if n <= 0 or poly.is_empty: return []
     minx, miny, maxx, maxy = poly.bounds
     points = []
     attempts = 0
     while len(points) < n and attempts < n * 100:
         p = Point(np.random.uniform(minx, maxx), np.random.uniform(miny, maxy))
-        if poly.contains(p):
-            points.append(p)
+        if poly.contains(p): points.append(p)
         attempts += 1
     return points
 
 
 @app.post("/api/importOSM")
 async def import_osm(req: ImportOSMRequest):
-    ville_pure = _ville_sans_numero(req.ville)
-    place = f"{req.residence}, {req.quartier}, {ville_pure}, Algeria"
-
-    # Désactivation cache pour bâtiments (toujours frais)
-    _prev_cache = ox.settings.use_cache
-    ox.settings.use_cache = False
-
+    print(f"🔍 Import OSM contexte pour : {req.residence}")
     try:
-        try:
-            gdf = ox.features_from_place(place, tags={"building": True})
-            if gdf.empty:
-                raise ValueError("Aucun bâtiment")
-        except Exception:
-            try:
-                place_fallback = f"{req.quartier}, {ville_pure}, Algeria"
-                gdf = ox.features_from_place(place_fallback, tags={"building": True})
-            except Exception as e:
-                raise HTTPException(status_code=400, detail=f"Erreur OSM: Impossible de récupérer la zone. ({str(e)})")
-    finally:
-        ox.settings.use_cache = _prev_cache
-
-    gdf = gdf[gdf.geometry.geom_type.isin(["Polygon", "MultiPolygon"])].copy()
-    if gdf.empty:
-        raise HTTPException(status_code=400, detail="Aucun polygone de bâtiment trouvé.")
-    gdf = gdf.reset_index(drop=True)
-
-    # Nommage bâtiments
-    formatted_ids = []
-    for i, row in gdf.iterrows():
-        bloc_val = "A"
-        if "ref" in row and pd.notna(row["ref"]):
-            bloc_val = str(row["ref"]).upper()
-        elif "name" in row and pd.notna(row["name"]) and "bloc" in str(row["name"]).lower():
-            m = re.search(r'bloc\s+([a-zA-Z0-9]+)', str(row["name"]).lower())
-            bloc_val = m.group(1).upper() if m else chr(65 + (i % 26))
+        if req.lat and req.lon:
+            # Récupère le contexte autour du bâtiment (150m)
+            gdf = ox.features_from_point((req.lat, req.lon), dist=150, tags={"building": True})
         else:
-            bloc_val = chr(65 + (i % 26))
+            ville_pure = req.ville.split(" - ")[1] if " - " in req.ville else req.ville
+            place = f"{req.residence}, {req.commune}, {ville_pure}, Algeria"
+            gdf = ox.features_from_place(place, tags={"building": True})
 
-        num_val = str(i + 1)
-        if "addr:housenumber" in row and pd.notna(row["addr:housenumber"]):
-            num_val = str(row["addr:housenumber"])
+        if gdf.empty:
+            raise HTTPException(status_code=400, detail="Aucun bâtiment trouvé pour cette localisation.")
 
-        bat_name = f"{ville_pure}-{req.quartier}-{req.residence}-BLOC {bloc_val}-numéro {num_val}"
-        formatted_ids.append(bat_name)
+        gdf = gdf[gdf.geometry.geom_type.isin(["Polygon", "MultiPolygon"])].copy().reset_index(drop=True)
 
-    gdf["id_batiment"] = formatted_ids
+        target_idx = 0
+        if req.lat and req.lon:
+            target_pt = Point(req.lon, req.lat)
+            distances = gdf.geometry.distance(target_pt)
+            target_idx = distances.idxmin()
 
-    # Génération abonnés
-    rows = []
-    cc_counter = 1
-    for _, bldg in gdf.iterrows():
-        bat_id = bldg["id_batiment"]
-        poly = bldg.geometry
-        if not poly.is_valid or poly.area == 0:
-            continue
+        formatted_ids = []
+        is_target_list = []
+        for i, row in gdf.iterrows():
+            is_target = (i == target_idx)
+            is_target_list.append(is_target)
+            bat_name = f"CIBLE-{req.residence[:15].upper()}" if is_target else f"VOISIN-B{i + 1}"
+            formatted_ids.append(bat_name)
 
-        fdt_lat_base = round(poly.centroid.y, 6)
-        fdt_lon_base = round(poly.centroid.x, 6)
-        tot_log = req.nombre_etages * req.logements_par_etage
-        pts_log = generate_random_point_in_polygon(poly, tot_log)
+        gdf["id_batiment"] = formatted_ids
+        gdf["is_target"] = is_target_list
 
+        target_bldg = gdf.iloc[target_idx]
+        osm_levels = target_bldg.get("building:levels")
+        osm_units = target_bldg.get("building:units")
+
+        etages = int(osm_levels) if pd.notna(osm_levels) else req.nombre_etages
+        if pd.notna(osm_units) and int(osm_units) > 0:
+            logements = max(1, int(osm_units) // max(1, etages))
+        else:
+            logements = req.logements_par_etage
+
+        if etages <= 0: etages = 1
+        if logements <= 0: logements = 1
+
+        rows = []
+        tot_log = etages * logements
+        pts_log = generate_random_point_in_polygon(target_bldg.geometry, tot_log)
+
+        cc_counter = 1
         for i in range(len(pts_log)):
-            etg = (i // req.logements_par_etage) + 1
+            etg = (i // logements) + 1
             rows.append({
                 "code_client": f"AB{cc_counter:06d}",
-                "id_batiment": bat_id,
-                "id_zone": "Z310-001",
+                "id_batiment": target_bldg["id_batiment"],
                 "lat_abonne": round(pts_log[i].y, 6),
                 "lon_abonne": round(pts_log[i].x, 6),
                 "etage": etg,
-                "porte": (etg * 100) + ((i % req.logements_par_etage) + 1),
+                "porte": (etg * 100) + ((i % logements) + 1),
                 "usage": "logements",
-                "nom_FDT": "F310-001-01",
-                "lat_fdt": fdt_lat_base,
-                "lon_fdt": fdt_lon_base,
             })
             cc_counter += 1
 
-    return JSONResponse(content={
-        "buildings_geojson": gdf[["id_batiment", "geometry"]].to_json(),
-        "subscribers": rows,
-        "count": len(gdf)
-    })
+        buildings_geojson = gdf[["id_batiment", "is_target", "geometry"]].to_json()
+
+        print(f"✅ Import OSM réussi: {len(gdf)} bâtiments, {len(rows)} abonnés générés")
+        return JSONResponse(content={
+            "buildings_geojson": buildings_geojson,
+            "subscribers": rows,
+            "count": len(gdf),
+            "residence": req.residence,
+            "etages_detectes": etages,
+            "logements_detectes": logements,
+        })
+    except Exception as e:
+        print(f"❌ Erreur Import OSM: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Erreur d'import : {str(e)}")
 
 
-# ====================== EMPLACEMENT FATs & NOM FAT (inchangés) ======================
+# ====================== ALGO FAT & NOMMAGE ======================
+def _fallback_clustering(df_sub: pd.DataFrame) -> list:
+    from sklearn.cluster import KMeans
+    output_rows = []
+    bat_groups = df_sub.groupby("id_batiment") if "id_batiment" in df_sub.columns else [("BAT-001", df_sub)]
+    for bat_id, bat_df in bat_groups:
+        bat_df = bat_df.reset_index(drop=True)
+        n_subs = len(bat_df)
+        n_fats = max(1, int(np.ceil(n_subs / FAT_CAPACITY)))
+        coords = bat_df[["lat_abonne", "lon_abonne"]].values
+        labels = np.zeros(n_subs, dtype=int) if n_fats == 1 else KMeans(n_clusters=n_fats, n_init=5,
+                                                                        random_state=42).fit_predict(coords)
+        for cl in range(n_fats):
+            mask = labels == cl
+            cluster_df = bat_df[mask]
+            if cluster_df.empty: continue
+            output_rows.append({
+                "id_batiment": str(bat_id), "id_zone": "Z310-001", "fat_id": f"FAT-{str(bat_id)[-6:]}-{cl + 1:02d}",
+                "cluster_label": int(cl), "centroid_lat": float(cluster_df["lat_abonne"].mean()),
+                "centroid_lon": float(cluster_df["lon_abonne"].mean()),
+                "n_subscribers": int(mask.sum()), "usage": "logements", "fdt_assigned": "F310-001-01",
+                "capacity_ok": bool(mask.sum() <= FAT_CAPACITY), "cable_m_to_fdt_real": 0.0, "radius_deg": 0.0,
+                "subscriber_ids": cluster_df["code_client"].tolist() if "code_client" in cluster_df.columns else [],
+            })
+    return output_rows
+
+
 @app.post("/api/emplacementFATs")
 async def get_emplacement_fats(req: FATPlacementRequest):
+    print(f"POST /api/emplacementFATs ({len(req.subscribers)} abonnés)")
     df_sub = pd.DataFrame(req.subscribers)
     if df_sub.empty:
-        raise HTTPException(status_code=400, detail="Liste des abonnés vide")
-
-    try:
-        planner = FATSmartPlanner()
-        planner.fit(df_sub)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erreur modèle K-Means : {str(e)}")
+        print("⚠️ Liste d'abonnés vide")
+        raise HTTPException(status_code=400, detail="Liste d'abonnés vide")
 
     output_rows = []
-    for res in planner.results_:
-        for fat in res.fat_candidates:
-            output_rows.append({
-                "id_batiment": res.id_batiment,
-                "id_zone": res.id_zone,
-                "fat_id": fat.fat_id,
-                "cluster_label": fat.cluster_label,
-                "centroid_lat": fat.centroid_lat,
-                "centroid_lon": fat.centroid_lon,
-                "n_subscribers": fat.n_subscribers,
-                "usage": fat.usage,
-                "fdt_assigned": fat.fdt_assigned,
-                "capacity_ok": fat.capacity_ok,
-                "cable_m_to_fdt_real": fat.cable_m_to_fdt_real,
-                "radius_deg": fat.radius_deg,
-                "subscriber_ids": fat.subscriber_ids
-            })
+    if fat_model is not None:
+        try:
+            print("🤖 Utilisation du modèle Fat Planner...")
+            fat_model.fit(df_sub)
+            results = getattr(fat_model, "results_", None) or []
+            for res in results:
+                for fat in (res.fat_candidates or []):
+                    output_rows.append({
+                        "id_batiment": getattr(res, "id_batiment", "BAT-001"),
+                        "id_zone": getattr(res, "id_zone", "Z310-001"),
+                        "fat_id": getattr(fat, "fat_id", ""), "cluster_label": getattr(fat, "cluster_label", 0),
+                        "centroid_lat": getattr(fat, "centroid_lat", 0.0),
+                        "centroid_lon": getattr(fat, "centroid_lon", 0.0),
+                        "n_subscribers": getattr(fat, "n_subscribers", 0), "usage": getattr(fat, "usage", "logements"),
+                        "fdt_assigned": getattr(fat, "fdt_assigned", "F310-001-01"),
+                        "capacity_ok": getattr(fat, "capacity_ok", True),
+                        "cable_m_to_fdt_real": getattr(fat, "cable_m_to_fdt_real", 0.0),
+                        "radius_deg": getattr(fat, "radius_deg", 0.0),
+                        "subscriber_ids": getattr(fat, "subscriber_ids", []),
+                    })
+            print(f"✅ {len(output_rows)} FATs identifiées par le modèle")
+        except Exception as e:
+            print(f"⚠️ Erreur modèle: {e}, fallback K-means...")
+            pass
+    if not output_rows:
+        print("🔄 Exécution du fallback K-means...")
+        output_rows = _fallback_clustering(df_sub)
+        print(f"✅ {len(output_rows)} FATs identifiées (fallback)")
     return {"fat_candidates": output_rows}
 
 
 @app.post("/api/nomFAT")
 async def generate_noms_fat(req: NamingFATRequest):
+    print(f"POST /api/nomFAT ({len(req.fat_candidates)} candidats)")
     df_cands = pd.DataFrame(req.fat_candidates)
     df_subs = pd.DataFrame(req.subscribers)
     if df_cands.empty:
-        raise HTTPException(status_code=400, detail="Liste des candidats FAT vide")
+        print("⚠️ Candidats FAT vides")
+        raise HTTPException(status_code=400, detail="Candidats FAT vides")
 
     generator = ATIDGenerator(wilaya_code="310")
     df_subs_indexed = df_subs.set_index("code_client")
-
-    ids_at = []
-    fat_seq_counter = {}
+    ids_at, fat_seq_counter = [], {}
 
     for _, row in df_cands.iterrows():
         bat_id = row["id_batiment"]
-        zone_id = row.get("id_zone", "Z310-001")
-        fdt_id = row.get("fdt_assigned", "F310-001-01")
         sub_ids = row.get("subscriber_ids", [])
-
         fat_seq_counter[bat_id] = fat_seq_counter.get(bat_id, 0) + 1
-        seq = fat_seq_counter[bat_id]
+        portes, etq_min = [], 1
 
-        portes = []
-        etq_min = 1
-        if isinstance(sub_ids, list) and len(sub_ids) > 0:
+        if isinstance(sub_ids, list) and sub_ids:
             valid_subs = [s for s in sub_ids if s in df_subs_indexed.index]
             if valid_subs:
                 sub_rows = df_subs_indexed.loc[valid_subs]
                 portes = sorted(sub_rows["porte"].tolist())
-                if "etage" in sub_rows.columns:
-                    etq_min = int(sub_rows["etage"].min())
+                if "etage" in sub_rows.columns: etq_min = int(sub_rows["etage"].min())
 
-        olt_num = generator._extract_olt_num(zone_id)
-        fdt_num = generator._extract_fdt_num(fdt_id)
-        adresse = generator._extract_adresse(bat_id)
-
-        id_at = generator._format_id(
+        at_id = generator._format_id(
             wilaya=generator.wilaya,
-            olt_num=olt_num,
-            fdt_num=fdt_num,
-            fat_seq=seq,
-            adresse=adresse,
+            olt_num=generator._extract_olt_num(row.get("id_zone", "Z310-001")),
+            fdt_num=generator._extract_fdt_num(row.get("fdt_assigned", "F310-001-01")),
+            fat_seq=fat_seq_counter[bat_id],
+            adresse=generator._extract_adresse(bat_id),
             portes=portes if portes else [0],
-            etage_depart=etq_min,
-            sequence=1
+            etage_depart=etq_min, sequence=1
         )
-        ids_at.append(id_at)
+        ids_at.append(at_id)
+        print(f"🏷️ ID généré: {at_id}")
 
     df_cands["fat_id_AT"] = ids_at
+    print("✅ Nommage FAT terminé")
     return {"fat_candidates_with_ids": df_cands.to_dict(orient="records")}
 
 

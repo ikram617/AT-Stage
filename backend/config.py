@@ -22,38 +22,8 @@ class ATConfig(BaseSettings):
     """
 
     TORTUOSITY_FEEDER: float = 1.2
-    """
-    Facteur de tortuosité pour câble feeder (OLT→FDT).
-    L'artère principale suit les routes, moins de détours → 1.2
-    """
     AT_DROP_CABLE_STANDARDS_M: list[int] = [15, 20, 50, 80]
-    """
-    Longueurs standard des câbles préfabriqués Algérie Télécom.
-    Le câble drop (FAT → abonné) doit être "snappé" vers
-    la longueur standard la plus proche.
-
-    Logique de snap :
-      - Étage 0 (RDC)   → ~15m  (couloir horizontal seulement)
-      - Étage 1-2       → ~20m  (vertical + couloir)
-      - Étage 3-8       → ~50m  (montée significative)
-      - Étage 9+        → ~80m  (tours AADL/HLM hautes)
-    """
-
-    """
-    Distance de base minimale pour un abonné RDC.
-    Inclut : distance FAT → boîte de dérivation + cheminement horizontal.
-    """
-
     FAT_CAPACITY_REMAINDER_THRESHOLD: int = 6
-    """
-    Règle AT Algérie Télécom :
-      Si reste = n_logements % FAT_CAPACITY >= 6 → ajouter 1 FAT supplémentaire
-
-    POURQUOI ? Un FAT avec 6, 7 ou 8 abonnés = FAT "plein" → préférable
-    à un FAT à 5/8 qui gaspille de la capacité. En dessous de 6,
-    on regroupe avec le FAT précédent (tolérance opérationnelle).
-    """
-
     BUILDING_TYPES: ClassVar[Dict[str, str]] = {
         "AADL": "Agence Nationale de l'Amélioration et du Développement du Logement",
         "LPP": "Logement Promotionnel Public",
@@ -67,9 +37,5 @@ class ATConfig(BaseSettings):
     DEFAULT_WILAYA_CODE: str = "016"
 
     class Config:
-        env_file = ".env"   # permet de surcharger via un fichier .env
-
-
-# Instance globale — importée partout dans le projet
-# Utilisation: from app.config import settings
+        env_file = ".env"
 settings = ATConfig()

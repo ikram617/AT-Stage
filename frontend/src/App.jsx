@@ -2,8 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 
 /* ============================================================
    FTTH SMART PLANNER — React · Light Theme · Algérie Télécom
-   Palette: AT Blue #005BAA + Orange #F7941D + White
-   FULL SCREEN VERSION — 100vw × 100vh (laptop ready)
+   Version v5.0 : Wilaya → Commune → Résidence
    ============================================================ */
 
 const AT_BLUE = "#005BAA";
@@ -25,7 +24,9 @@ const RED = "#EF4444";
 const PURPLE = "#7C3AED";
 const PURPLE_LIGHT = "#EDE9FE";
 
-// ── Algérie Télécom SVG logo ────────────────────────────────
+const API = "http://localhost:8000";
+
+// ── AT Logo ────────────────────────────────────────────────
 const ATLogo = ({ size = 40 }) => (
   <svg width={size} height={size} viewBox="0 0 60 60" fill="none">
     <rect width="60" height="60" rx="10" fill={AT_BLUE} />
@@ -34,19 +35,7 @@ const ATLogo = ({ size = 40 }) => (
   </svg>
 );
 
-// ── Sample data ─────────────────────────────────────────────
-const PROJECTS_ARCHIVE = [
-  { id: 1, name: "Rés. Les Falaises", ville: "Oran", quartier: "Seddikia", date: "27/03/2026", etages: 5, logements: 4 },
-  { id: 2, name: "El Bahia Tower",    ville: "Oran", quartier: "Carteaux",  date: "25/03/2026", etages: 8, logements: 6 },
-  { id: 3, name: "Rés. Atlas B3",     ville: "Oran", quartier: "Victor Hugo", date: "22/03/2026", etages: 6, logements: 4 },
-  { id: 4, name: "Cité AADL Nedjma",  ville: "Oran", quartier: "Haï Nedjma", date: "18/03/2026", etages: 10, logements: 8 },
-  { id: 5, name: "Rés. Yasmine",      ville: "Oran", quartier: "Gambetta",   date: "15/03/2026", etages: 4, logements: 4 },
-  { id: 6, name: "Tour Gambetta",     ville: "Oran", quartier: "Gambetta",   date: "10/03/2026", etages: 12, logements: 6 },
-  { id: 7, name: "Cité AADL Alger-Est", ville: "Alger", quartier: "Bab Ezzouar", date: "05/03/2026", etages: 8, logements: 4 },
-  { id: 8, name: "Rés. Zouaghi",      ville: "Constantine", quartier: "Centre", date: "28/02/2026", etages: 7, logements: 4 },
-];
-
-// ── Notification component ──────────────────────────────────
+// ── Notification ───────────────────────────────────────────
 const Notification = ({ notif, onClose }) => {
   useEffect(() => {
     const t = setTimeout(onClose, 4000);
@@ -57,6 +46,7 @@ const Notification = ({ notif, onClose }) => {
     success: { bg: GREEN_LIGHT, border: GREEN, icon: "✓", iconColor: GREEN },
     info: { bg: AT_BLUE_LIGHT, border: AT_BLUE, icon: "ℹ", iconColor: AT_BLUE },
     error: { bg: "#FEE2E2", border: RED, icon: "✕", iconColor: RED },
+    warning: { bg: AT_ORANGE_LIGHT, border: AT_ORANGE, icon: "⚠", iconColor: AT_ORANGE },
   };
   const c = colors[notif.type] || colors.info;
 
@@ -67,24 +57,23 @@ const Notification = ({ notif, onClose }) => {
       borderRadius: 12, padding: "14px 18px",
       display: "flex", alignItems: "flex-start", gap: 12,
       boxShadow: "0 8px 32px rgba(0,0,0,0.12)", maxWidth: 360,
-      animation: "slideUp 0.3s ease",
     }}>
       <div style={{
         width: 30, height: 30, borderRadius: 8,
         background: c.bg, color: c.iconColor,
         display: "flex", alignItems: "center", justifyContent: "center",
-        fontWeight: 700, fontSize: 14, flexShrink: 0,
+        fontWeight: 700, fontSize: 14,
       }}>{c.icon}</div>
       <div style={{ flex: 1 }}>
         <div style={{ fontWeight: 700, fontSize: 13, color: GRAY_800 }}>{notif.title}</div>
         <div style={{ fontSize: 11, color: GRAY_600, marginTop: 2 }}>{notif.sub}</div>
       </div>
-      <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: GRAY_400, fontSize: 16, lineHeight: 1 }}>✕</button>
+      <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: GRAY_400, fontSize: 16 }}>✕</button>
     </div>
   );
 };
 
-// ── KPI Card ────────────────────────────────────────────────
+// ── KPICard ────────────────────────────────────────────────
 const KPICard = ({ label, value, suffix = "", sub, color, icon }) => {
   const colors = {
     blue: { accent: AT_BLUE, bg: AT_BLUE_LIGHT, text: AT_BLUE },
@@ -106,7 +95,7 @@ const KPICard = ({ label, value, suffix = "", sub, color, icon }) => {
         <span style={{ fontSize: 18, width: 32, height: 32, background: c.bg, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>{icon}</span>
       </div>
       <div style={{ fontSize: 30, fontWeight: 800, color: c.text, lineHeight: 1, letterSpacing: "-1px" }}>
-        {value !== null ? value : <div style={{ width: 60, height: 28, background: GRAY_200, borderRadius: 6, animation: "shimmer 1.5s infinite" }} />}
+        {value !== null ? value : <div style={{ width: 60, height: 28, background: GRAY_200, borderRadius: 6 }} />}
         {value !== null && <span style={{ fontSize: 16 }}>{suffix}</span>}
       </div>
       <div style={{ fontSize: 11, color: GRAY_400, marginTop: 4 }}>{sub}</div>
@@ -114,9 +103,9 @@ const KPICard = ({ label, value, suffix = "", sub, color, icon }) => {
   );
 };
 
-// ── FAT node ────────────────────────────────────────────────
+// ── FATNode ────────────────────────────────────────────────
 const FATNode = ({ id, connected, totalPorts, onHover, onLeave }) => (
-  <div 
+  <div
     onMouseEnter={onHover}
     onMouseLeave={onLeave}
     style={{
@@ -124,10 +113,8 @@ const FATNode = ({ id, connected, totalPorts, onHover, onLeave }) => (
       borderRadius: 8, padding: "5px 8px", cursor: "pointer",
       boxShadow: `0 2px 8px rgba(247,148,29,0.25)`,
       minWidth: 90, textAlign: "center",
-      transition: "transform 0.2s"
+      transition: "transform 0.2s", zIndex: 10
     }}
-    onMouseOver={(e) => e.currentTarget.style.transform = "scale(1.05)"}
-    onMouseOut={(e) => e.currentTarget.style.transform = "none"}
   >
     <div style={{ fontSize: 8, fontWeight: 800, color: AT_ORANGE, letterSpacing: "0.5px", textTransform: "uppercase" }}>POINT FAT</div>
     <div style={{ fontSize: 9, fontWeight: 700, color: GRAY_700, fontFamily: "monospace", marginTop: 2 }}>FAT-ORA-{String(100 + id).padStart(3, "0")}</div>
@@ -139,8 +126,8 @@ const FATNode = ({ id, connected, totalPorts, onHover, onLeave }) => (
   </div>
 );
 
-// ── Building floor plan ─────────────────────────────────────
-const BuildingPlan = ({ etages, logements, residence }) => {
+// ── BuildingPlan ────────────────────────────────────────────
+const BuildingPlan = ({ etages, logements, residenceName }) => {
   const [hoveredFatId, setHoveredFatId] = useState(null);
   const totalAbonnes = etages * logements;
   const fatsNeeded = Math.ceil(totalAbonnes / 10);
@@ -155,11 +142,10 @@ const BuildingPlan = ({ etages, logements, residence }) => {
     <div style={{ padding: 20, overflowX: "auto" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
         <div>
-          <div style={{ fontWeight: 700, fontSize: 14, color: GRAY_800 }}>{residence || "Résidence AADL"}</div>
+          <div style={{ fontWeight: 700, fontSize: 14, color: GRAY_800 }}>{residenceName || "Résidence"}</div>
           <div style={{ fontSize: 11, color: GRAY_400 }}>{etages} étages · {logements} logements/étage · {fatsNeeded} FAT(s)</div>
         </div>
       </div>
-
       {(() => {
         let fi = 0;
         return Array.from({ length: etages + 1 }, (_, i) => etages - i).map((e) => {
@@ -172,9 +158,8 @@ const BuildingPlan = ({ etages, logements, residence }) => {
             <div key={e} style={{ marginBottom: 2 }}>
               <div style={{ display: "flex", alignItems: "stretch", gap: 0 }}>
                 <div style={{
-                  width: 64, flexShrink: 0,
-                  display: "flex", alignItems: "center", justifyContent: "flex-end",
-                  paddingRight: 10, fontSize: 9, fontWeight: 700,
+                  width: 64, flexShrink: 0, display: "flex", alignItems: "center",
+                  justifyContent: "flex-end", paddingRight: 10, fontSize: 9, fontWeight: 700,
                   color: GRAY_400, letterSpacing: "0.5px", textTransform: "uppercase",
                 }}>
                   {e === 0 ? "RDC" : `ÉT. ${e}`}
@@ -184,8 +169,7 @@ const BuildingPlan = ({ etages, logements, residence }) => {
                   flex: 1, display: "flex",
                   background: GRAY_50, border: `1px solid ${GRAY_200}`,
                   borderLeft: "none", borderRight: "none",
-                  minHeight: isFatFloor ? 90 : 64,
-                  position: "relative",
+                  minHeight: isFatFloor ? 90 : 64, position: "relative",
                 }}>
                   {Array.from({ length: logements }).map((_, l) => {
                     const isLastUnit = l === logements - 1;
@@ -199,48 +183,53 @@ const BuildingPlan = ({ etages, logements, residence }) => {
                         <div style={{
                           flex: 1, display: "flex", flexDirection: "column",
                           alignItems: "center", justifyContent: "center",
-                          padding: "8px 4px", gap: 4,
+                          padding: "8px 4px", gap: 4, zIndex: 5,
                           background: isHovered ? AT_ORANGE_LIGHT : "white",
                           border: isHovered ? `2px solid ${AT_ORANGE}` : `1px solid ${GRAY_200}`,
-                          borderRadius: 4, margin: "4px 2px",
-                          minWidth: 56,
+                          borderRadius: 4, margin: "4px 2px", minWidth: 56,
                         }}>
                           <div style={{ fontSize: 9, fontWeight: 700, color: GRAY_600, fontFamily: "monospace" }}>P.{doorNumber}</div>
-                          <div style={{ width: 6, height: 6, borderRadius: "50%", background: isHovered ? AT_ORANGE : AT_BLUE, boxShadow: `0 0 4px ${isHovered ? AT_ORANGE : AT_BLUE}55` }} />
+                          <div style={{ width: 6, height: 6, borderRadius: "50%", background: isHovered ? AT_ORANGE : AT_BLUE }} />
                         </div>
                         {!isLastUnit && (
                           <div style={{
-                            width: isFatBetween ? 100 : 12,
+                            width: isFatBetween ? 100 : 20,
                             display: "flex", flexDirection: "column",
                             alignItems: "center", justifyContent: "center",
-                            background: isFatBetween ? AT_ORANGE_LIGHT : GRAY_100,
-                            borderLeft: `1px dashed ${isHovered ? AT_ORANGE : GRAY_200}`,
-                            borderRight: `1px dashed ${isHovered ? AT_ORANGE : GRAY_200}`,
-                            position: "relative",
-                            flexShrink: 0,
+                            background: isFatBetween ? AT_ORANGE_LIGHT : "transparent",
+                            borderLeft: isFatBetween ? `1px dashed ${isHovered ? AT_ORANGE : GRAY_200}` : "none",
+                            borderRight: isFatBetween ? `1px dashed ${isHovered ? AT_ORANGE : GRAY_200}` : "none",
+                            position: "relative", flexShrink: 0,
                           }}>
+                            {/* Flèche SVG inclinée connectant le bloc vers la colonne centrale */}
+                            {!isFatBetween && (
+                              <svg style={{ position: "absolute", width: "100%", height: "100%", top: 0, left: 0, pointerEvents: "none" }}>
+                                <defs>
+                                  <marker id={`arrow-${isHovered ? 'hover' : 'normal'}`} viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+                                    <path d="M 0 0 L 10 5 L 0 10 z" fill={isHovered ? AT_ORANGE : GRAY_300} />
+                                  </marker>
+                                </defs>
+                                <line x1="0" y1="50%" x2="100%" y2={e > fatFloors[0] ? "20%" : "80%"} stroke={isHovered ? AT_ORANGE : GRAY_300} strokeWidth="1.5" strokeDasharray="3 3" markerEnd={`url(#arrow-${isHovered ? 'hover' : 'normal'})`} />
+                              </svg>
+                            )}
+
                             {isFatBetween && logicalFatId !== null && (
-                              <FATNode 
-                                id={logicalFatId} 
+                              <FATNode
+                                id={logicalFatId}
                                 connected={Math.min(limitPerFat, totalAbonnes - logicalFatId * limitPerFat)}
                                 totalPorts={limitPerFat}
                                 onHover={() => setHoveredFatId(logicalFatId)}
                                 onLeave={() => setHoveredFatId(null)}
                               />
                             )}
-                            {!isFatBetween && <div style={{ width: 1, height: "100%", background: GRAY_300, opacity: 0.5 }} />}
+                            {!isFatBetween && <div style={{ width: 1, height: "100%", background: GRAY_300, opacity: 0.3 }} />}
                           </div>
                         )}
                       </div>
                     );
                   })}
                   {e > 0 && (
-                    <div style={{
-                      position: "absolute", left: "50%", top: -12,
-                      transform: "translateX(-50%)",
-                      width: 0, height: 12,
-                      borderLeft: `2px dashed ${AT_ORANGE}88`,
-                    }} />
+                    <div style={{ position: "absolute", left: "50%", top: -12, transform: "translateX(-50%)", width: 0, height: 12, borderLeft: `2px dashed ${AT_ORANGE}88` }} />
                   )}
                 </div>
                 <div style={{ width: 6, background: AT_BLUE, borderRadius: "0 4px 4px 0", opacity: 0.7 }} />
@@ -249,126 +238,263 @@ const BuildingPlan = ({ etages, logements, residence }) => {
           );
         });
       })()}
-
       <div style={{ display: "flex", alignItems: "center", paddingLeft: 70, marginTop: 4 }}>
         <div style={{ flex: 1, height: 8, background: `linear-gradient(90deg, ${GRAY_400}, ${GRAY_300})`, borderRadius: 4 }} />
       </div>
       <div style={{ textAlign: "center", fontSize: 10, color: GRAY_400, marginTop: 4 }}>VOIRIE / RUE</div>
-
-      <div style={{ display: "flex", gap: 16, marginTop: 16, flexWrap: "wrap" }}>
-        {[
-          { color: AT_BLUE, label: "Mur porteur" },
-          { color: AT_ORANGE, label: "Point FAT (couloir)" },
-          { color: AT_BLUE, dot: true, label: "Prise fibre logement" },
-          { color: `${AT_ORANGE}88`, dashed: true, label: "Liaison fibre verticale" },
-        ].map((l, i) => (
-          <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 10, color: GRAY_600 }}>
-            {l.dot ? <div style={{ width: 8, height: 8, borderRadius: "50%", background: l.color }} /> :
-             l.dashed ? <div style={{ width: 16, height: 0, borderTop: `2px dashed ${l.color}` }} /> :
-             <div style={{ width: 12, height: 8, background: l.color, borderRadius: 2 }} />}
-            {l.label}
-          </div>
-        ))}
-      </div>
     </div>
   );
 };
 
-// ── Leaflet Map component ────────────────────────────────────
-const LeafletMap = ({ buildingsGeoJson, fatResults }) => {
-  const mapRef = useRef(null);
-  const mapInstanceRef = useRef(null);
+// ── Leaflet loader ────────────────────────────────────────────────────────────
+const LEAFLET_CSS = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+const LEAFLET_JS  = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
 
-  // Initialize map once
-  useEffect(() => {
-    if (!mapRef.current) return;
-
-    const initMap = () => {
-      // Destroy any existing instance to avoid "already initialized" error
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        mapInstanceRef.current = null;
-      }
-      const L = window.L;
-      if (!L || !mapRef.current) return;
-
-      const map = L.map(mapRef.current, { zoomControl: true, scrollWheelZoom: true });
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: '© OpenStreetMap',
-        maxZoom: 19,
-      }).addTo(map);
-      map.setView([36.7, 3.05], 12);
-      mapInstanceRef.current = map;
-    };
-
-    if (window.L) {
-      initMap();
-    } else {
+function loadLeaflet() {
+  return new Promise((resolve, reject) => {
+    if (window.L) { resolve(window.L); return; }
+    if (!document.querySelector(`link[href="${LEAFLET_CSS}"]`)) {
       const link = document.createElement("link");
-      link.rel = "stylesheet";
-      link.href = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css";
-      if (!document.querySelector('link[href*="leaflet"]')) document.head.appendChild(link);
-
-      const script = document.createElement("script");
-      script.src = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";
-      script.onload = initMap;
-      if (!document.querySelector('script[src*="leaflet"]')) document.head.appendChild(script);
-      else script.onload();
+      link.rel = "stylesheet"; link.href = LEAFLET_CSS;
+      document.head.appendChild(link);
     }
+    if (!document.querySelector(`script[src="${LEAFLET_JS}"]`)) {
+      const script = document.createElement("script");
+      script.src = LEAFLET_JS;
+      script.onload = () => resolve(window.L);
+      script.onerror = () => reject(new Error("Impossible de charger Leaflet"));
+      document.head.appendChild(script);
+    } else {
+      const wait = setInterval(() => {
+        if (window.L) { clearInterval(wait); resolve(window.L); }
+      }, 50);
+    }
+  });
+}
 
-    return () => {
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        mapInstanceRef.current = null;
-      }
-    };
+// ── LeafletMap ────────────────────────────────────────────────────────────────
+const LeafletMap = ({ buildingsGeoJson, fatResults }) => {
+  const mapRef            = useRef(null);
+  const mapInstanceRef    = useRef(null);
+  const buildingsLayerRef = useRef(null);
+  const fatsLayerRef      = useRef(null);
+  const [leafletReady, setLeafletReady] = useState(false);
+
+  useEffect(() => {
+    loadLeaflet()
+      .then(() => setLeafletReady(true))
+      .catch(err => console.error("Leaflet load error:", err));
   }, []);
 
-  // Update buildings layer when GeoJSON changes
   useEffect(() => {
-    const L = window.L;
-    const map = mapInstanceRef.current;
-    if (!L || !map || !buildingsGeoJson) return;
+    if (!leafletReady || !mapRef.current) return;
+    if (mapInstanceRef.current) return;
 
-    try {
-      const geoData = typeof buildingsGeoJson === "string" ? JSON.parse(buildingsGeoJson) : buildingsGeoJson;
-      const layer = L.geoJSON(geoData, {
-        style: { color: AT_BLUE, weight: 2, fillColor: AT_BLUE_LIGHT, fillOpacity: 0.45 },
-        onEachFeature: (feature, lyr) => {
-          const name = feature.properties?.id_batiment || "Bâtiment";
-          lyr.bindPopup(`<b> ${name}</b>`);
+    const L   = window.L;
+    const map = L.map(mapRef.current, { zoomControl: true });
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap", maxZoom: 19,
+    }).addTo(map);
+    map.setView([35.7, -0.65], 13);
+    mapInstanceRef.current = map;
+  }, [leafletReady]);
+
+  useEffect(() => {
+    if (!leafletReady || !mapInstanceRef.current) return;
+
+    const L   = window.L;
+    const map = mapInstanceRef.current;
+
+    if (buildingsLayerRef.current) { map.removeLayer(buildingsLayerRef.current); buildingsLayerRef.current = null; }
+    if (fatsLayerRef.current)      { map.removeLayer(fatsLayerRef.current);      fatsLayerRef.current      = null; }
+
+    if (buildingsGeoJson) {
+      try {
+        const geoJsonData = typeof buildingsGeoJson === "string" ? JSON.parse(buildingsGeoJson) : buildingsGeoJson;
+        buildingsLayerRef.current = L.geoJSON(geoJsonData, {
+          style: (feature) => {
+            const isTarget = feature.properties?.is_target;
+            return {
+              color: isTarget ? "#F7941D" : "#9CA3AF",
+              weight: isTarget ? 3 : 1.5,
+              opacity: 0.9,
+              fillColor: isTarget ? "#FEF3E6" : "#F3F4F6",
+              fillOpacity: isTarget ? 0.8 : 0.4,
+            };
+          },
+          onEachFeature: (feature, layer) => {
+            const isTarget = feature.properties?.is_target;
+            const nom = feature.properties?.id_batiment || "Bâtiment";
+            layer.bindPopup(`<b>${nom}</b><br>${isTarget ? "Résidence sélectionnée" : "Bâtiment voisin"}`);
+          },
+        }).addTo(map);
+
+        const bounds = buildingsLayerRef.current.getBounds();
+        if (bounds.isValid()) map.fitBounds(bounds, { padding: [40, 40] });
+      } catch (e) { console.error("Erreur parsing GeoJSON:", e); }
+    }
+
+    if (fatResults && fatResults.length > 0) {
+      fatsLayerRef.current = L.layerGroup().addTo(map);
+      fatResults.forEach((fat, index) => {
+        if (fat.centroid_lat && fat.centroid_lon) {
+          L.circleMarker([fat.centroid_lat, fat.centroid_lon], {
+            radius: 8, fillColor: "#10B981", color: "#fff", weight: 2, opacity: 1, fillOpacity: 0.9,
+          })
+            .bindPopup(`<b>FAT #${index + 1}</b><br>${fat.n_subscribers || 0} abonnés`)
+            .addTo(fatsLayerRef.current);
         }
-      }).addTo(map);
-      if (layer.getBounds().isValid()) map.fitBounds(layer.getBounds(), { padding: [20, 20] });
-    } catch(e) { console.error("GeoJSON parse error", e); }
-  }, [buildingsGeoJson]);
-
-  // Overlay FAT markers
-  useEffect(() => {
-    const L = window.L;
-    const map = mapInstanceRef.current;
-    if (!L || !map) return;
-    fatResults.forEach(fat => {
-      if (!fat.centroid_lat || !fat.centroid_lon) return;
-      const icon = L.divIcon({
-        html: `<div style="background:${AT_ORANGE};color:white;border:2px solid white;border-radius:6px;padding:3px 7px;font-size:9px;font-weight:800;white-space:nowrap;box-shadow:0 2px 8px rgba(247,148,29,0.5);font-family:monospace;">📡 ${fat.fat_id || "FAT"}</div>`,
-        className: "", iconAnchor: [0, 0],
       });
-      L.marker([fat.centroid_lat, fat.centroid_lon], { icon })
-        .addTo(map)
-        .bindPopup(`<b>${fat.fat_id_AT || fat.fat_id}</b><br>${fat.n_subscribers} abonnés<br>${fat.capacity_ok ? "✓ Conforme" : "✗ Dépassement"}`);
-    });
-  }, [fatResults]);
+    }
+  }, [leafletReady, buildingsGeoJson, fatResults]);
 
   return (
-    <div style={{ height: "100%", minHeight: 280, borderRadius: 10, overflow: "hidden" }}>
-      <div ref={mapRef} style={{ width: "100%", height: "100%", minHeight: 280 }} />
+    <div style={{ height: "100%", minHeight: 400, borderRadius: 10, overflow: "hidden", position: "relative" }}>
+      {!leafletReady && (
+        <div style={{
+          position: "absolute", inset: 0, display: "flex",
+          alignItems: "center", justifyContent: "center",
+          background: "#F3F4F6", zIndex: 10, fontSize: 13, color: "#9CA3AF",
+        }}> Chargement de la carte… </div>
+      )}
+      <div ref={mapRef} style={{ width: "100%", height: "100%", minHeight: 400 }} />
+    </div>
+  );
+};
+
+// ── ResidenceSearchSelect ──────────────────────────────────
+const ResidenceSearchSelect = ({ commune, ville, onSelect, selectedObj, disabled }) => {
+  const [query, setQuery] = useState("");
+  const [options, setOptions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    if (!commune) { setOptions([]); setQuery(""); return; }
+    setLoading(true); setOptions([]); setQuery("");
+    const url = `${API}/api/residence?ville=${encodeURIComponent(ville)}&commune=${encodeURIComponent(commune)}`;
+    console.log(`[Fetch] Résidences: ${url}`);
+    fetch(url)
+      .then(r => r.json())
+      .then(d => {
+        console.log("[Response] Résidences:", d);
+        setOptions(d.residences || []);
+        setTotalCount(d.count || 0);
+      })
+      .catch((err) => {
+        console.error("[Error] Résidences:", err);
+        setOptions([]);
+      })
+      .finally(() => setLoading(false));
+  }, [commune, ville]);
+
+  const filtered = query.trim() ? options.filter(r => r.name.toLowerCase().includes(query.toLowerCase())) : options;
+  const displayed = filtered.slice(0, 80);
+
+  useEffect(() => {
+    const handler = (e) => { if (containerRef.current && !containerRef.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const selectedLabel = selectedObj?.name || null;
+
+  return (
+    <div ref={containerRef} style={{ position: "relative" }}>
+      <div
+        style={{
+          display: "flex", alignItems: "center",
+          border: `1.5px solid ${open ? AT_BLUE : GRAY_200}`,
+          borderRadius: 8, background: disabled ? GRAY_100 : "white",
+          padding: "0 12px", gap: 8, opacity: disabled ? 0.5 : 1,
+          cursor: disabled ? "not-allowed" : "text", transition: "border-color 0.2s",
+        }}
+        onClick={() => !disabled && setOpen(true)}
+      >
+        <span style={{ fontSize: 14, color: GRAY_400 }}>🔍</span>
+        <input
+          type="text"
+          value={open ? query : (selectedLabel || "")}
+          placeholder={
+            loading ? "Chargement des bâtiments..." :
+            !commune ? "Sélectionnez une commune d'abord" :
+            `Rechercher parmi ${totalCount} bâtiment${totalCount > 1 ? "s" : ""}...`
+          }
+          disabled={disabled || !commune}
+          readOnly={!open}
+          onChange={e => setQuery(e.target.value)}
+          onFocus={() => !disabled && setOpen(true)}
+          style={{
+            flex: 1, border: "none", outline: "none", fontSize: 13, color: GRAY_800,
+            background: "transparent", padding: "10px 0", cursor: disabled ? "not-allowed" : "text",
+          }}
+        />
+        {loading && (
+          <div style={{ width: 16, height: 16, border: `2px solid ${AT_BLUE}`, borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite", flexShrink: 0 }} />
+        )}
+        {!loading && selectedObj && !open && (
+          <button onClick={e => { e.stopPropagation(); onSelect(null); setQuery(""); }} style={{ background: "none", border: "none", color: GRAY_400, cursor: "pointer", fontSize: 14, padding: 0 }}>✕</button>
+        )}
+      </div>
+
+      {open && !disabled && (
+        <div style={{
+          position: "absolute", top: "100%", left: 0, right: 0, zIndex: 1000,
+          background: "white", border: `1.5px solid ${AT_BLUE}`, borderTop: "none",
+          borderRadius: "0 0 8px 8px", maxHeight: 260, overflowY: "auto",
+          boxShadow: "0 8px 24px rgba(0,91,170,0.12)",
+        }}>
+          <div style={{ padding: "8px 12px", fontSize: 11, color: GRAY_400, borderBottom: `1px solid ${GRAY_100}`, background: GRAY_50, fontWeight: 600 }}>
+            {query ? `${filtered.length} résultat${filtered.length > 1 ? "s" : ""} pour "${query}"` : `${totalCount} bâtiment résidentiel${totalCount > 1 ? "s" : ""} disponible${totalCount > 1 ? "s" : ""}`}
+            {displayed.length < filtered.length && ` · affiché ${displayed.length}`}
+          </div>
+
+          {displayed.length === 0 && !loading && (
+            <div style={{ padding: "20px 12px", textAlign: "center", color: GRAY_400, fontSize: 12 }}>Aucun résultat</div>
+          )}
+
+          {displayed.map((res, i) => {
+            const isSelected = res.osm_id === selectedObj?.osm_id;
+            const icon =
+              res.building_type === "apartments" ? "🏢" :
+              res.building_type === "house" ? "🏠" : "🏡";
+
+            const subParts = [];
+            if (res.levels) subParts.push(`${res.levels} étage${res.levels > 1 ? "s" : ""}`);
+            if (res.units) subParts.push(`${res.units} logement${res.units > 1 ? "s" : ""}`);
+            const subLabel = subParts.join(" · ");
+
+            return (
+              <div
+                key={res.osm_id || i}
+                onClick={() => { onSelect(res); setOpen(false); setQuery(""); }}
+                style={{
+                  padding: "8px 12px", cursor: "pointer", fontSize: 12, borderBottom: `1px solid ${GRAY_100}`,
+                  background: isSelected ? AT_BLUE_LIGHT : "white", color: isSelected ? AT_BLUE : GRAY_800,
+                  fontWeight: isSelected ? 700 : 400, display: "flex", alignItems: "center", gap: 8,
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = isSelected ? AT_BLUE_LIGHT : GRAY_50}
+                onMouseLeave={e => e.currentTarget.style.background = isSelected ? AT_BLUE_LIGHT : "white"}
+              >
+                <span style={{ fontSize: 14, flexShrink: 0 }}>{icon}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{res.name}</div>
+                  {subLabel && <div style={{ fontSize: 10, color: isSelected ? AT_BLUE : GRAY_400, marginTop: 1 }}>{subLabel}</div>}
+                </div>
+                {isSelected && <span style={{ color: AT_BLUE, fontSize: 14, flexShrink: 0 }}>✓</span>}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
 
 // ══════════════════════════════════════════════════════════════
-//  MAIN APP — FULL SCREEN VERSION
+//  MAIN APP
 // ══════════════════════════════════════════════════════════════
 export default function FTTHSmartPlanner() {
   const [screen, setScreen] = useState("login");
@@ -378,75 +504,104 @@ export default function FTTHSmartPlanner() {
   const [loginData, setLoginData] = useState({ id: "k.benali@at.dz", password: "atdz2026" });
   const [loginLoading, setLoginLoading] = useState(false);
 
-  const [ville, setVille] = useState("");
-  const [quartier, setQuartier] = useState("");
-  const [residence, setResidence] = useState("");
-  
-  const [villesOpts, setVillesOpts] = useState([]);
-  const [quartiersOpts, setQuartiersOpts] = useState([]);
-  const [residencesOpts, setResidencesOpts] = useState([]);
+  const [ville, setVille]         = useState("");
+  const [commune, setCommune]     = useState("");
+  const [residenceObj, setResidenceObj] = useState(null);
 
-  const [etages, setEtages] = useState(5);
+  const [villesOpts, setVillesOpts]     = useState([]);
+  const [communesOpts, setCommunesOpts] = useState([]);
+
+  // Structure bâtie (mise à jour via OSM ou manuel)
+  const [etages, setEtages]       = useState(5);
   const [logements, setLogements] = useState(4);
-  const [fatCap, setFatCap] = useState(8);
-  const [osmLoaded, setOsmLoaded] = useState(false);
-  const [osmLoading, setOsmLoading] = useState(false);
+  const [fatCap, setFatCap]       = useState(8);
+
+  const [osmLoaded, setOsmLoaded]     = useState(false);
+  const [osmLoading, setOsmLoading]   = useState(false);
   const [planGenerated, setPlanGenerated] = useState(false);
-  
-  const [kpis, setKpis] = useState(null);
-  const [archiveSearch, setArchiveSearch] = useState("");
-  
+  const [kpis, setKpis]               = useState(null);
   const [rawBuildings, setRawBuildings] = useState(null);
   const [subscribersData, setSubscribersData] = useState([]);
-  const [fatResults, setFatResults] = useState([]);
-
-  // API Calls pour OSM
-  useEffect(() => {
-    fetch("http://localhost:8000/api/ville").then(r => r.json())
-      .then(d => setVillesOpts((d.villes || []).map(v => [v, v])))
-      .catch(e => console.error(e));
-  }, []);
-
-  useEffect(() => {
-    if (!ville) { setQuartiersOpts([]); return; }
-    fetch(`http://localhost:8000/api/quartier?ville=${ville}`).then(r => r.json())
-      .then(d => setQuartiersOpts((d.quartiers || []).map(q => [q, q])))
-      .catch(e => console.error(e));
-  }, [ville]);
-
-  useEffect(() => {
-    if (!ville || !quartier) { setResidencesOpts([]); return; }
-    fetch(`http://localhost:8000/api/residence?ville=${ville}&quartier=${quartier}`).then(r => r.json())
-      .then(d => setResidencesOpts((d.residences || []).map(r => [r, r])))
-      .catch(e => console.error(e));
-  }, [ville, quartier]);
+  const [fatResults, setFatResults]   = useState([]);
 
   const notify = useCallback((type, title, sub) => setNotif({ type, title, sub }), []);
+
+  useEffect(() => {
+    console.log(`[Fetch] Villes: ${API}/api/ville`);
+    fetch(`${API}/api/ville`)
+      .then(r => r.json())
+      .then(d => {
+        console.log("[Response] Villes:", d);
+        setVillesOpts(d.villes || []);
+      })
+      .catch((err) => {
+        console.error("[Error] Villes:", err);
+        notify("error", "Connexion API", "Impossible de contacter le backend");
+      });
+  }, [notify]);
+
+  useEffect(() => {
+    setCommune(""); setResidenceObj(null); setCommunesOpts([]);
+    if (!ville) return;
+    const url = `${API}/api/commune?ville=${encodeURIComponent(ville)}`;
+    console.log(`[Fetch] Communes: ${url}`);
+    fetch(url)
+      .then(r => r.json())
+      .then(d => {
+        console.log("[Response] Communes:", d);
+        setCommunesOpts(d.communes || []);
+      })
+      .catch((err) => {
+        console.error("[Error] Communes:", err);
+        notify("error", "Erreur", "Impossible de charger les communes");
+      });
+  }, [ville, notify]);
+
+  useEffect(() => { setResidenceObj(null); }, [commune]);
 
   const login = () => {
     setLoginLoading(true);
     setTimeout(() => {
       setLoginLoading(false);
       setScreen("dashboard");
-      notify("success", "Connexion réussie", "Bienvenue, Khaled B. — Ingénieur Réseau");
+      notify("success", "Connexion réussie", "Bienvenue sur l'espace d'ingénierie");
     }, 1200);
   };
 
   const importOSM = async () => {
-    if (!ville || !quartier || !residence) { notify("error", "Données manquantes", "Sélectionnez ville, quartier et résidence"); return; }
+    if (!ville || !commune || !residenceObj) {
+      notify("error", "Données manquantes", "Veuillez sélectionner votre cible");
+      return;
+    }
     setOsmLoading(true);
+    const payload = {
+      ville, commune,
+      residence: residenceObj.name,
+      lat: residenceObj.lat,
+      lon: residenceObj.lon,
+      nombre_etages: etages,
+      logements_par_etage: logements
+    };
+    console.log("[Action] Import OSM - Payload:", payload);
     try {
-      const resp = await fetch("http://localhost:8000/api/importOSM", {
-        method: "POST", headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ ville, quartier, residence, nombre_etages: etages, logements_par_etage: logements, commerce: false })
+      const resp = await fetch(`${API}/api/importOSM`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
       });
       const data = await resp.json();
+      console.log("[Response] Import OSM:", data);
       if (!resp.ok) throw new Error(data.detail || "Erreur Import");
+
       setRawBuildings(data.buildings_geojson);
       setSubscribersData(data.subscribers);
+
+      if (data.etages_detectes) setEtages(data.etages_detectes);
+      if (data.logements_detectes) setLogements(data.logements_detectes);
+
       setOsmLoaded(true);
-      notify("success", "OSM Synchronisé", `${data.count} polygones importés avec succès`);
+      notify("success", "Carte & Données synchronisées", `Bâtiment ciblé et voisinage importés`);
     } catch (err) {
+      console.error("[Error] Import OSM:", err);
       notify("error", "Erreur réseau", err.message);
     } finally {
       setOsmLoading(false);
@@ -454,597 +609,217 @@ export default function FTTHSmartPlanner() {
   };
 
   const lancerSectorisation = async () => {
-    if (!osmLoaded) { notify("info", "Import requis", "Importez d'abord les données OSM"); return; }
-    notify("info", "IA K-Means", "Positionnement en cours, veuillez patienter...");
-    
+    if (!osmLoaded) { notify("info", "Import requis", "Importez d'abord les données de la résidence"); return; }
+    if (!subscribersData || subscribersData.length === 0) {
+      notify("error", "Données manquantes", "Aucun abonné détecté pour la sectorisation.");
+      return;
+    }
+    notify("info", "Traitement Algorithmique", "Positionnement dynamique...");
     try {
-      // 1. Modèle IA
-      const req1 = await fetch("http://localhost:8000/api/emplacementFATs", {
-        method: "POST", headers: {"Content-Type": "application/json"},
+      console.log("[Action] Sectorisation - Emplacement FATs");
+      const req1 = await fetch(`${API}/api/emplacementFATs`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ subscribers: subscribersData })
       });
       const data1 = await req1.json();
-      if (!req1.ok) throw new Error(data1.detail || "Erreur clustering");
+      console.log("[Response] Emplacement FATs:", data1);
+      if (!req1.ok) throw new Error(data1.detail || `Erreur FAT (${req1.status})`);
 
-      // 2. Noms AT
-      const req2 = await fetch("http://localhost:8000/api/nomFAT", {
-        method: "POST", headers: {"Content-Type": "application/json"},
+      console.log("[Action] Sectorisation - Nommage FATs");
+      const req2 = await fetch(`${API}/api/nomFAT`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fat_candidates: data1.fat_candidates, subscribers: subscribersData })
       });
       const data2 = await req2.json();
-      if (!req2.ok) throw new Error(data2.detail || "Erreur Nommage");
-      
-      const finalFats = data2.fat_candidates_with_ids || [];
+      console.log("[Response] Nommage FATs:", data2);
+      if (!req2.ok) throw new Error(data2.detail || `Erreur nommage FAT (${req2.status})`);
+
+      const finalFats = data2.fat_candidates_with_ids || data1.fat_candidates;
       setFatResults(finalFats);
-      
+
       const totalAbonnes = subscribersData.length;
       const fatsNeeded = finalFats.length;
-      const fatsPortsUsed = Math.round((totalAbonnes / (fatsNeeded * fatCap || 1)) * 100);
-      const lineaire = Math.round(finalFats.reduce((acc, f) => acc + (f.cable_m_to_fdt_real || 0), 0));
-      
-      setKpis({ totalAbonnes, fatsNeeded, fatsPortsUsed, lineaire });
+      const kpisResult = {
+        totalAbonnes, fatsNeeded,
+        fatsPortsUsed: Math.round((totalAbonnes / (fatsNeeded * fatCap || 1)) * 100),
+        lineaire: Math.round(finalFats.reduce((acc, f) => acc + (f.cable_m_to_fdt_real || 0), 0))
+      };
+
+      setKpis(kpisResult);
       setPlanGenerated(true);
-      notify("success", "Sectorisation terminée !", `${fatsNeeded} FAT(s) générées`);
-      setActiveTab("results");
+      notify("success", "Sectorisation terminée", `Topologie générée pour ${fatsNeeded} boîtiers`);
     } catch (err) {
-      notify("error", "Erreur secteur", err.message);
+      console.error("[Error] Sectorisation:", err);
+      notify("error", "Échec process", err.message);
     }
   };
 
-  const residenceLabel = residence || "Résidence non sélectionnée";
-
-  const filteredProjects = PROJECTS_ARCHIVE.filter(p =>
-    p.name.toLowerCase().includes(archiveSearch.toLowerCase()) ||
-    p.ville.toLowerCase().includes(archiveSearch.toLowerCase())
-  );
-
-  const inputStyle = {
-    width: "100%", padding: "10px 14px",
-    background: "white", border: `1.5px solid ${GRAY_200}`,
-    borderRadius: 8, color: GRAY_800,
-    fontSize: 13, fontFamily: "inherit", outline: "none",
-    transition: "border-color 0.2s, box-shadow 0.2s",
-  };
+  const inputStyle = { width: "100%", padding: "10px 14px", background: "white", border: `1.5px solid ${GRAY_200}`, borderRadius: 8, color: GRAY_800, fontSize: 13, boxSizing: "border-box" };
   const labelStyle = { fontSize: 11, fontWeight: 700, color: GRAY_600, marginBottom: 5, display: "block", letterSpacing: "0.5px", textTransform: "uppercase" };
-  const cardStyle = {
-    background: "white", borderRadius: 12,
-    border: `1px solid ${GRAY_200}`, padding: 20,
-    boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
-  };
-  const btnPrimary = {
-    background: `linear-gradient(135deg, ${AT_BLUE}, ${AT_BLUE_DARK})`,
-    color: "white", border: "none", borderRadius: 8,
-    padding: "11px 20px", fontSize: 13, fontWeight: 700,
-    cursor: "pointer", display: "flex", alignItems: "center",
-    justifyContent: "center", gap: 8, width: "100%",
-    boxShadow: `0 4px 12px ${AT_BLUE}44`,
-    transition: "all 0.2s",
-  };
-
-  // Global full-screen reset
+  const btnPrimary = { background: `linear-gradient(135deg, ${AT_BLUE}, ${AT_BLUE_DARK})`, color: "white", border: "none", borderRadius: 8, padding: "11px 20px", fontSize: 13, fontWeight: 700, cursor: "pointer", width: "100%" };
+  const cardStyle = { background: "white", borderRadius: 12, border: `1px solid ${GRAY_200}`, padding: 20, boxShadow: "0 1px 4px rgba(0,0,0,0.05)", marginBottom: 14 };
   const globalStyle = `
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
-    @keyframes slideUp { from { opacity:0;transform:translateY(20px) } to { opacity:1;transform:translateY(0) } }
-    @keyframes shimmer { 0%,100%{opacity:0.6} 50%{opacity:1} }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    html, body, #root {
-      margin: 0 !important;
-      padding: 0 !important;
-      width: 100vw !important;
-      height: 100vh !important;
-      overflow: hidden !important;
-    }
-    * { box-sizing: border-box; }
+    @keyframes spin { to { transform: rotate(360deg) } }
+    html, body, #root { margin:0 !important; padding:0 !important; width:100vw !important; height:100vh !important; overflow:hidden !important; }
+    select:focus, input:focus { outline: none; border-color: ${AT_BLUE} !important; }
   `;
 
-  // ─────────────────────────────────────────────────────────────
-  // LOGIN SCREEN — FULL SCREEN
-  // ─────────────────────────────────────────────────────────────
-  if (screen === "login") return (
-    <div style={{
-      width: "100vw",
-      height: "100vh",
-      background: `linear-gradient(135deg, ${AT_BLUE_LIGHT} 0%, white 50%, ${AT_ORANGE_LIGHT} 100%)`,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      fontFamily: "'Outfit', 'Segoe UI', sans-serif",
-      position: "fixed",
-      top: 0,
-      left: 0,
-      overflow: "hidden",
-    }}>
-      <style>{globalStyle}</style>
+  const steps = [
+    { label: "Wilaya",    done: !!ville,    active: !ville },
+    { label: "Commune",   done: !!commune,  active: !!ville && !commune },
+    { label: "Résidence", done: !!residenceObj, active: !!commune && !residenceObj },
+  ];
 
-      <div style={{ position: "fixed", top: -120, left: -120, width: 400, height: 400, borderRadius: "50%", background: `${AT_BLUE}08` }} />
-      <div style={{ position: "fixed", bottom: -80, right: -80, width: 320, height: 320, borderRadius: "50%", background: `${AT_ORANGE}08` }} />
-
-      <div style={{
-        background: "white", borderRadius: 20, padding: 48, width: 440,
-        boxShadow: "0 24px 80px rgba(0,91,170,0.15)",
-        border: `1px solid ${GRAY_100}`,
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 36 }}>
-          <ATLogo size={52} />
-          <div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: GRAY_800, letterSpacing: "-0.3px" }}>
-              FTTH <span style={{ color: AT_BLUE }}>SMART</span> PLANNER
-            </div>
-            <div style={{ fontSize: 10, color: GRAY_400, letterSpacing: "1px", textTransform: "uppercase", marginTop: 2 }}>
-              Algérie Télécom · v3.2
+  if (screen === "login") {
+    return (
+      <div style={{ width: "100vw", height: "100vh", background: `linear-gradient(135deg, ${AT_BLUE_LIGHT} 0%, white 50%, ${AT_ORANGE_LIGHT} 100%)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <style>{globalStyle}</style>
+        <div style={{ background: "white", borderRadius: 20, padding: 48, width: 440, boxShadow: "0 24px 80px rgba(0,91,170,0.15)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 36 }}>
+            <ATLogo size={52} />
+            <div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: GRAY_800 }}>FTTH <span style={{ color: AT_BLUE }}>SMART</span> PLANNER</div>
+              <div style={{ fontSize: 10, color: GRAY_400 }}>Algérie Télécom · Interface Pro</div>
             </div>
           </div>
-        </div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: GRAY_800, marginBottom: 6 }}>Connexion Sécurisée</div>
+          <div style={{ fontSize: 13, color: GRAY_400, marginBottom: 32 }}>Accès SaaS ingénierie réseau</div>
 
-        <div style={{ fontSize: 24, fontWeight: 800, color: GRAY_800, marginBottom: 6, letterSpacing: "-0.5px" }}>Connexion Sécurisée</div>
-        <div style={{ fontSize: 13, color: GRAY_400, marginBottom: 32 }}>Accès réservé aux ingénieurs réseau autorisés</div>
-
-        <div style={{ marginBottom: 18 }}>
-          <label style={labelStyle}>Identifiant Agent</label>
-          <input style={inputStyle} type="text" value={loginData.id}
-            onChange={e => setLoginData(p => ({ ...p, id: e.target.value }))}
-            placeholder="ex: k.benali@at.dz" />
-        </div>
-
-        <div style={{ marginBottom: 24 }}>
-          <label style={labelStyle}>Mot de passe</label>
-          <div style={{ position: "relative" }}>
-            <input style={{ ...inputStyle, paddingRight: 44 }}
-              type={showPassword ? "text" : "password"}
-              value={loginData.password}
-              onChange={e => setLoginData(p => ({ ...p, password: e.target.value }))}
-              placeholder="••••••••••" />
-            <button onClick={() => setShowPassword(p => !p)} style={{
-              position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
-              background: "none", border: "none", cursor: "pointer", color: GRAY_400,
-              fontSize: 16, padding: 4,
-            }}>
-              {showPassword ? "🙈" : "👁"}
-            </button>
+          <div style={{ marginBottom: 18 }}>
+            <label style={labelStyle}>Identifiant Agent</label>
+            <input style={inputStyle} type="text" value={loginData.id} onChange={e => setLoginData(p => ({ ...p, id: e.target.value }))} placeholder="ex: agent@at.dz" />
           </div>
-        </div>
-
-        <button style={btnPrimary} onClick={login} disabled={loginLoading}>
-          {loginLoading ? (
-            <div style={{ width: 18, height: 18, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
-          ) : "Accéder au Planner →"}
-        </button>
-
-        <div style={{ textAlign: "center", marginTop: 20 }}>
-          <span style={{
-            display: "inline-flex", alignItems: "center", gap: 6,
-            background: GREEN_LIGHT, border: `1px solid ${GREEN}44`,
-            borderRadius: 20, padding: "4px 12px",
-            fontSize: 10, fontWeight: 700, color: GREEN,
-          }}>
-            <span style={{ width: 5, height: 5, borderRadius: "50%", background: GREEN }} />
-            SERVEUR EN LIGNE · TLS 1.3
-          </span>
-        </div>
-      </div>
-
-      {notif && <Notification notif={notif} onClose={() => setNotif(null)} />}
-    </div>
-  );
-
-  // ─────────────────────────────────────────────────────────────
-  // ARCHIVE SCREEN — FULL SCREEN
-  // ─────────────────────────────────────────────────────────────
-  if (screen === "archive") return (
-    <div style={{
-      width: "100vw",
-      height: "100vh",
-      background: GRAY_50,
-      fontFamily: "'Outfit','Segoe UI',sans-serif",
-      overflow: "hidden",
-      position: "fixed",
-      top: 0,
-      left: 0,
-    }}>
-      <style>{globalStyle}</style>
-
-      <nav style={{
-        height: 60, background: "white", borderBottom: `1px solid ${GRAY_200}`,
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "0 24px", position: "sticky", top: 0, zIndex: 100,
-        boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-      }}>
-        <button onClick={() => setScreen("dashboard")} style={{
-          display: "flex", alignItems: "center", gap: 10,
-          background: "none", border: "none", cursor: "pointer",
-          fontSize: 14, fontWeight: 600, color: AT_BLUE,
-        }}>
-          <ATLogo size={32} /> ← Retour au Planner
-        </button>
-        <div style={{ fontSize: 16, fontWeight: 700, color: GRAY_800 }}>📁 Archivage des Projets</div>
-        <div style={{ fontSize: 12, color: GRAY_400 }}>Khaled B. — Ingénieur Réseau</div>
-      </nav>
-
-      <div style={{ height: "calc(100vh - 60px)", padding: "32px 24px", overflow: "auto", maxWidth: 900, margin: "0 auto" }}>
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: 26, fontWeight: 800, color: GRAY_800, letterSpacing: "-0.5px" }}>Tous les projets</div>
-          <div style={{ fontSize: 13, color: GRAY_400, marginTop: 4 }}>{PROJECTS_ARCHIVE.length} projets · triés par date décroissante</div>
-        </div>
-
-        <div style={{ position: "relative", marginBottom: 24 }}>
-          <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: GRAY_400, fontSize: 16 }}>🔍</span>
-          <input style={{ ...inputStyle, paddingLeft: 40, borderRadius: 10 }}
-            placeholder="Rechercher un projet, une ville..."
-            value={archiveSearch}
-            onChange={e => setArchiveSearch(e.target.value)} />
-        </div>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {filteredProjects.map((p, i) => (
-            <div key={p.id} style={{
-              ...cardStyle,
-              display: "flex", alignItems: "center", gap: 16,
-              cursor: "pointer", transition: "box-shadow 0.2s, transform 0.15s",
-            }}
-              onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 4px 20px ${AT_BLUE}22`; e.currentTarget.style.transform = "translateY(-1px)"; }}
-              onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 1px 4px rgba(0,0,0,0.05)"; e.currentTarget.style.transform = "none"; }}>
-              <div style={{ width: 48, height: 48, borderRadius: 10, background: AT_BLUE_LIGHT, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>🏢</div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 700, fontSize: 14, color: GRAY_800 }}>{p.name}</div>
-                <div style={{ fontSize: 11, color: GRAY_400, marginTop: 3 }}>{p.ville} · {p.quartier} · {p.etages} étages · {p.logements} log/ét.</div>
-              </div>
-              <div style={{ background: AT_BLUE_LIGHT, color: AT_BLUE, borderRadius: 8, padding: "6px 14px", fontSize: 12, fontWeight: 700, fontFamily: "monospace", flexShrink: 0 }}>📅 {p.date}</div>
-              <button onClick={() => {
-                setResidence("falaises");
-                setOsmLoaded(true);
-                setPlanGenerated(false);
-                setScreen("dashboard");
-                notify("info", "Projet chargé", `${p.name} · ${p.ville}`);
-              }} style={{ background: AT_BLUE, color: "white", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", flexShrink: 0 }}>Ouvrir →</button>
+          <div style={{ marginBottom: 24 }}>
+            <label style={labelStyle}>Mot de passe</label>
+            <div style={{ position: "relative" }}>
+              <input style={{ ...inputStyle, paddingRight: 44 }} type={showPassword ? "text" : "password"} value={loginData.password} onChange={e => setLoginData(p => ({ ...p, password: e.target.value }))} placeholder="••••••••" />
+              <button onClick={() => setShowPassword(p => !p)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: GRAY_400 }}>{showPassword ? "🙈" : "👁"}</button>
             </div>
-          ))}
+          </div>
+          <button style={btnPrimary} onClick={login} disabled={loginLoading}>{loginLoading ? "Authentification..." : "Accéder au Planner →"}</button>
         </div>
+        {notif && <Notification notif={notif} onClose={() => setNotif(null)} />}
       </div>
+    );
+  }
 
-      {notif && <Notification notif={notif} onClose={() => setNotif(null)} />}
-    </div>
-  );
-
-  // ─────────────────────────────────────────────────────────────
-  // DASHBOARD SCREEN — FULL SCREEN (100vw × 100vh)
-  // ─────────────────────────────────────────────────────────────
   return (
-    <div style={{
-      width: "100vw",
-      height: "100vh",
-      background: GRAY_50,
-      fontFamily: "'Outfit','Segoe UI',sans-serif",
-      display: "flex",
-      flexDirection: "column",
-      overflow: "hidden",
-      position: "fixed",
-      top: 0,
-      left: 0,
-    }}>
+    <div style={{ width: "100vw", height: "100vh", background: GRAY_50, fontFamily: "'Outfit','Segoe UI',sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <style>{globalStyle}</style>
 
-      {/* TOP NAV */}
-      <nav style={{
-        height: 60, background: "white", borderBottom: `1px solid ${GRAY_200}`,
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "0 20px", zIndex: 100, boxShadow: "0 1px 6px rgba(0,0,0,0.06)",
-      }}>
+      <nav style={{ height: 60, background: "white", borderBottom: `1px solid ${GRAY_200}`, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", zIndex: 100 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <ATLogo size={34} />
-          <div style={{ fontSize: 14, fontWeight: 800, color: GRAY_800, letterSpacing: "-0.3px" }}>
-            FTTH <span style={{ color: AT_BLUE }}>SMART</span> PLANNER
-          </div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: GRAY_800 }}>FTTH <span style={{ color: AT_BLUE }}>SMART</span> PLANNER</div>
         </div>
-
-        <div style={{ display: "flex", gap: 4, background: GRAY_100, borderRadius: 8, padding: 4 }}>
-          {[["planner", "🗺 Planificateur"], ["settings", "⚙ Capacités"]].map(([id, label]) => (
-            <button key={id} onClick={() => setActiveTab(id)} style={{
-              padding: "6px 16px", borderRadius: 6, border: "none",
-              fontSize: 12, fontWeight: 600, cursor: "pointer",
-              background: activeTab === id ? "white" : "transparent",
-              color: activeTab === id ? AT_BLUE : GRAY_600,
-              boxShadow: activeTab === id ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
-            }}>{label}</button>
-          ))}
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{
-            display: "inline-flex", alignItems: "center", gap: 6,
-            background: PURPLE_LIGHT, border: `1px solid ${PURPLE}44`,
-            borderRadius: 20, padding: "4px 12px",
-            fontSize: 10, fontWeight: 700, color: PURPLE,
-          }}>
-            <span style={{ width: 5, height: 5, borderRadius: "50%", background: PURPLE, animation: "shimmer 1.5s infinite" }} />
-            IA Active · K-Means
-          </div>
-
-          <button onClick={() => setScreen("archive")} style={{
-            display: "flex", alignItems: "center", gap: 8,
-            background: "none", border: `1.5px solid ${GRAY_200}`,
-            borderRadius: 8, padding: "6px 12px", cursor: "pointer",
-          }}
-            onMouseEnter={e => { e.currentTarget.style.background = AT_BLUE_LIGHT; e.currentTarget.style.borderColor = AT_BLUE; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.borderColor = GRAY_200; }}>
-            <div style={{
-              width: 28, height: 28, borderRadius: "50%",
-              background: `linear-gradient(135deg, ${AT_BLUE}, ${AT_ORANGE})`,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 11, fontWeight: 800, color: "white",
-            }}>KB</div>
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: GRAY_800 }}>Khaled B.</div>
-              <div style={{ fontSize: 10, color: GRAY_400 }}>Mes Projets</div>
-            </div>
-          </button>
-        </div>
+        <div style={{ fontSize: 11, color: GRAY_400 }}>Planification Architecturale v5.0</div>
       </nav>
 
-      {/* STATUS BAR */}
-      <div style={{
-        background: "white", borderBottom: `1px solid ${GRAY_100}`,
-        display: "flex", alignItems: "center", gap: 16,
-        padding: "5px 20px", fontSize: 11, color: GRAY_400,
-      }}>
-        <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
-          <span style={{ width: 6, height: 6, borderRadius: "50%", background: GREEN, boxShadow: `0 0 5px ${GREEN}` }} />
-          API OSM connectée
-        </span>
-        <span>·</span>
-        <span>Wilayas chargées : 48</span>
-        <span>·</span>
-        <span style={{ fontFamily: "monospace" }}>Sync: 27/03/2026 · 11:42</span>
-        <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6, color: PURPLE, fontWeight: 700 }}>
-          <span style={{ width: 5, height: 5, borderRadius: "50%", background: PURPLE, animation: "shimmer 1.5s infinite" }} />
-          Algorithme: K-Means clustering
-        </span>
-      </div>
-
-      {/* KPI ROW */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, padding: "16px 20px", background: GRAY_50, borderBottom: `1px solid ${GRAY_200}` }}>
-        <KPICard label="Abonnés Estimés" value={kpis?.totalAbonnes ?? null} sub={kpis ? `${etages} étages × ${logements} log/ét.` : "—"} color="blue" icon="👥" />
-        <KPICard label="FATs Proposées" value={kpis?.fatsNeeded ?? null} sub={kpis ? "16 ports/FAT · AT standard" : "—"} color="orange" icon="📡" />
+        <KPICard label="Abonnés Estimés" value={kpis?.totalAbonnes ?? null} sub={`${etages} étages × ${logements} log/ét.`} color="blue" icon="👥" />
+        <KPICard label="FATs Proposées" value={kpis?.fatsNeeded ?? null} sub="16 ports/FAT" color="orange" icon="📡" />
         <KPICard label="Linéaire Fibre" value={kpis?.lineaire ?? null} suffix="m" sub="Câble fibre estimé" color="purple" icon="🔌" />
-        <KPICard label="Ports Utilisés" value={kpis?.fatsPortsUsed ?? null} suffix="%" sub="Taux d'utilisation FAT" color="green" icon="📶" />
+        <KPICard label="Ports Utilisés" value={kpis?.fatsPortsUsed ?? null} suffix="%" sub="Taux d'utilisation" color="green" icon="📶" />
       </div>
 
-      {/* MAIN FLEX LAYOUT — FULL REMAINING HEIGHT */}
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-
-        {/* SIDEBAR */}
-        <aside style={{
-          width: 300,
-          background: "white",
-          borderRight: `1px solid ${GRAY_200}`,
-          padding: 20,
-          display: "flex",
-          flexDirection: "column",
-          gap: 16,
-          overflowY: "auto",
-        }}>
-
-          {/* Localisation */}
+        <aside style={{ width: 310, background: "white", borderRight: `1px solid ${GRAY_200}`, padding: 20, overflowY: "auto" }}>
           <div style={cardStyle}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
               <span style={{ width: 28, height: 28, background: AT_BLUE_LIGHT, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>📍</span>
-              <span style={{ fontWeight: 700, fontSize: 13, color: GRAY_800 }}>Localisation</span>
+              <span style={{ fontWeight: 700, fontSize: 13, color: GRAY_800 }}>Ciblage Réseau</span>
             </div>
-            {[
-              { label: "Ville / Wilaya", val: ville, set: setVille, opts: villesOpts },
-              { label: "Quartier", val: quartier, set: setQuartier, opts: quartiersOpts },
-              { label: "Résidence", val: residence, set: setResidence, opts: residencesOpts },
-            ].map(f => (
-              <div key={f.label} style={{ marginBottom: 10 }}>
-                <label style={labelStyle}>{f.label}</label>
-                <select style={{ ...inputStyle, appearance: "none", cursor: "pointer" }} value={f.val} onChange={e => f.set(e.target.value)}>
-                  <option value="">Sélectionner...</option>
-                  {f.opts.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                </select>
-              </div>
-            ))}
-            <button style={{ ...btnPrimary, background: osmLoaded ? `linear-gradient(135deg,${GREEN},#059669)` : btnPrimary.background }} onClick={importOSM}>
-              {osmLoading ? (
-                <div style={{ width: 16, height: 16, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
-              ) : osmLoaded ? "✓ OSM Synchronisé" : "🔍 Import Data OSM"}
-            </button>
-            {osmLoaded && (
-              <div style={{ marginTop: 10, background: GREEN_LIGHT, border: `1px solid ${GREEN}44`, borderRadius: 7, padding: "8px 12px" }}>
-                <div style={{ fontSize: 9, fontWeight: 700, color: GREEN, letterSpacing: "1px", textTransform: "uppercase" }}>✓ Données OSM chargées</div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: GRAY_800, marginTop: 2 }}>{residenceLabel}</div>
-              </div>
-            )}
-          </div>
 
-          {/* Structure Bâtiment */}
-          <div style={{ ...cardStyle, opacity: osmLoaded ? 1 : 0.4, pointerEvents: osmLoaded ? "auto" : "none", transition: "opacity 0.3s" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-              <span style={{ width: 28, height: 28, background: GREEN_LIGHT, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>🏗</span>
-              <span style={{ fontWeight: 700, fontSize: 13, color: GRAY_800 }}>Structure Bâtiment</span>
-            </div>
-            {[
-              { label: "Nombre d'Étages", val: etages, set: setEtages, min: 1, max: 30 },
-              { label: "Logements / Étage", val: logements, set: setLogements, min: 2, max: 20 },
-            ].map(f => (
-              <div key={f.label} style={{ marginBottom: 10 }}>
-                <label style={labelStyle}>{f.label}</label>
-                <input type="number" style={inputStyle} value={f.val} min={f.min} max={f.max} onChange={e => f.set(parseInt(e.target.value) || f.min)} />
-              </div>
-            ))}
-            <div style={{ marginBottom: 14 }}>
-              <label style={labelStyle}>Capacité FAT (ports)</label>
-              <select style={{ ...inputStyle, appearance: "none", cursor: "pointer" }} value={fatCap} onChange={e => setFatCap(parseInt(e.target.value))}>
-                <option value={8}>8 ports</option>
-                <option value={16}>16 ports</option>
-                <option value={32}>32 ports</option>
-              </select>
-            </div>
-            <button style={{ ...btnPrimary, background: `linear-gradient(135deg,${AT_ORANGE},#d97706)` }} onClick={lancerSectorisation}>
-              ▶ Lancer Sectorisation
-            </button>
-          </div>
-
-          {/* Export */}
-          <div style={{ ...cardStyle, opacity: planGenerated ? 1 : 0.4, pointerEvents: planGenerated ? "auto" : "none", transition: "opacity 0.3s" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-              <span style={{ width: 28, height: 28, background: AT_BLUE_LIGHT, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>📤</span>
-              <span style={{ fontWeight: 700, fontSize: 13, color: GRAY_800 }}>Exporter le Projet</span>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
-              {[["PDF","📄"],["Excel","📊"],["JSON","{ }"],["KMZ","🗺"]].map(([fmt, ico]) => (
-                <button key={fmt} onClick={() => notify("success", `Export ${fmt} lancé`, "Génération en cours...")}
-                  style={{ padding: "8px 4px", background: GRAY_50, border: `1px solid ${GRAY_200}`, borderRadius: 8, cursor: "pointer", fontSize: 11, fontWeight: 700, color: GRAY_700, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-                  {ico} {fmt}
-                </button>
-              ))}
-            </div>
-            <button style={btnPrimary} onClick={() => notify("success", "Export PDF complet", "Téléchargement démarré")}>
-              Exporter le projet →
-            </button>
-          </div>
-
-          {/* Projets Récents */}
-          <div style={cardStyle}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-              <span style={{ width: 28, height: 28, background: PURPLE_LIGHT, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>🗂</span>
-              <span style={{ fontWeight: 700, fontSize: 13, color: GRAY_800 }}>Projets Récents</span>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-              {PROJECTS_ARCHIVE.slice(0, 3).map(p => (
-                <div key={p.id} onClick={() => { setOsmLoaded(true); setPlanGenerated(false); notify("info", "Projet chargé", `${p.name} · ${p.ville}`); }}
-                  style={{ padding: "9px 12px", background: GRAY_50, borderRadius: 8, cursor: "pointer", border: `1px solid ${GRAY_100}`, transition: "background 0.15s" }}
-                  onMouseEnter={e => e.currentTarget.style.background = AT_BLUE_LIGHT}
-                  onMouseLeave={e => e.currentTarget.style.background = GRAY_50}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: GRAY_800 }}>{p.name}</div>
-                  <div style={{ fontSize: 10, color: GRAY_400, marginTop: 2, fontFamily: "monospace" }}>{p.ville} · {p.quartier} · {p.date}</div>
+            <div style={{ display: "flex", alignItems: "center", marginBottom: 16, gap: 4 }}>
+              {steps.map((s, i) => (
+                <div key={s.label} style={{ display: "flex", alignItems: "center", flex: 1 }}>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1 }}>
+                    <div style={{ width: 22, height: 22, borderRadius: "50%", background: s.done ? GREEN : s.active ? AT_BLUE : GRAY_200, color: (s.done || s.active) ? "white" : GRAY_400, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700 }}>
+                      {s.done ? "✓" : i + 1}
+                    </div>
+                    <div style={{ fontSize: 9, color: s.done ? GREEN : s.active ? AT_BLUE : GRAY_400, fontWeight: 600, marginTop: 3, textAlign: "center" }}>{s.label}</div>
+                  </div>
+                  {i < steps.length - 1 && <div style={{ width: 20, height: 2, background: s.done ? GREEN : GRAY_200, flexShrink: 0, marginBottom: 18 }} />}
                 </div>
               ))}
             </div>
+
+            <div style={{ marginBottom: 12 }}>
+              <label style={labelStyle}>1. Wilaya</label>
+              <select style={inputStyle} value={ville} onChange={e => setVille(e.target.value)}>
+                <option value="">{villesOpts.length === 0 ? "Chargement..." : "— Sélectionner une wilaya —"}</option>
+                {villesOpts.map(v => <option key={v} value={v}>{v}</option>)}
+              </select>
+            </div>
+
+            <div style={{ marginBottom: 12, opacity: ville ? 1 : 0.4, pointerEvents: ville ? "auto" : "none" }}>
+              <label style={labelStyle}>2. Commune</label>
+              <select style={inputStyle} value={commune} onChange={e => setCommune(e.target.value)} disabled={!ville}>
+                <option value="">{!ville ? "Sélectionnez une wilaya" : communesOpts.length === 0 ? "Chargement..." : "— Sélectionner une commune —"}</option>
+                {communesOpts.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+
+            <div style={{ marginBottom: 16, opacity: commune ? 1 : 0.4, pointerEvents: commune ? "auto" : "none" }}>
+              <label style={labelStyle}>3. Résidence / Cité</label>
+              <ResidenceSearchSelect commune={commune} ville={ville} onSelect={setResidenceObj} selectedObj={residenceObj} disabled={!commune} />
+              {residenceObj && <div style={{ marginTop: 6, padding: "6px 10px", background: GREEN_LIGHT, borderRadius: 6, fontSize: 11, color: GREEN, fontWeight: 600 }}>✓ {residenceObj.name}</div>}
+            </div>
+
+            <button style={{ ...btnPrimary, background: osmLoaded ? GREEN : AT_BLUE, marginTop: 4 }} onClick={importOSM} disabled={osmLoading || !residenceObj}>
+              {osmLoading ? "Chargement Zone..." : osmLoaded ? "✓ Zone Synchronisée" : "🔍 Capturer Topologie OSM"}
+            </button>
+          </div>
+
+          <div style={{ ...cardStyle, opacity: osmLoaded ? 1 : 0.4, pointerEvents: osmLoaded ? "auto" : "none" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+              <span style={{ width: 28, height: 28, background: GREEN_LIGHT, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>🏗</span>
+              <span style={{ fontWeight: 700, fontSize: 13, color: GRAY_800 }}>Vérification Structure</span>
+            </div>
+            <div style={{ fontSize: 11, color: GRAY_400, marginBottom: 10 }}>Modifiez si l'estimation OSM diffère de la réalité terrain.</div>
+            <div style={{ marginBottom: 10 }}>
+              <label style={labelStyle}>Nombre d'Étages</label>
+              <input type="number" style={inputStyle} value={etages} onChange={e => setEtages(parseInt(e.target.value) || 1)} min={1} />
+            </div>
+            <div style={{ marginBottom: 10 }}>
+              <label style={labelStyle}>Logements par Étage</label>
+              <input type="number" style={inputStyle} value={logements} onChange={e => setLogements(parseInt(e.target.value) || 1)} min={1} />
+            </div>
+            <button style={{ ...btnPrimary, background: `linear-gradient(135deg, ${AT_ORANGE}, #d97706)` }} onClick={lancerSectorisation}>
+              ▶ Ingénierie de Câblage
+            </button>
           </div>
         </aside>
 
-        {/* MAIN CONTENT AREA */}
         <div style={{ flex: 1, padding: 20, overflow: "auto", background: GRAY_50 }}>
-
-          {/* PLANNER TAB */}
           {activeTab === "planner" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-
-              {/* Carte + Plan de séctorisation côte-à-côte */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                <div style={{ ...cardStyle }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-                    <div style={{ fontWeight: 700, fontSize: 14, color: GRAY_800, display: "flex", alignItems: "center", gap: 8 }}>
-                      Plan de Sectorisation
-                      {planGenerated && <span style={{ background: AT_BLUE_LIGHT, color: AT_BLUE, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20 }}>{residenceLabel}</span>}
-                    </div>
-                    {planGenerated && (
-                      <button onClick={() => { setPlanGenerated(false); setKpis(null); setFatResults([]); setRawBuildings(null); }} style={{ background: GRAY_100, border: "none", borderRadius: 6, padding: "5px 10px", fontSize: 11, cursor: "pointer", color: GRAY_600 }}>↺ Reset</button>
-                    )}
-                  </div>
-                  {!planGenerated ? (
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 340, gap: 12, color: GRAY_400 }}>
-                      <div style={{ fontSize: 56 }}>🏢</div>
-                      <div style={{ fontWeight: 600, fontSize: 14, color: GRAY_600 }}>Veuillez importer les données de la résidence</div>
-                      <div style={{ fontSize: 12 }}>Sélectionnez une ville, un quartier, puis lancez la sectorisation</div>
-                    </div>
+                <div style={{ background: "white", borderRadius: 12, border: `1px solid ${GRAY_200}`, padding: 0, overflow: "hidden", minHeight: 450 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: GRAY_800, padding: "16px 20px", borderBottom: `1px solid ${GRAY_100}` }}>Plan Vertical Câblage</div>
+                  {planGenerated ? (
+                    <BuildingPlan etages={etages} logements={logements} residenceName={residenceObj?.name} />
                   ) : (
-                    <BuildingPlan etages={etages} logements={logements} residence={residenceLabel} />
+                    <div style={{ textAlign: "center", padding: 80, color: GRAY_400 }}>
+                      <div style={{ fontSize: 32, marginBottom: 12 }}>📋</div>
+                      <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>Sélectionnez et chargez un bâtiment</div>
+                      <div style={{ fontSize: 12 }}>Puis lancez l'ingénierie pour générer l'architecture.</div>
+                    </div>
                   )}
                 </div>
 
-                <div style={{ ...cardStyle, display: "flex", flexDirection: "column" }}>
-                  <div style={{ fontWeight: 700, fontSize: 14, color: GRAY_800, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
-                    🗺 Carte OpenStreetMap — Bâtiments de la zone
-                    <span style={{ background: AT_ORANGE_LIGHT, color: AT_ORANGE, fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 20, textTransform: "uppercase" }}>AADL Cluster</span>
-                  </div>
-                  <div style={{ flex: 1, minHeight: 400, borderRadius: 10, overflow: "hidden", border: `1px solid ${GRAY_200}` }}>
+                <div style={{ background: "white", borderRadius: 12, border: `1px solid ${GRAY_200}`, overflow: "hidden" }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: GRAY_800, padding: "16px 20px", borderBottom: `1px solid ${GRAY_100}` }}>Secteur de Raccordement OSM</div>
+                  <div style={{ height: "100%", minHeight: 450 }}>
                     <LeafletMap buildingsGeoJson={rawBuildings} fatResults={fatResults} />
-                  </div>
-                  <div style={{ fontSize: 10, color: GRAY_400, marginTop: 8 }}>
-                    © OpenStreetMap contributors · Molette pour zoomer
                   </div>
                 </div>
               </div>
-
-              {/* ─── Tableau FAT (affiché en dessous dès que la sectorisation est lancée) ─── */}
-              {planGenerated && fatResults.length > 0 && (
-                <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
-
-                  {/* Table des FATs */}
-                  <div style={cardStyle}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span style={{ fontWeight: 700, fontSize: 13 }}>Points FAT Proposés</span>
-                      </div>
-                      <span style={{ background: AT_BLUE_LIGHT, color: AT_BLUE, fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20 }}>
-                        {fatResults.length} FAT·s · K-Means 2D
-                      </span>
-                    </div>
-                    <div style={{ overflowX: "auto" }}>
-                      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-                        <thead>
-                          <tr style={{ background: GRAY_50 }}>
-                            {["ID FAT AT", "Bâtiment", "Distance FDT", "Abonnés", "Statut"].map(h => (
-                              <th key={h} style={{ textAlign: "left", padding: "8px 10px", fontSize: 10, fontWeight: 700, letterSpacing: "0.6px", textTransform: "uppercase", color: GRAY_400, borderBottom: `2px solid ${GRAY_200}` }}>{h}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {fatResults.map((fat, i) => (
-                            <tr key={i} style={{ background: i % 2 === 0 ? "white" : GRAY_50, transition: "background 0.1s" }}
-                              onMouseEnter={e => e.currentTarget.style.background = AT_BLUE_LIGHT}
-                              onMouseLeave={e => e.currentTarget.style.background = i % 2 === 0 ? "white" : GRAY_50}>
-                              <td style={{ padding: "9px 10px", fontFamily: "monospace", fontWeight: 700, color: AT_ORANGE, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={fat.fat_id_AT}>
-                                {fat.fat_id_AT || `FAT-TEMP-${i}`}
-                              </td>
-                              <td style={{ padding: "9px 10px", color: GRAY_700, maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={fat.id_batiment}>
-                                {fat.id_batiment}
-                              </td>
-                              <td style={{ padding: "9px 10px", color: GRAY_600 }}>{Math.round(fat.cable_m_to_fdt_real || 0)} m</td>
-                              <td style={{ padding: "9px 10px", fontWeight: 700, color: GRAY_800 }}>{fat.n_subscribers} / {fatCap}</td>
-                              <td style={{ padding: "9px 10px" }}>
-                                {fat.capacity_ok
-                                  ? <span style={{ background: GREEN_LIGHT, color: GREEN, fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 20 }}>CONFORME</span>
-                                  : <span style={{ background: "#FEE2E2", color: RED, fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 20 }}>DÉPASSEMENT</span>}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                </div>
-              )}
-
-            </div>
-          )}
-
-          {/* SETTINGS TAB */}
-          {activeTab === "settings" && (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-              <div style={{ fontSize: 20, fontWeight: 800, color: GRAY_800, gridColumn: "1/-1" }}>⚙ Paramètres & Capacités</div>
-              {[
-                { title: "Paramètres FAT", icon: AT_ORANGE, rows: [["Capacité standard", "16 ports"],["Taux max utilisation", "80%"],["Distance max", "150m"],["Redondance", "Activée ✓"]] },
-                { title: "Algorithme IA", icon: PURPLE, rows: [["Méthode clustering", "K-Means"],["Itérations max", "300"],["Tolérance convergence", "0.0001"],["Seed aléatoire", "42"]] },
-                { title: "🗺 OSM & Cartographie", icon: AT_BLUE, rows: [["API OSM", "Nominatim v1"],["Format export carte", "GeoJSON"],["Système coord.", "WGS84"],["Mise à jour auto", "Activée ✓"]] },
-                { title: "Export", icon: GREEN, rows: [["Format PDF", "A3 paysage"],["Format Excel", "XLSX 2007+"],["Format cartographique", "KMZ/KML"],["Compression JSON", "Gzip"]] },
-              ].map(s => (
-                <div key={s.title} style={cardStyle}>
-                  <div style={{ fontWeight: 700, fontSize: 13, color: GRAY_800, marginBottom: 14, borderLeft: `3px solid ${s.icon}`, paddingLeft: 10 }}>{s.title}</div>
-                  {s.rows.map(([k, v]) => (
-                    <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "9px 0", borderBottom: `1px solid ${GRAY_100}` }}>
-                      <span style={{ fontSize: 13, color: GRAY_600 }}>{k}</span>
-                      <span style={{ fontSize: 12, fontFamily: "monospace", fontWeight: 700, color: GRAY_800 }}>{v}</span>
-                    </div>
-                  ))}
-                </div>
-              ))}
             </div>
           )}
         </div>
       </div>
-
       {notif && <Notification notif={notif} onClose={() => setNotif(null)} />}
     </div>
   );
