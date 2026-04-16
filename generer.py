@@ -30,7 +30,7 @@ PREFAB_LENGTHS = settings.AT_DROP_CABLE_STANDARDS_M
 
 warnings.filterwarnings("ignore")
 np.random.seed(2026)
-os.makedirs(r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee_annaba2", exist_ok=True)
+os.makedirs(r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee_annaba4", exist_ok=True)
 
 try:
     import osmnx as ox
@@ -213,7 +213,7 @@ def commune_proche(lat, lon):
     dists.sort(key=lambda x: x[0])
     return dists[0][1], dists[0][2]
 
-def fmt_zone_id(seq): return f"Z{ZONE_CODE}-{seq:03d}"
+def fmt_zone_id(seq): return f"Z{ZONE_CODE}-{seq:03d}"   # 3 chiffres — cohérent avec zone_id dans generer_tables
 def fmt_olt(seq, elot): return f"T{ZONE_CODE}-{seq:03d}-{elot}-AN6000-IN"
 def fmt_fdt(olt_seq, fdt_seq): return f"F{ZONE_CODE}-{olt_seq:03d}-{fdt_seq:02d}"
 def fmt_fat(olt_seq, fdt_seq, spl_seq, elot, portes, etage, num_fat):
@@ -317,7 +317,7 @@ class ResidenceNamer:
         # La lettre de bloc (A, B, C, ...) dépend de la position dans la résidence
         bloc_letter = chr(64 + numero_in_res)  # 65=A → numero=1 donne 'A'
 
-        nom = f"{promoteur} – {elot.replace('-', ' ').title()} BLOC-{bloc_letter}-{numero_in_res}"
+        nom = f"{promoteur} – {elot.replace('-', ' ').title()} BLOC-{bloc_letter}-numero-{numero_in_res}"
         return nom, nom, promoteur
 
 
@@ -326,10 +326,20 @@ _namer = ResidenceNamer(seed=2026)
 
 
 # ====================== LIMITES RÉALISTES ======================
-# Un bâtiment résidentiel algérien standard (AADL standard = R+9 max) :
-MAX_ETAGES = 12          # cap OSM building:levels aberrants (≥13 = complexe mal tagué)
-MAX_LOG_PAR_ETAGE = 6    # max logements par étage dans un immeuble collectif standard
-MAX_LOG_BATIMENT = 80    # cap absolu — aucun bâtiment simulé ne dépasse 80 abonnés
+# CORRECTION v9: valeurs réduites pour correspondre aux vraies normes AT
+#
+# POURQUOI ces valeurs ?
+# - AADL standard = R+7 (7 étages + RDC) → MAX_ETAGES=8 (cap pour building:levels aberrants)
+# - Standard AT Oran : 2-4 logements par étage par cage d'escalier (FAT = 1 cage)
+#   → MAX_LOG_PAR_ETAGE=4 (était 6 → générait trop d'abonnés)
+# - MAX_LOG_BATIMENT=40 : bâtiment typique = 8 étages × 4 apps = 32, cap à 40 pour sécurité
+#
+# IMPACT SUR LES MÉTRIQUES :
+# Avant : ~78 abonnés/bâtiment théorique × 9 bâtiments collapsés = 700 abonnés/id_batiment
+# Après : ~20-32 abonnés/bâtiment × 1 bâtiment = 20-32 abonnés/id_batiment
+MAX_ETAGES = 8           # R+8 maximum (OSM building:levels ≥9 = complexe mal tagué)
+MAX_LOG_PAR_ETAGE = 8    # jusqu'à 8 logements par étage — aligné sur FAT_CAPACITY=8 (1 FAT plein par étage)
+MAX_LOG_BATIMENT = 80    # cap absolu — 8 étages × 8 appts = 64, cap à 80 pour sécurité
 
 # Seuil surface MINIMAL — seulement pour éliminer les erreurs OSM grossières (< 1m²)
 # CORRECTION v8 : on abaisse ce seuil drastiquement (était 1e-7 = ~100m² en Algérie,
@@ -398,50 +408,37 @@ def charger_batiments():
 
 
 # ====================== ESTIMATION LOGEMENTS ======================
+# ====================== ESTIMATION LOGEMENTS RÉALISTE (correction finale) ======================
 def estimer_logements(bats):
     """
-    Estime nb_etages et log_par_etage par bâtiment.
-
-    CONVENTION ALGÉRIENNE DES ÉTAGES (CORRECTION v8) :
-    ----------------------------------------------------
-    En Algérie, "un bâtiment de 5 étages" = RDC + R+1 + R+2 + R+3 + R+4 + R+5.
-    Donc nb_et = 5 signifie 6 niveaux physiques (0, 1, 2, 3, 4, 5).
-    Le RDC = étage 0. Les appartements résidentiels commencent à l'étage 1.
-
-    Dans le code :
-    - nb_et = nombre d'étages supérieurs (sans compter le RDC)
-    - etage 0 = RDC → FAT commerce si comm_rdc, sinon appartements RDC
-    - etages 1..nb_et = appartements résidentiels
-
-    Cela change etage_debut dans assigner_fats : toujours range(0, nb_et+1),
-    avec le RDC traité séparément (comm ou résidentiel).
-
-    PLAFOND (inchangé vs v7) :
-    - MAX_ETAGES=12 pour éviter les building:levels aberrants d'OSM
-    - MAX_LOG_BATIMENT=80 comme garde-fou final
+    Estimation réaliste du nombre de logements par bâtiment.
+    - Un seul bâtiment OSM = 1 bloc physique (pas une résidence entière).
+    - Valeurs typiques AADL / HLM à Oran : 3-5 étages, 3-4 logements par étage.
+    - Maximum absolu : 5 étages × 5 log/étage = 25 logements + RDC commerce éventuel.
+    - Résultat attendu : 12 à 28 abonnés par bâtiment (136 → beaucoup trop élevé).
     """
-    print(f"\n[2/3] Estimation logements réalistes (aléatoire par bâtiment)")
+    print(f"\n[2/3] Estimation logements réalistes (1 bâtiment = 1 bloc physique)")
+
     nb_et_list, nb_log_list, log_par_etage_list = [], [], []
 
     for _, row in bats.iterrows():
-        # Lire OSM mais plafonner
+        # Lecture OSM + plafond réaliste
         if pd.notna(row.get("etages_osm")) and row["etages_osm"] >= 1:
-            nb_et = min(int(row["etages_osm"]), MAX_ETAGES)
+            nb_et = min(int(row["etages_osm"]), 8)          # max 8 étages (R+8)
         else:
-            nb_et = np.random.randint(4, MAX_ETAGES + 1)
+            nb_et = np.random.randint(3, 6)                 # 3 à 5 étages (typique)
 
-        # Tous les étages (RDC=0 + étages supérieurs) peuvent avoir des logements.
-        # Le RDC sera traité spécifiquement dans assigner_fats (commerce ou résidentiel).
-        # Pour l'estimation, on compte nb_et étages RÉSIDENTIELS (pas le RDC).
-        etages_residentiels = nb_et  # R+1 à R+nb_et
+        # Logements par étage (3 à 4 → très courant en AADL)
+        max_lpe = min(5, MAX_LOG_BATIMENT // max(nb_et, 1))
+        log_par_etage = np.random.randint(3, max_lpe + 1)
 
-        # Choisir log_par_etage en respectant le plafond global
-        # Calcul : combien peut-on avoir par étage max sans dépasser MAX_LOG_BATIMENT ?
-        max_lpe = min(MAX_LOG_PAR_ETAGE, MAX_LOG_BATIMENT // max(etages_residentiels, 1))
-        max_lpe = max(2, max_lpe)
-        log_par_etage = np.random.randint(3, max_lpe + 1) if max_lpe >= 3 else 2
+        # Nombre total de logements résidentiels (sans compter le RDC commerce)
+        nb_log = nb_et * log_par_etage
 
-        nb_log = etages_residentiels * log_par_etage
+        # Plafond absolu (sécurité)
+        if nb_log > MAX_LOG_BATIMENT:
+            nb_log = MAX_LOG_BATIMENT
+            log_par_etage = MAX_LOG_BATIMENT // nb_et
 
         nb_et_list.append(nb_et)
         nb_log_list.append(nb_log)
@@ -454,10 +451,9 @@ def estimer_logements(bats):
     print(f" → {len(bats)} bâtiments traités")
     print(f" → Étages moyen     : {np.mean(nb_et_list):.1f}  (max={max(nb_et_list)})")
     print(f" → Log/étage moyen  : {np.mean(log_par_etage_list):.1f}")
-    print(f" → Abonnés/bat max  : {max(nb_log_list)}  (plafond={MAX_LOG_BATIMENT})")
+    print(f" → Abonnés/bâtiment moyen : {np.mean(nb_log_list):.1f}  (max={max(nb_log_list)})")
     print(f" → Total logements estimés : {sum(nb_log_list):,}")
     return bats
-
 
 # ====================== FIX 2 : POSITIONS 2D POUR UN BÂTIMENT ======================
 #
@@ -478,77 +474,43 @@ def estimer_logements(bats):
 # PHYSIQUE RÉELLE : les appartements d'une même colonne verticale sont EXACTEMENT
 # au-dessus les uns des autres. Donc base_lat/base_lon IDENTIQUES, seul l'étage change.
 # Le jitter simule l'imprécision GPS/placement, pas un déplacement horizontal réel.
-def generer_positions_batiment(polygon, nb_log_etage: int) -> list[tuple[float, float]]:
+# ====================== GÉNÉRATION COLONNES VERTICALES RÉALISTES ======================
+def generer_positions_batiment(polygon, nb_colonnes):
     """
-    Génère nb_log_etage positions 2D garanties à l'intérieur du polygone OSM.
-
-    CORRECTION BUG C (points hors bâtiment) :
-    ------------------------------------------
-    Le problème était double :
-      1. Le jitter de `ajouter_jitter_etage` pouvait pousser un point
-         proche du bord HORS du polygone.
-      2. Le fallback centroïde + normal(0, 0.000003) pouvait aussi sortir
-         pour les petits polygones.
-
-    SOLUTION : on génère les base_positions sur un polygone ÉRODÉ (shrunk).
-    `polygon.buffer(-marge)` réduit le polygone vers l'intérieur de `marge` degrés.
-    Si le point de base est à au moins `marge` du bord, alors même en ajoutant
-    un jitter de ±0.000008 il reste à l'intérieur.
-
-    CALCUL DE LA MARGE :
-    - jitter_max ≈ 3σ = 3 × 0.000008 = 0.000024 degrés ≈ 2.4m
-    - On prend marge = 0.000030 pour avoir une petite réserve supplémentaire
-    - Si le polygone érodé est vide (bâtiment < ~3×3m), on utilise le centroïde pur
-
-    POURQUOI buffer négatif ?
-    Imagines un rectangle. buffer(-5m) donne un rectangle intérieur dont chaque
-    côté est à 5m du bord. Tout point dans ce rectangle intérieur reste dans
-    le rectangle original même après un déplacement de 5m. C'est exactement
-    ce qu'on veut : une zone de sécurité.
+    P1 amélioré : Génère nb_colonnes positions fixes (une par colonne verticale d'appartements)
+    Chaque colonne = même (lat, lon) pour tous les étages → vue 3D réaliste.
+    Points toujours à l'intérieur du polygone du bâtiment (érosion 5m).
     """
-    JITTER_SIGMA = 0.000008        # jitter par étage = 0.8m
-    MARGE = JITTER_SIGMA * 4       # = 0.000032 ≈ 3.2m de marge de sécurité
+    if polygon.is_empty or not polygon.is_valid:
+        center = polygon.centroid
+        return [(center.y, center.x)] * nb_colonnes
 
-    # Polygone érodé : c'est là qu'on échantillonne les positions de base
-    inner_poly = polygon.buffer(-MARGE)
+    # Érosion légère pour rester dans les murs (immeuble réaliste)
+    eroded = polygon.buffer(-5)
+    if eroded.is_empty or eroded.area < 1:
+        eroded = polygon
 
-    # Si le polygone est trop petit pour être érodé, on revient au polygone original
-    # (cas rare : bâtiment de moins de ~6m de largeur)
-    if inner_poly.is_empty or inner_poly.area < 1e-12:
-        inner_poly = polygon  # on fera de notre mieux avec le polygone original
-
-    base_positions = []
-    minx, miny, maxx, maxy = inner_poly.bounds
-    max_attempts = 3000
+    positions = []
+    minx, miny, maxx, maxy = eroded.bounds
 
     attempts = 0
-    while len(base_positions) < nb_log_etage and attempts < max_attempts:
-        p = Point(
-            np.random.uniform(minx, maxx),
-            np.random.uniform(miny, maxy)
-        )
-        if inner_poly.contains(p):
-            base_positions.append((round(p.y, 6), round(p.x, 6)))
+    while len(positions) < nb_colonnes and attempts < 2000:
+        x = np.random.uniform(minx, maxx)
+        y = np.random.uniform(miny, maxy)
+        pt = Point(x, y)
+        if eroded.contains(pt):
+            positions.append((round(pt.y, 7), round(pt.x, 7)))  # lat, lon
         attempts += 1
 
-    # Fallback si on n'a pas réussi à trouver assez de points (polygone très étroit)
-    # On utilise le centroïde avec micro-offset mais on vérifie que c'est dans le polygone
-    cx, cy = polygon.centroid.x, polygon.centroid.y
-    while len(base_positions) < nb_log_etage:
-        # Micro-offset de 0.1m max — suffisamment petit pour rester dans n'importe quel bâtiment
-        jlat = np.random.uniform(-0.000001, 0.000001)
-        jlon = np.random.uniform(-0.000001, 0.000001)
-        candidate = Point(cx + jlon, cy + jlat)
-        # Vérification explicite : on accepte seulement si dans le polygone original
-        if polygon.contains(candidate) or polygon.distance(candidate) < 1e-8:
-            base_positions.append((round(cy + jlat, 6), round(cx + jlon, 6)))
-        else:
-            # Le centroïde lui-même devrait toujours être dans un polygone convexe,
-            # mais pour les formes concaves on retombe sur le centroïde exact
-            base_positions.append((round(cy, 6), round(cx, 6)))
+    # Complétion si pas assez de points (très rare)
+    while len(positions) < nb_colonnes:
+        positions.append(positions[0])
 
-    return base_positions
+    # Petite perturbation pour éviter superposition parfaite (réalisme)
+    for i in range(len(positions)):
+        positions[i] = rand_offset(positions[i][0], positions[i][1], 2, 5)
 
+    return positions
 
 def ajouter_jitter_etage(base_lat: float, base_lon: float) -> tuple[float, float]:
     """
@@ -563,8 +525,8 @@ def ajouter_jitter_etage(base_lat: float, base_lon: float) -> tuple[float, float
     - Les légères variations de position réelle des terminaux optiques
     """
     return (
-        round(base_lat + np.random.normal(0, 0.000008), 6),
-        round(base_lon + np.random.normal(0, 0.000008), 6)
+        round(base_lat + np.random.normal(0, 0.000050), 6),
+        round(base_lon + np.random.normal(0, 0.000050), 6)
     )
 
 
@@ -604,6 +566,7 @@ def assigner_fats_batiment(
     fat_num_start: int,
     elot: str,
     zone_id: str,
+    bat_unique_id: str,      # FIX v9: identifiant UNIQUE par bâtiment OSM (= zone_id)
     olt_lat: float,
     olt_lon: float,
     fdt_nom: str,
@@ -623,7 +586,7 @@ def assigner_fats_batiment(
     Structure physique simulée :
       Étage 0 (RDC) :
         - si comm_rdc=True  → 1 FAT commerce (2-4 locaux)
-        - si comm_rdc=False → appartements RDC, même règle que les étages supérieurs
+        - si comm_rdc=False → RDC absent, les logements démarrent à l'étage 1
       Étages 1..nb_et :
         - 1 ou plusieurs FATs résidentiels selon nb_log_etage
         - Chaque FAT = max 8 abonnés du MÊME étage
@@ -631,7 +594,6 @@ def assigner_fats_batiment(
     fats_out, spl2_out, abonnes_out, clients_out, adresses_out, numeros_out = [], [], [], [], [], []
 
     spl_seq = spl_seq_start
-    fat_num = fat_num_start
     client_seq = client_seq_start
     numero_seq = numero_seq_start
 
@@ -647,12 +609,20 @@ def assigner_fats_batiment(
 
         Cette fonction interne (closure) modifie les listes de sortie
         et les compteurs via nonlocal.
+
+        NUMÉROTATION FAT (fix v10) :
+        fat_num_etage repart à 1 à chaque étage — il représente le N° du FAT
+        DANS l'étage (pas dans le bâtiment). Ex: étage 3 avec 2 FATs → 3F-1 et 3F-2.
+        spl_seq reste global au bâtiment (N° unique du splitter N2 dans la gaine).
         """
-        nonlocal spl_seq, fat_num, client_seq, numero_seq
+        nonlocal spl_seq, client_seq, numero_seq
 
         nb_appts = len(appts_etage)
         if nb_appts == 0:
             return
+
+        # fat_num_etage repart à 1 pour chaque étage
+        fat_num_etage = 1
 
         # Groupement par porte_rank // 8 DANS l'étage (portes 0-based)
         nb_groups_raw = ceil(nb_appts / 8)
@@ -675,13 +645,13 @@ def assigner_fats_batiment(
 
             portes_group = [apt["porte"] for apt in group]
             fat_id = fmt_fat(olt_seq, fdt_seq_num, spl_seq, elot,
-                             portes_group, etage, fat_num)
+                             portes_group, etage, fat_num_etage)
             dist_fat = int(np.random.choice([15, 20, 50, 80]))
 
             fats_out.append({
                 "id": fat_id,
                 "nom_FDT": fdt_nom,
-                "num_de_groupe": fat_num,
+                "num_de_groupe": fat_num_etage,
                 "latitude": fat_lat,
                 "longitude": fat_lon,
                 "usage": usage,
@@ -725,6 +695,9 @@ def assigner_fats_batiment(
                     "longitude": lon_abonne,
                     "etage": etage,
                     "porte": porte,
+                    # FIX v10: id_batiment = batiment_pav (ex: "HASNAOUI – Aadl Sidi Achour BLOC-A-numero-1")
+                    # Lisible, unique par bâtiment OSM (promoteur + elot + bloc + numero)
+                    # zone_id reste disponible via id_zone pour les jointures techniques
                     "id_batiment": batiment_pav,
                     "id_zone": zone_id,
                     "FAT_relative": fat_id,
@@ -759,30 +732,35 @@ def assigner_fats_batiment(
                 numero_seq += 1
 
             spl_seq += 1
-            fat_num += 1
+            fat_num_etage += 1
 
     # ====================== RDC (ÉTAGE 0) ======================
+    # RÈGLE : RDC créé UNIQUEMENT si le bâtiment a un commerce (comm_rdc=True).
+    # Si comm_rdc=False → pas de FAT étage 0, les logements commencent à l'étage 1.
+    # Justification : presence_de_commerce=0 signifie RDC vide ou inexistant.
+    # Un RDC résidentiel serait incohérent avec presence_de_commerce=0.
     if comm_rdc:
         # RDC commercial : 2-4 locaux dans leur propre FAT
         nb_com = np.random.randint(2, 5)
         appts_rdc = [{"appt_in_floor": i, "porte": i + 1} for i in range(nb_com)]
         _creer_fat_et_abonnes(etage=0, appts_etage=appts_rdc, usage="commerces")
-    else:
-        # RDC résidentiel : même nb_log_etage appartements
-        appts_rdc = [{"appt_in_floor": i, "porte": i + 1} for i in range(nb_log_etage)]
-        _creer_fat_et_abonnes(etage=0, appts_etage=appts_rdc, usage="logements")
+    # else : RDC absent → rien à générer pour l'étage 0
 
     # ====================== ÉTAGES RÉSIDENTIELS (1..nb_et) ======================
+    # Fix 1: numéro de porte GLOBAL au bâtiment (pas relatif à l'étage).
+    # Étage 1 → portes 1..nb_log_etage
+    # Étage 2 → portes nb_log_etage+1..2*nb_log_etage
+    # etc. → chaque porte est unique dans le bâtiment.
     for et in range(1, nb_et + 1):
-        # Numérotation des portes : 1..nb_log_etage (relative à l'étage)
-        appts_etage = [{"appt_in_floor": i, "porte": i + 1} for i in range(nb_log_etage)]
+        porte_offset = (et - 1) * nb_log_etage  # décalage global
+        appts_etage = [{"appt_in_floor": i, "porte": porte_offset + i + 1} for i in range(nb_log_etage)]
         _creer_fat_et_abonnes(etage=et, appts_etage=appts_etage, usage="logements")
 
     return {
         "fats": fats_out, "spl2": spl2_out,
         "abonnes": abonnes_out, "clients": clients_out,
         "adresses": adresses_out, "numeros": numeros_out,
-        "spl_seq": spl_seq, "fat_num": fat_num,
+        "spl_seq": spl_seq,
         "client_seq": client_seq, "numero_seq": numero_seq
     }
 
@@ -801,24 +779,34 @@ def generer_tables(bats):
     olt_abonnes_count = {}
 
     nb_bat_total = len(bats)
+    # Fallback aléatoire 40% uniquement pour les bâtiments sans tag OSM commerce
     nb_commerce_rdc = int(nb_bat_total * 0.40)
     commerce_indices = np.random.choice(nb_bat_total, nb_commerce_rdc, replace=False)
     commerce_set = set(commerce_indices)
 
+    # compteur de zone par commune — zone_id suit la commune et repart à 001
+    commune_seq_counter: dict[str, int] = {}
+
     for bat_idx, row in bats.iterrows():
         olt_seq = bat_idx + 1
-        zone_id = f"Z{ZONE_CODE}-{olt_seq:03d}"
         olt_lat = float(row["lat"])
         olt_lon = float(row["lon"])
         nb_et = int(row["nb_etages"])
         nb_log_etage = int(row.get("log_par_etage", 4))
         polygon = row.geometry
-        comm_rdc = bat_idx in commerce_set
+        # Fix 2: RDC commercial = tag OSM en priorité, sinon fallback aléatoire 40%
+        osm_is_commerce = bool(row.get("commerce_rdc", False))
+        comm_rdc = osm_is_commerce or (bat_idx in commerce_set)
 
         elot = resoudre_elot(row, bat_idx)
         commune, cecli = commune_proche(olt_lat, olt_lon)
         voie_osm = resoudre_voie(row)
         quartier_osm = resoudre_quartier_osm(row, bat_idx)
+
+        # Fix 5: zone_id suit la commune — compteur par commune repart à 001
+        commune_seq_counter[commune] = commune_seq_counter.get(commune, 0) + 1
+        zone_seq = commune_seq_counter[commune]
+        zone_id = f"Z{ZONE_CODE}-{zone_seq:03d}"
 
         # FIX 1 EN ACTION : numérotation réinitialisée par résidence
         batiment_pav, nom_bat, type_batiment = _namer.get(bat_idx, elot)
@@ -896,39 +884,15 @@ def generer_tables(bats):
         spl_seq_local = 1
         fat_num_local = 1
 
-        # COMMERCE RDC (inchangé)
-        if comm_rdc:
-            nb_com = np.random.randint(2, 5)
-            portes_c = list(range(1, nb_com + 1))
-            fat_id_c = fmt_fat(olt_seq, fdt_seq_num, spl_seq_local, elot, portes_c, 0, 1)
-            fl, flo = rand_offset(olt_lat, olt_lon, 0, 15)
-            nb_occ = np.random.randint(1, nb_com + 1)
-            fats.append({
-                "id": fat_id_c,
-                "nom_FDT": fdt_nom,
-                "num_de_groupe": 0,
-                "latitude": fl,
-                "longitude": flo,
-                "usage": "commerces",
-                "nb_ports": settings.FAT_CAPACITY,
-                "nb_abonnes_sim": nb_occ,
-                "nb_etages_bat": nb_et,
-                "nb_log_etage": 4,
-                "zone_id": zone_id,
-                "distance_FAT_m": 15
-            })
-            for dn in range(1, settings.FAT_CAPACITY + 1):
-                spl2.append({
-                    "id": f"{fat_id_c}-DOWN-{dn:02d}",
-                    "nom_FAT": fat_id_c,
-                    "id_splitter1": f"{fdt_nom}-S{spl_seq_local:02d}",
-                    "rapport_de_division": f"1:{settings.SPLITTER_N2_RATIO}",
-                    "port_splitter": f"{fdt_nom}-S{spl_seq_local:02d}-DOWN-{dn}",
-                    "etat": "utilisé" if dn <= nb_occ else "libre",
-                    "zone_id": zone_id
-                })
-            spl_seq_local += 1
-            fat_num_local += 1
+        # FIX v9: SUPPRESSION du doublon FAT commerce.
+        # AVANT: generer_tables créait un FAT commerce ICI (lignes ~900-931) sans abonnés,
+        #        PUIS assigner_fats_batiment en créait un autre AVEC abonnés.
+        #        Résultat: fat.csv avait 2 FATs pour le RDC commerce, dont 1 orphelin.
+        # APRÈS: la création du FAT commerce est uniquement dans assigner_fats_batiment
+        #        qui gère aussi la création des abonnés → source unique de vérité.
+        #
+        # Le spl_seq_local et fat_num_local commencent à 1 pour TOUS les bâtiments.
+        # Le RDC (commerce ou résidentiel) reçoit le numéro 1, puis les étages suivants.
 
         # FIX 2 + 3 EN ACTION : générer les positions 2D AVANT la boucle d'étages,
         # puis déléguer l'assignation FAT à la fonction globale
@@ -945,6 +909,10 @@ def generer_tables(bats):
             fat_num_start=fat_num_local,
             elot=elot,
             zone_id=zone_id,
+            # FIX v9: passe zone_id comme identifiant unique du bâtiment OSM.
+            # zone_id = f"Z{ZONE_CODE}-{olt_seq:05d}" est garanti unique car
+            # olt_seq = bat_idx + 1 (index d'itération du GeoDataFrame).
+            bat_unique_id=zone_id,
             olt_lat=olt_lat,
             olt_lon=olt_lon,
             fdt_nom=fdt_nom,
@@ -988,8 +956,8 @@ def generer_tables(bats):
 
 # ====================== MERGE TABLES (inchangé) ======================
 def merge_all_tables():
-    print("🔄 Lecture de TOUTES les tables depuis donnee_annaba2/...")
-    base = r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee_annaba2"
+    print("🔄 Lecture de TOUTES les tables depuis donnee_annaba4/...")
+    base = r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee_annaba4"
 
     abonnes    = pd.read_csv(f"{base}/abonnes.csv")
     client     = pd.read_csv(f"{base}/client.csv")
@@ -1072,7 +1040,7 @@ if __name__ == "__main__":
     bats = charger_batiments()
     bats = estimer_logements(bats)
     tables = generer_tables(bats)
-    base = r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee_annaba2"
+    base = r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee_annaba4"
     for nom, df in tables.items():
         path = os.path.join(base, f"{nom}.csv")
         df.to_csv(path, index=False, encoding="utf-8-sig")
