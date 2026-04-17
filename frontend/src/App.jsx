@@ -728,7 +728,7 @@ export default function FTTHSmartPlanner() {
           <div style={cardStyle}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
               <span style={{ width: 28, height: 28, background: AT_BLUE_LIGHT, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>📍</span>
-              <span style={{ fontWeight: 700, fontSize: 13, color: GRAY_800 }}>Ciblage Réseau</span>
+              <span style={{ fontWeight: 700, fontSize: 13, color: GRAY_800 }}>Localisation</span>
             </div>
 
             <div style={{ display: "flex", alignItems: "center", marginBottom: 16, gap: 4 }}>
@@ -768,7 +768,7 @@ export default function FTTHSmartPlanner() {
             </div>
 
             <button style={{ ...btnPrimary, background: osmLoaded ? GREEN : AT_BLUE, marginTop: 4 }} onClick={importOSM} disabled={osmLoading || !residenceObj}>
-              {osmLoading ? "Chargement Zone..." : osmLoaded ? "✓ Zone Synchronisée" : "🔍 Capturer Topologie OSM"}
+              {osmLoading ? "Chargement Résidence..." : osmLoaded ? "✓ Résidence Synchronisée" : "Import depuis OpenStreetMap"}
             </button>
           </div>
 
@@ -787,7 +787,7 @@ export default function FTTHSmartPlanner() {
               <input type="number" style={inputStyle} value={logements} onChange={e => setLogements(parseInt(e.target.value) || 1)} min={1} />
             </div>
             <button style={{ ...btnPrimary, background: `linear-gradient(135deg, ${AT_ORANGE}, #d97706)` }} onClick={lancerSectorisation}>
-              ▶ Ingénierie de Câblage
+              ▶ Lancer Sectorisation
             </button>
           </div>
         </aside>
@@ -797,12 +797,12 @@ export default function FTTHSmartPlanner() {
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                 <div style={{ background: "white", borderRadius: 12, border: `1px solid ${GRAY_200}`, padding: 0, overflow: "hidden", minHeight: 450 }}>
-                  <div style={{ fontWeight: 700, fontSize: 14, color: GRAY_800, padding: "16px 20px", borderBottom: `1px solid ${GRAY_100}` }}>Plan Vertical Câblage</div>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: GRAY_800, padding: "16px 20px", borderBottom: `1px solid ${GRAY_100}` }}>Plan de Sectorisation</div>
                   {planGenerated ? (
-                    <BuildingPlan etages={etages} logements={logements} residenceName={residenceObj?.name} />
+                    <BuildingPlan residenceName={residenceObj?.name} />
                   ) : (
                     <div style={{ textAlign: "center", padding: 80, color: GRAY_400 }}>
-                      <div style={{ fontSize: 32, marginBottom: 12 }}>📋</div>
+
                       <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>Sélectionnez et chargez un bâtiment</div>
                       <div style={{ fontSize: 12 }}>Puis lancez l'ingénierie pour générer l'architecture.</div>
                     </div>
@@ -810,7 +810,7 @@ export default function FTTHSmartPlanner() {
                 </div>
 
                 <div style={{ background: "white", borderRadius: 12, border: `1px solid ${GRAY_200}`, overflow: "hidden" }}>
-                  <div style={{ fontWeight: 700, fontSize: 14, color: GRAY_800, padding: "16px 20px", borderBottom: `1px solid ${GRAY_100}` }}>Secteur de Raccordement OSM</div>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: GRAY_800, padding: "16px 20px", borderBottom: `1px solid ${GRAY_100}` }}>Carte Geographique OpenStreetMap</div>
                   <div style={{ height: "100%", minHeight: 450 }}>
                     <LeafletMap buildingsGeoJson={rawBuildings} fatResults={fatResults} />
                   </div>

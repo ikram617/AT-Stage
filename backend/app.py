@@ -166,30 +166,48 @@ def load_from_json_cache(key: str):
 OVERPASS_SERVERS = [
     "https://overpass-api.de/api/interpreter",
     "https://lz4.overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
+    "https://api.openstreetmap.fr/oapi/interpreter",
+    "https://overpass.nchc.org.tw/api/interpreter"
 ]
 
 
-async def _overpass_request(query: str, timeout: int = 35) -> dict:
-    async def _try(url: str):
-        try:
-            async with httpx.AsyncClient(timeout=float(timeout)) as c:
-                resp = await c.post(url, data={"data": query.strip()})
-                print(f"📡 Overpass Response from {url}: {resp.status_code}")
-                if resp.status_code == 200:
-                    data = resp.json()
-                    print(f"✅ Elements found: {len(data.get('elements', []))}")
-                    if data.get("elements"): return data
-        except Exception:
-            pass
-        return None
+async def _overpass_request(query: str, timeout: int = 50, retries: int = 3) -> dict:
+    for attempt in range(retries):
+        if attempt > 0:
+            wait_time = 2 * attempt
+            print(f"⏳ Attente de {wait_time}s avant nouvelle tentative...")
+            await asyncio.sleep(wait_time)
+            
+        print(f"📡 Tentative Overpass {attempt + 1}/{retries}...")
+        
+        async def _try(url: str):
+            try:
+                async with httpx.AsyncClient(timeout=float(timeout)) as c:
+                    resp = await c.post(url, data={"data": query.strip()})
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        if data.get("elements"):
+                            print(f"✅ {len(data['elements'])} éléments trouvés sur {url}")
+                            return data
+                    elif resp.status_code == 429:
+                        print(f"⚠️ 429 Too Many Requests sur {url}")
+            except Exception as e:
+                # print(f"❌ Erreur sur {url}: {e}")
+                pass
+            return None
 
-    tasks = [asyncio.create_task(_try(url)) for url in OVERPASS_SERVERS]
-    for coro in asyncio.as_completed(tasks):
-        result = await coro
-        if result:
-            for t in tasks: t.cancel()
-            return result
-    for t in tasks: t.cancel()
+        tasks = [asyncio.create_task(_try(url)) for url in OVERPASS_SERVERS]
+        for coro in asyncio.as_completed(tasks):
+            result = await coro
+            if result:
+                for t in tasks: t.cancel()
+                return result
+        
+        for t in tasks: t.cancel()
+        if attempt < retries - 1:
+            await asyncio.sleep(2)
+            
     return {"elements": []}
 
 
@@ -219,48 +237,49 @@ def _format_building_name(tags: dict, index: int) -> dict:
     }
 
 
-async def fetch_residences_in_commune(commune: str, wilaya_name: str) -> List[Dict[str, Any]]:
-    # Extraction du nom pur de la wilaya (évite le code "31 - Oran")
+async def fetch_residences_in_commune(commune: str, wilaya_name: str, lat_fallback: float = None, lon_fallback: float = None) -> List[Dict[str, Any]]:
     wilaya_pure = wilaya_name.split(" - ")[1] if " - " in wilaya_name else wilaya_name
-    
-    # On utilise une approche hiérarchique : Wilaya -> Commune -> Résidences
-    # Cela évite les confusions entre communes homonymes
-    query = f"""
-    [out:json][timeout:60];
-    
-    // 1. Trouver la Wilaya (admin_level=4)
-    rel[name~"{wilaya_pure}",i][admin_level=4];
-    map_to_area -> .wilayaArea;
-    
-    // 2. Trouver la Commune (admin_level=8) dans la Wilaya
-    (
-      rel[name~"{commune}",i][admin_level=8](area.wilayaArea);
-      rel[name~"{commune}",i][boundary=administrative](area.wilayaArea);
-      // Fallback si la wilaya restrictive échoue
-      rel[name~"{commune}",i][admin_level=8];
-    )->.commune;
-    
-    .commune map_to_area -> .searchArea;
+    elements = []
 
-    (
-      // Bâtiments nommés (Résidences, Tours, Batiments)
-      nwr["building"]["name"](area.searchArea);
-      
-      // Zones résidentielles (Cités, Résidences fermées)
-      nwr["landuse"="residential"]["name"](area.searchArea);
-      
-      // Lieux-dits et quartiers (très fréquents en Algérie)
-      nwr["place"~"neighbourhood|quarter|suburb|office|industrial|commercial"]["name"](area.searchArea);
-      
-      // Adresses avec un nom de résidence spécifique
-      nwr["addr:housename"](area.searchArea);
-    );
-    out tags center;
-    """
-    
-    print(f"🌐 Requête Overpass hiérarchique pour: {commune} ({wilaya_pure})")
-    data = await _overpass_request(query)
-    elements = data.get("elements", [])
+    # STRATÉGIE 1 (RAPIDE) : Bounding Box si coordonnées dispo
+    if lat_fallback and lon_fallback:
+        print(f"⚡ Stratégie 1 (Rapide): Bounding Box autour de {lat_fallback}, {lon_fallback}")
+        margin = 0.025 # ~2.5km
+        s, w, n, e = lat_fallback - margin, lon_fallback - margin, lat_fallback + margin, lon_fallback + margin
+        query_bbox = f"""
+        [out:json][timeout:25];
+        (
+          nwr["building"]["name"]({s},{w},{n},{e});
+          nwr["landuse"="residential"]["name"]({s},{w},{n},{e});
+          nwr["place"~"neighbourhood|quarter|suburb"]["name"]({s},{w},{n},{e});
+          nwr["addr:housename"]({s},{w},{n},{e});
+        );
+        out tags center;
+        """
+        data = await _overpass_request(query_bbox, timeout=25, retries=2)
+        elements = data.get("elements", [])
+
+    # STRATÉGIE 2 (LENTE / COMPLÈTE) : Recherche par Zone Administrative
+    if not elements:
+        print(f"🔍 Stratégie 2 (Complète): Recherche par zone administrative pour {commune}")
+        query_area = f"""
+        [out:json][timeout:50];
+        area[name~"^{wilaya_pure}$",i][admin_level=4]->.w;
+        (
+          area[name~"^{commune}$",i][admin_level=8](area.w);
+          area[name~"{commune}",i][admin_level=8](area.w);
+          area[name~"^{commune}$",i](area.w);
+        )->.searchArea;
+        (
+          nwr["building"]["name"](area.searchArea);
+          nwr["landuse"="residential"]["name"](area.searchArea);
+          nwr["place"~"neighbourhood|quarter|suburb"]["name"](area.searchArea);
+          nwr["addr:housename"](area.searchArea);
+        );
+        out tags center;
+        """
+        data = await _overpass_request(query_area, timeout=50, retries=2)
+        elements = data.get("elements", [])
     
     residences = []
     seen_names = set()
@@ -358,7 +377,18 @@ async def get_commune(ville: str = Query(...)):
 async def get_residence(ville: str = Query(...), commune: str = Query(...), search: str = Query(None)):
     print(f"GET /api/residence (ville={ville}, commune={commune}, search={search})")
     ville_pure = ville.split(" - ")[1] if " - " in ville else ville
-    residences = await fetch_residences_in_commune(commune, ville_pure)
+    
+    # Récupération des coordonnées de la commune depuis le cache pour le fallback
+    lat_f, lon_f = None, None
+    wilaya_data = _load_wilaya_cache(ville)
+    if wilaya_data and wilaya_data.get("communes"):
+        for c in wilaya_data["communes"]:
+            if c["nom"] == commune:
+                lat_f = c.get("lat")
+                lon_f = c.get("lon")
+                break
+    
+    residences = await fetch_residences_in_commune(commune, ville_pure, lat_f, lon_f)
     if search and search.strip():
         q = search.strip().lower()
         residences = [r for r in residences if q in r["name"].lower()]
@@ -578,4 +608,4 @@ async def generate_noms_fat(req: NamingFATRequest):
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
