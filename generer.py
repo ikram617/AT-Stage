@@ -30,7 +30,7 @@ PREFAB_LENGTHS = settings.AT_DROP_CABLE_STANDARDS_M
 
 warnings.filterwarnings("ignore")
 np.random.seed(2026)
-os.makedirs(r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee_annaba4", exist_ok=True)
+os.makedirs(r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee_annaba4v2", exist_ok=True)
 
 try:
     import osmnx as ox
@@ -285,39 +285,32 @@ class ResidenceNamer:
     RESIDENCE_SIZE = 3  # nombre de bâtiments par résidence
 
     def __init__(self, seed=2026):
-        # np.random pour reproducibilité, indépendant du seed global
         self._rng = np.random.RandomState(seed)
-        self._residence_promoteurs = {}  # résidence_id → promoteur choisi
+        self._commune_counters = {}
 
-    def get(self, bat_idx: int, elot: str) -> tuple[str, str, str]:
+    def get(self, bat_idx: int, elot: str, row: pd.Series, commune: str) -> tuple[str, str, str]:
         """
-        Retourne (batiment_pav, nom_bat, type_batiment) pour le bâtiment bat_idx.
-
-        bat_idx    : index global du bâtiment (0-based)
-        elot       : identifiant de l'îlot/adresse (pour la lisibilité)
-
-        Returns:
-          batiment_pav : nom complet de l'adresse postale
-          nom_bat      : même chose (utilisé dans d'autres colonnes)
-          promoteur    : type_batiment (AADL, etc.)
+        Priorise le VRAI nom OSM s'il existe.
+        Sinon, génère un nom réaliste avec un numéro séquentiel par commune.
         """
-        # Quelle résidence ? La division entière donne le groupe.
-        residence_id = bat_idx // self.RESIDENCE_SIZE
+        nom_osm = str(row.get("nom_bat", "")).strip()
+        commune_clean = commune.replace(" ", "-").title()
+        
+        # Compteur local par commune (garantit l'unicité du Bat-X dans la commune)
+        if commune_clean not in self._commune_counters:
+            self._commune_counters[commune_clean] = 0
+        self._commune_counters[commune_clean] += 1
+        uid_in_commune = self._commune_counters[commune_clean]
+        
+        if nom_osm and nom_osm.lower() not in ("nan", "none", "null"):
+            nom_complet = f"{nom_osm} ({commune_clean}_Bat-{uid_in_commune})"
+            return nom_complet, nom_complet, "OSM"
 
-        # Numéro DANS la résidence (1-based) — le modulo repart à 0 puis +1
-        numero_in_res = (bat_idx % self.RESIDENCE_SIZE) + 1
+        # --- GÉNÉRATION AUTOMATIQUE (si pas de nom OSM) ---
+        promoteur = self._rng.choice(self.PROMOTEURS)
 
-        # Chaque résidence a UN promoteur fixe, choisi aléatoirement à la première
-        # occurrence. On mémorise pour que tous les blocs d'une même résidence
-        # aient le même promoteur.
-        if residence_id not in self._residence_promoteurs:
-            self._residence_promoteurs[residence_id] = self._rng.choice(self.PROMOTEURS)
-        promoteur = self._residence_promoteurs[residence_id]
-
-        # La lettre de bloc (A, B, C, ...) dépend de la position dans la résidence
-        bloc_letter = chr(64 + numero_in_res)  # 65=A → numero=1 donne 'A'
-
-        nom = f"{promoteur} – {elot.replace('-', ' ').title()} BLOC-{bloc_letter}-numero-{numero_in_res}"
+        # Noms plus réalistes et lisibles, ex: AADL - Annaba_Bat-12
+        nom = f"{promoteur} - {commune_clean}_Bat-{uid_in_commune}"
         return nom, nom, promoteur
 
 
@@ -337,8 +330,8 @@ _namer = ResidenceNamer(seed=2026)
 # IMPACT SUR LES MÉTRIQUES :
 # Avant : ~78 abonnés/bâtiment théorique × 9 bâtiments collapsés = 700 abonnés/id_batiment
 # Après : ~20-32 abonnés/bâtiment × 1 bâtiment = 20-32 abonnés/id_batiment
-MAX_ETAGES = 8           # R+8 maximum (OSM building:levels ≥9 = complexe mal tagué)
-MAX_LOG_PAR_ETAGE = 8    # jusqu'à 8 logements par étage — aligné sur FAT_CAPACITY=8 (1 FAT plein par étage)
+MAX_ETAGES = 10          # R+10 maximum
+MAX_LOG_PAR_ETAGE = 7    # jusqu'à 7 logements par étage — aligné sur FAT_CAPACITY=8 (1 FAT plein par étage)
 MAX_LOG_BATIMENT = 80    # cap absolu — 8 étages × 8 appts = 64, cap à 80 pour sécurité
 
 # Seuil surface MINIMAL — seulement pour éliminer les erreurs OSM grossières (< 1m²)
@@ -368,6 +361,17 @@ def charger_batiments():
     print(f"\n[1/3] Chargement bâtiments OSM — {PLACE}")
     bats = ox.features_from_place(PLACE, tags={"building": True})
     bats = bats[bats.geometry.geom_type.isin(["Polygon", "MultiPolygon"])].copy()
+    
+    # 1. Garder uniquement les immeubles (residential, apartments, yes)
+    # ou ceux ayant des noms spécifiques (AADL, Hasnaoui, etc.)
+    valid_btypes = ["apartments", "residential", "yes"]
+    keywords = ["aadl", "hasnaoui", "residence", "résidence", "cite", "cité", "logement", "promotion", "cooperative"]
+    
+    is_valid_type = bats.get("building", "").isin(valid_btypes)
+    has_keyword = bats.get("name", "").str.lower().str.contains('|'.join(keywords), na=False)
+    bats = bats[is_valid_type | has_keyword].copy()
+
+    # 2. Exclure strictement les bâtiments non résidentiels évidents (poste, cinema, etc.)
     if "building" in bats.columns:
         bats = bats[~bats["building"].fillna("").isin(EXCLURE)].copy()
 
@@ -403,7 +407,12 @@ def charger_batiments():
     TYPES_COM = {"commercial", "retail", "office", "shop", "mixed"}
     bats["commerce_rdc"] = bats["btype"].isin(TYPES_COM)
     bats = bats.reset_index(drop=True)
+    
+    nb_nommes = (bats["nom_bat"] != "").sum()
+    nb_non_nommes = len(bats) - nb_nommes
     print(f"  → {len(bats):,} bâtiments (après explosion MultiPolygon)")
+    print(f"  → Bâtiments avec nom défini dans OSM : {nb_nommes}")
+    print(f"  → Bâtiments sans nom (nommés automatiquement) : {nb_non_nommes}")
     return bats
 
 
@@ -422,15 +431,20 @@ def estimer_logements(bats):
     nb_et_list, nb_log_list, log_par_etage_list = [], [], []
 
     for _, row in bats.iterrows():
-        # Lecture OSM + plafond réaliste
-        if pd.notna(row.get("etages_osm")) and row["etages_osm"] >= 1:
-            nb_et = min(int(row["etages_osm"]), 8)          # max 8 étages (R+8)
+        # Lecture OSM + plafond (min 4 étages pour s'assurer d'atteindre 20 abonnés)
+        if pd.notna(row.get("etages_osm")) and row["etages_osm"] >= 3:
+            nb_et = max(4, min(int(row["etages_osm"]), MAX_ETAGES))
         else:
-            nb_et = np.random.randint(3, 6)                 # 3 à 5 étages (typique)
+            nb_et = np.random.randint(5, MAX_ETAGES + 1)
 
-        # Logements par étage (3 à 4 → très courant en AADL)
-        max_lpe = min(5, MAX_LOG_BATIMENT // max(nb_et, 1))
-        log_par_etage = np.random.randint(3, max_lpe + 1)
+        # Logements par étage calculé pour garantir [20, 70] abonnés au total
+        min_lpe = max(4, int(np.ceil(20 / nb_et)))
+        max_lpe = min(MAX_LOG_PAR_ETAGE, int(np.floor(70 / nb_et)))
+        
+        if min_lpe > max_lpe:
+            max_lpe = min_lpe
+
+        log_par_etage = np.random.randint(min_lpe, max_lpe + 1)
 
         # Nombre total de logements résidentiels (sans compter le RDC commerce)
         nb_log = nb_et * log_par_etage
@@ -477,57 +491,38 @@ def estimer_logements(bats):
 # ====================== GÉNÉRATION COLONNES VERTICALES RÉALISTES ======================
 def generer_positions_batiment(polygon, nb_colonnes):
     """
-    P1 amélioré : Génère nb_colonnes positions fixes (une par colonne verticale d'appartements)
-    Chaque colonne = même (lat, lon) pour tous les étages → vue 3D réaliste.
-    Points toujours à l'intérieur du polygone du bâtiment (érosion 5m).
+    Génère `nb_colonnes` positions aléatoires STRICTEMENT à l'intérieur du polygone du bâtiment.
+    Chaque position représente une "colonne" (ligne verticale) d'appartements.
     """
     if polygon.is_empty or not polygon.is_valid:
         center = polygon.centroid
-        return [(center.y, center.x)] * nb_colonnes
+        return [(round(center.y, 6), round(center.x, 6))] * nb_colonnes
 
-    # Érosion légère pour rester dans les murs (immeuble réaliste)
-    eroded = polygon.buffer(-5)
-    if eroded.is_empty or eroded.area < 1:
-        eroded = polygon
-
+    min_x, min_y, max_x, max_y = polygon.bounds
     positions = []
-    minx, miny, maxx, maxy = eroded.bounds
-
-    attempts = 0
-    while len(positions) < nb_colonnes and attempts < 2000:
-        x = np.random.uniform(minx, maxx)
-        y = np.random.uniform(miny, maxy)
-        pt = Point(x, y)
-        if eroded.contains(pt):
-            positions.append((round(pt.y, 7), round(pt.x, 7)))  # lat, lon
-        attempts += 1
-
-    # Complétion si pas assez de points (très rare)
-    while len(positions) < nb_colonnes:
-        positions.append(positions[0])
-
-    # Petite perturbation pour éviter superposition parfaite (réalisme)
-    for i in range(len(positions)):
-        positions[i] = rand_offset(positions[i][0], positions[i][1], 2, 5)
+    
+    from shapely.geometry import Point
+    
+    for _ in range(nb_colonnes):
+        point_trouve = False
+        for _ in range(100):  # 100 tentatives max par point
+            pt = Point(np.random.uniform(min_x, max_x), np.random.uniform(min_y, max_y))
+            if polygon.contains(pt):
+                positions.append((round(pt.y, 6), round(pt.x, 6)))
+                point_trouve = True
+                break
+        if not point_trouve:
+            # Fallback sur le centroïde si impossible (polygone trop petit/complexe)
+            center = polygon.centroid
+            positions.append((round(center.y, 6), round(center.x, 6)))
 
     return positions
 
 def ajouter_jitter_etage(base_lat: float, base_lon: float) -> tuple[float, float]:
     """
-    Ajoute un jitter réaliste par étage.
-
-    VALEUR : normal(0, 0.000008) ≈ ±0.8m (1σ), max ~2.4m (3σ)
-    La marge de sécurité de generer_positions_batiment (3.2m) est > 2.4m,
-    donc les points restent dans le bâtiment avec probabilité > 99.7%.
-
-    Ce jitter simule :
-    - L'imprécision du relevé GPS terrain
-    - Les légères variations de position réelle des terminaux optiques
+    Désactivé : Retourne les coordonnées exactes pour assurer une ligne verticale parfaite.
     """
-    return (
-        round(base_lat + np.random.normal(0, 0.000050), 6),
-        round(base_lon + np.random.normal(0, 0.000050), 6)
-    )
+    return (round(base_lat, 6), round(base_lon, 6))
 
 
 # ====================== FAT ASSIGNMENT : PRIORITÉ ÉTAGE (v8) ======================
@@ -646,7 +641,7 @@ def assigner_fats_batiment(
             portes_group = [apt["porte"] for apt in group]
             fat_id = fmt_fat(olt_seq, fdt_seq_num, spl_seq, elot,
                              portes_group, etage, fat_num_etage)
-            dist_fat = int(np.random.choice([15, 20, 50, 80]))
+            dist_fat = int(np.random.choice(settings.AT_DROP_CABLE_STANDARDS_M))
 
             fats_out.append({
                 "id": fat_id,
@@ -739,21 +734,21 @@ def assigner_fats_batiment(
     # Si comm_rdc=False → pas de FAT étage 0, les logements commencent à l'étage 1.
     # Justification : presence_de_commerce=0 signifie RDC vide ou inexistant.
     # Un RDC résidentiel serait incohérent avec presence_de_commerce=0.
+    current_porte = 1
     if comm_rdc:
         # RDC commercial : 2-4 locaux dans leur propre FAT
         nb_com = np.random.randint(2, 5)
-        appts_rdc = [{"appt_in_floor": i, "porte": i + 1} for i in range(nb_com)]
+        appts_rdc = [{"appt_in_floor": i, "porte": current_porte + i} for i in range(nb_com)]
+        current_porte += nb_com
         _creer_fat_et_abonnes(etage=0, appts_etage=appts_rdc, usage="commerces")
     # else : RDC absent → rien à générer pour l'étage 0
 
     # ====================== ÉTAGES RÉSIDENTIELS (1..nb_et) ======================
     # Fix 1: numéro de porte GLOBAL au bâtiment (pas relatif à l'étage).
-    # Étage 1 → portes 1..nb_log_etage
-    # Étage 2 → portes nb_log_etage+1..2*nb_log_etage
-    # etc. → chaque porte est unique dans le bâtiment.
+    # Incrémentation continue de 1 à N
     for et in range(1, nb_et + 1):
-        porte_offset = (et - 1) * nb_log_etage  # décalage global
-        appts_etage = [{"appt_in_floor": i, "porte": porte_offset + i + 1} for i in range(nb_log_etage)]
+        appts_etage = [{"appt_in_floor": i, "porte": current_porte + i} for i in range(nb_log_etage)]
+        current_porte += nb_log_etage
         _creer_fat_et_abonnes(etage=et, appts_etage=appts_etage, usage="logements")
 
     return {
@@ -767,7 +762,8 @@ def assigner_fats_batiment(
 
 # ====================== GÉNÉRATION TABLES ======================
 def generer_tables(bats):
-    print(f"\n[3/3] Génération tables AT — {wilaya_nom}")
+    nb_bat_total = len(bats)
+    print(f"\n[3/3] Génération tables AT — {wilaya_nom} ({nb_bat_total} bâtiments à traiter)")
     from backend.config import settings
 
     zones, equipements, cartes, ports = [], [], [], []
@@ -809,7 +805,11 @@ def generer_tables(bats):
         zone_id = f"Z{ZONE_CODE}-{zone_seq:03d}"
 
         # FIX 1 EN ACTION : numérotation réinitialisée par résidence
-        batiment_pav, nom_bat, type_batiment = _namer.get(bat_idx, elot)
+        batiment_pav, nom_bat, type_batiment = _namer.get(bat_idx, elot, row, commune)
+
+        # ====== PRINT POUR LE SUIVI ======
+        print(f" ⏳ [{bat_idx + 1}/{nb_bat_total}] Traitement : {batiment_pav}")
+        print(f"    ➡️ Étages: {nb_et} | Log/étage: {nb_log_etage} | Commerce RDC: {'Oui' if comm_rdc else 'Non'}")
 
         olt_nom = f"T{ZONE_CODE}-{olt_seq:03d}-{elot}-AN6000-IN"
 
@@ -956,8 +956,8 @@ def generer_tables(bats):
 
 # ====================== MERGE TABLES (inchangé) ======================
 def merge_all_tables():
-    print("🔄 Lecture de TOUTES les tables depuis donnee_annaba4/...")
-    base = r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee_annaba4"
+    print("🔄 Lecture de TOUTES les tables depuis donnee_annaba4v2/...")
+    base = r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee_annaba4v2"
 
     abonnes    = pd.read_csv(f"{base}/abonnes.csv")
     client     = pd.read_csv(f"{base}/client.csv")
@@ -1040,7 +1040,7 @@ if __name__ == "__main__":
     bats = charger_batiments()
     bats = estimer_logements(bats)
     tables = generer_tables(bats)
-    base = r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee_annaba4"
+    base = r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee_annaba4v2"
     for nom, df in tables.items():
         path = os.path.join(base, f"{nom}.csv")
         df.to_csv(path, index=False, encoding="utf-8-sig")

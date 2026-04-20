@@ -1,184 +1,176 @@
-from fastapi import FastAPI, HTTPException, Query, BackgroundTasks
-from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import List, Dict, Any, Optional
+import streamlit as st
 import pandas as pd
-import geopandas as gpd
-import osmnx as ox
-from shapely.geometry import Point
+import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import numpy as np
-import os
-import types
-import sys
-import asyncio
-import json
-import time
-import re
-import sqlite3
-import threading
-import unicodedata
-from pathlib import Path
-import httpx
 
-# ====================== IMPORT MODELE ======================
-config_module = types.ModuleType("config")
-class _Settings:
-    FAT_CAPACITY = 8
-    TORTUOSITY_TRUNK = 1.3
-    AT_DROP_CABLE_STANDARDS_M = [10, 15, 20, 30, 50, 100]
-config_module.settings = _Settings()
-sys.modules["config"] = config_module
+st.set_page_config(page_title="FTTH Dataset Explorer", layout="wide", page_icon="📡")
 
-from model2D import FATSmartPlanner
-from id_generator import ATIDGenerator
 
-# ====================== CACHE & DB ======================
-_CACHE_DIR = Path("osm_cache")
-_CACHE_DIR.mkdir(exist_ok=True)
-_CACHE_DB = _CACHE_DIR / "osm_cache.db"
-_DZ_ADMIN_DB = Path("dz_admin.db")
+# ====================== CHARGEMENT DU DATASET ======================
+@st.cache_data
+def load_data():
+    df = pd.read_csv(r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee_annaba4v2\dataset_fusionnee_final.csv")
+    # Les identifiants générés par generer.py (ex: Bat-1, Bat-2) sont désormais strictement uniques.
+    # On n'a plus besoin de séparer artificiellement par coordonnées GPS.
+    df['building_uid'] = df['id_batiment']
 
-ox.settings.use_cache = True
-ox.settings.cache_folder = str(_CACHE_DIR / "osmnx_http")
-_db_lock = threading.Lock()
+    numeric_cols = ['lat_abonne', 'lon_abonne', 'etage', 'porte', 'lat_fat', 'lon_fat',
+                    'distance_olt_m', 'nbr_etages', 'nbr_logements_par_etage',
+                    'nbr_logements_total']
 
-def _init_databases():
-    with _db_lock:
-        with sqlite3.connect(str(_CACHE_DB)) as conn:
-            conn.execute("CREATE TABLE IF NOT EXISTS cache (key TEXT PRIMARY KEY, value TEXT NOT NULL, ts REAL NOT NULL, category TEXT, parent_key TEXT)")
-        with sqlite3.connect(str(_DZ_ADMIN_DB)) as conn:
-            conn.execute("CREATE TABLE IF NOT EXISTS wilayas (code TEXT PRIMARY KEY, name TEXT NOT NULL)")
-            conn.execute("CREATE TABLE IF NOT EXISTS communes (code TEXT PRIMARY KEY, wilaya_code TEXT, name TEXT NOT NULL, FOREIGN KEY(wilaya_code) REFERENCES wilayas(code))")
-            conn.execute("CREATE TABLE IF NOT EXISTS quartiers (id INTEGER PRIMARY KEY AUTOINCREMENT, commune_code TEXT, name TEXT NOT NULL, UNIQUE(commune_code, name))")
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_com_w ON communes(wilaya_code)")
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_q_c ON quartiers(commune_code)")
+    for col in numeric_cols:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+    return df
 
-_init_databases()
 
-async def sync_dz_admin_db():
-    try:
-        with sqlite3.connect(str(_DZ_ADMIN_DB)) as conn:
-            if conn.execute("SELECT COUNT(*) FROM communes").fetchone()[0] >= 1541: return
-    except: pass
-    url = "https://raw.githubusercontent.com/Kenandarabeh/algeria-wilayas-communes-2026/main/wilayas.json"
-    try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            r = await client.get(url)
-            if r.status_code == 200:
-                data = r.json()
-                with sqlite3.connect(str(_DZ_ADMIN_DB)) as conn:
-                    conn.execute("DELETE FROM wilayas"); conn.execute("DELETE FROM communes")
-                    for w in data:
-                        wc, wn = str(w.get("code", "")).zfill(2), w.get("nom") or w.get("name", "")
-                        conn.execute("INSERT INTO wilayas (code, name) VALUES (?, ?)", (wc, wn))
-                        for c in w.get("communes", []):
-                            cc, cn = c.get("code") or f"{wc}{str(c.get('id',''))[-3:].zfill(3)}", c.get("nom") or c.get("name", "")
-                            conn.execute("INSERT OR IGNORE INTO communes (code, wilaya_code, name) VALUES (?, ?, ?)", (cc, wc, cn))
-                print("✅ [DZ_ADMIN] Synchronisation terminée.")
-    except Exception as e: print(f"WARNING [SYNC] {e}")
+df = load_data()
 
-async def _sync_quartiers_osm(c_code: str, c_name: str, v_name: str):
-    try:
-        cp = c_name.split(' ')[0]
-        q = f'[out:json][timeout:25];area["ISO3166-1"="DZ"]->.a;area[name~"^{cp}",i]["admin_level"="8"](.a)->.c;(node["place"~"suburb|quarter|neighbourhood"](area.c);way["landuse"="residential"](area.c););out tags;'
-        async with httpx.AsyncClient(timeout=30.0) as cl:
-            for srv in ["https://overpass-api.de/api/interpreter", "https://lz4.overpass-api.de/api/interpreter"]:
-                try:
-                    r = await cl.post(srv, data={"data": q})
-                    if r.status_code == 200:
-                        found = {f"{e['tags'].get('name:fr', e['tags'].get('name',''))} {e['tags'].get('name:ar','')}".strip() for e in r.json().get('elements',[]) if e['tags'].get('name')}
-                        with sqlite3.connect(str(_DZ_ADMIN_DB)) as conn:
-                            for n in found: conn.execute("INSERT OR IGNORE INTO quartiers (commune_code, name) VALUES (?, ?)", (c_code, n))
-                        break
-                except: continue
-    except: pass
+st.title("📡 FTTH Smart Planner - Dataset Explorer")
+st.caption(f"Dataset chargé : **{len(df):,} lignes** | {df.shape[1]} colonnes")
 
-# ====================== APP & MODELS ======================
-app = FastAPI(); app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+# ====================== SIDEBAR ======================
+st.sidebar.header("🔎 Filtres")
 
-class ImportOSMRequest(BaseModel): ville: str; quartier: str; residence: str; nombre_etages: int = 8; logements_par_etage: int = 12
-class FATPlacementRequest(BaseModel): subscribers: List[Dict[str, Any]]
-class NamingFATRequest(BaseModel): fat_candidates: List[Dict[str, Any]]; subscribers: List[Dict[str, Any]]
+selected_uid = st.sidebar.selectbox(
+    "Sélectionner un Bâtiment (Unique)",
+    options=["Tous"] + sorted(df['building_uid'].unique()),
+    index=0
+)
 
-# ====================== ENDPOINTS LOCALISATION ======================
-@app.get("/api/ville")
-async def get_villes():
-    with sqlite3.connect(str(_DZ_ADMIN_DB)) as conn:
-        rows = conn.execute("SELECT code, name FROM wilayas ORDER BY code ASC").fetchall()
-        return {"villes": [f"{r[0]} - {r[1]}" for r in rows]}
+# Filtrage
+filtered_df = df.copy()
+if selected_uid != "Tous":
+    filtered_df = filtered_df[filtered_df['building_uid'] == selected_uid]
 
-@app.get("/api/commune/{ville}")
-async def get_communes(ville: str):
-    wc = ville.split(' ')[0].zfill(2)
-    with sqlite3.connect(str(_DZ_ADMIN_DB)) as conn:
-        rows = conn.execute("SELECT name FROM communes WHERE wilaya_code = ? ORDER BY name ASC", (wc,)).fetchall()
-        return {"communes": [r[0] for r in rows]}
+# ====================== TABS ======================
+tab1, tab2, tab3, tab4 = st.tabs(
+    ["📊 Overview & Stats", "📈 Distributions", "🏢 3D Building View", "🗺️ Carte Géographique"])
 
-@app.get("/api/quartier")
-async def get_quartiers(ville: str, commune: str, background_tasks: BackgroundTasks):
-    wc = ville.split(' ')[0].zfill(2); cp = commune.split(' ')[0]
-    with sqlite3.connect(str(_DZ_ADMIN_DB)) as conn:
-        c_row = conn.execute("SELECT code FROM communes WHERE wilaya_code = ? AND name LIKE ?", (wc, f"%{cp}%")).fetchone()
-        if not c_row: return {"quartiers": []}
-        qs = [r[0] for r in conn.execute("SELECT name FROM quartiers WHERE commune_code = ? ORDER BY name ASC", (c_row[0],)).fetchall()]
-        if not qs: background_tasks.add_task(_sync_quartiers_osm, c_row[0], commune, ville)
-        return {"quartiers": qs}
+with tab1:
+    st.subheader("📊 Statistiques Générales")
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Total Abonnés", len(filtered_df))
+    col2.metric("Blocs Physiques", filtered_df['building_uid'].nunique())
+    col3.metric("FATs uniques", filtered_df['FAT_relative'].nunique())
+    col4.metric("Quartiers", filtered_df['quartier'].nunique())
 
-@app.get("/api/residence")
-async def get_residences(ville: str, commune: str, quartier: str):
-    vp, qp = ville.split(' ')[0], quartier.split(' ')[0]
-    async with httpx.AsyncClient(timeout=10.0) as cl:
-        r = await cl.get("https://nominatim.openstreetmap.org/search", params={"q":f"{qp}, {vp}, Algeria", "format":"jsonv2", "limit":1})
-        if not r.json(): return {"residences": []}
-        bbox = r.json()[0].get('boundingbox')
-        if not bbox: return {"residences": []}
-        s, n, w, e = float(bbox[0]), float(bbox[1]), float(bbox[2]), float(bbox[3])
-        vb = f"{w-0.005},{s-0.005},{e+0.005},{n+0.005}"
-        names = set()
-        for t in ["residence", "cite", "lotissement"]:
-            r2 = await cl.get("https://nominatim.openstreetmap.org/search", params={"q":f"{t} {vp}", "format":"jsonv2", "limit":20, "viewbox":vb, "bounded":1})
-            for it in r2.json():
-                nm = it.get('display_name','').split(',')[0].strip()
-                if nm: names.add(nm)
-        return {"residences": sorted(list(names))}
+    st.subheader("Top 10 Batiments les plus peuplés")
+    top_bat = filtered_df.groupby('id_batiment').size().nlargest(10)
+    st.bar_chart(top_bat)
 
-# ====================== BUSINESS ENDPOINTS ======================
-@app.post("/api/importOSM")
-async def import_osm(req: ImportOSMRequest):
-    vp, qp = req.ville.split(' ')[0], req.quartier.split(' ')[0]
-    place = f"{req.residence}, {qp}, {vp}, Algeria"
-    try:
-        gdf = ox.features_from_place(place, tags={"building": True})
-        if gdf.empty: gdf = ox.features_from_place(f"{qp}, {vp}, Algeria", tags={"building": True})
-    except: raise HTTPException(status_code=400, detail="Zone introuvable")
-    gdf = gdf[gdf.geometry.geom_type.isin(["Polygon", "MultiPolygon"])].copy().reset_index(drop=True)
-    subs = []
-    for i, b in gdf.iterrows():
-        b_name = f"{vp}-{qp}-{req.residence}-B{i+1}"
-        for j in range(req.nombre_etages * req.logements_par_etage):
-            etg = (j // req.logements_par_etage) + 1
-            subs.append({"code_client": f"AB{i:03d}{j:03d}", "id_batiment": b_name, "lat_abonne": b.geometry.centroid.y, "lon_abonne": b.geometry.centroid.x, "etage": etg, "porte": etg*100+(j%req.logements_par_etage)+1, "usage": "logements"})
-    return {"buildings_geojson": gdf.to_json(), "subscribers": subs, "count": len(gdf)}
+with tab2:
+    st.subheader("Distribution des données")
+    colA, colB = st.columns(2)
 
-@app.post("/api/emplacementFATs")
-async def sectorize(req: FATPlacementRequest):
-    planner = FATSmartPlanner(); planner.fit(pd.DataFrame(req.subscribers))
-    res = []
-    for r in planner.results_:
-        for f in r.fat_candidates:
-            res.append({"id_batiment": r.id_batiment, "fat_id": f.fat_id, "centroid_lat": f.centroid_lat, "centroid_lon": f.centroid_lon, "n_subscribers": f.n_subscribers, "capacity_ok": f.capacity_ok, "cable_m_to_fdt_real": f.cable_m_to_fdt_real, "subscriber_ids": f.subscriber_ids})
-    return {"fat_candidates": res}
+    with colA:
+        fig = px.histogram(filtered_df, x="etage", nbins=30, title="Distribution par Étage")
+        st.plotly_chart(fig, use_container_width=True)
 
-@app.post("/api/nomFAT")
-async def naming(req: NamingFATRequest):
-    gen = ATIDGenerator(wilaya_code="310"); dat = req.fat_candidates
-    for i, d in enumerate(dat): d["fat_id_AT"] = f"FAT-AT-{d['id_batiment'][-4:]}-{i+1}"
-    return {"fat_candidates_with_ids": dat}
+        fig2 = px.histogram(filtered_df, x="nbr_logements_total", title="Nombre total de logements par bâtiment")
+        st.plotly_chart(fig2, use_container_width=True)
 
-@app.on_event("startup")
-async def startup(): asyncio.create_task(sync_dz_admin_db())
+    with colB:
+        fig3 = px.box(filtered_df, y="distance_olt_m", title="Distance OLT (mètres)")
+        st.plotly_chart(fig3, use_container_width=True)
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+        fig4 = px.histogram(filtered_df, x="nbr_logements_par_etage", title="Logements par étage")
+        st.plotly_chart(fig4, use_container_width=True)
+
+with tab3:
+    st.subheader("🏢 Visualisation 3D du Bâtiment (Abonnés + FATs)")
+
+    if selected_uid == "Tous":
+        st.info("Sélectionne un bâtiment spécifique dans la sidebar pour voir la vue 3D")
+    else:
+        # Vérification des doublons de porte
+        dupes = filtered_df[filtered_df.duplicated(subset=['porte'], keep=False)]
+        if not dupes.empty:
+            st.warning(f"⚠️ Attention : {len(dupes)} abonnés partagent un numéro de porte identique dans ce bloc.")
+            if st.checkbox("Voir les doublons"):
+                st.write(dupes[['code_client', 'etage', 'porte', 'id_batiment']])
+
+        bat_df = filtered_df # Déjà filtré par selected_uid
+
+        if len(bat_df) == 0:
+            st.warning("Aucune donnée pour ce bâtiment")
+        else:
+            # 3D Scatter : Abonnés (Z = étage)
+            fig_3d = go.Figure()
+
+            # Abonnés
+            fig_3d.add_trace(go.Scatter3d(
+                x=bat_df['lon_abonne'],
+                y=bat_df['lat_abonne'],
+                z=bat_df['etage'],
+                mode='markers',
+                marker=dict(size=4, color=bat_df['etage'], colorscale='Viridis', opacity=0.8),
+                name='Abonnés'
+            ))
+
+            # FATs
+            fat_df = bat_df.drop_duplicates(subset=['lat_fat', 'lon_fat'])
+            fig_3d.add_trace(go.Scatter3d(
+                x=fat_df['lon_fat'],
+                y=fat_df['lat_fat'],
+                z=fat_df['etage'] + 0.5,  # légèrement au-dessus
+                mode='markers',
+                marker=dict(size=8, color='red', symbol='diamond'),
+                name='FATs'
+            ))
+
+            fig_3d.update_layout(
+                title=f"3D - {selected_uid} ({len(bat_df)} abonnés)",
+                scene=dict(
+                    xaxis_title="Longitude",
+                    yaxis_title="Latitude",
+                    zaxis_title="Étage",
+                    aspectmode="cube"
+                ),
+                height=700,
+                margin=dict(l=0, r=0, b=0, t=40)
+            )
+            st.plotly_chart(fig_3d, use_container_width=True)
+
+with tab4:
+    st.subheader("🗺️ Carte Géographique des Abonnés & FATs")
+
+    if len(filtered_df) > 5000:
+        st.warning("Trop de points → affichage d’un échantillon de 5000 points")
+        map_df = filtered_df.sample(5000)
+    else:
+        map_df = filtered_df
+
+    fig_map = px.scatter_mapbox(
+        map_df,
+        lat="lat_abonne",
+        lon="lon_abonne",
+        color="etage",
+        hover_name="code_client",
+        hover_data=["id_batiment", "porte", "FAT_relative"],
+        zoom=15,
+        height=700,
+        mapbox_style="open-street-map"
+    )
+    fig_map.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
+    st.plotly_chart(fig_map, use_container_width=True)
+
+# ====================== INSIGHTS AUTOMATIQUES ======================
+st.subheader("💡 Insights intéressants")
+col_ins1, col_ins2 = st.columns(2)
+
+with col_ins1:
+    st.write("**Bâtiment le plus chargé**")
+    max_bat = filtered_df.groupby('building_uid').size().idxmax()
+    st.success(f"{max_bat} → {filtered_df[filtered_df['building_uid'] == max_bat].shape[0]} abonnés")
+
+with col_ins2:
+    st.write("**FAT le plus utilisé**")
+    if 'FAT_relative' in filtered_df.columns:
+        top_fat = filtered_df['FAT_relative'].value_counts().idxmax()
+        st.info(f"FAT {top_fat} → {filtered_df[filtered_df['FAT_relative'] == top_fat].shape[0]} abonnés")
+
+st.caption("Dataset finalisé avec suc"
+           "cès ! Prêt pour analyse FTTH.")

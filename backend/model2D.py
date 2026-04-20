@@ -2,6 +2,7 @@
 # FATSmartPlanner - Pipeline Complet P1 → P5 (Stage ING4 - Algérie Télécom Oran)
 # Version 2D Pure + Summary enrichi (MSE, RMSE, MAE, R², Silhouette, ARI)
 # =============================================================================
+import math
 
 import joblib
 import numpy as np
@@ -78,30 +79,46 @@ def snap_cable(dist_m: float) -> int:
     return settings.AT_DROP_CABLE_STANDARDS_M[-1]
 
 
-def calculate_k_optimal(n_abonnes: int) -> int:
+# =============================================================================
+# CALCUL K OPTIMAL - VERSION METIER AT ORAN (V3 - Réaliste)
+# =============================================================================
+def calculate_k_optimal(n_abonnes: int, building_type: str = "RESIDENTIEL") -> int:
     """
-    Règle Algérie Télécom - Placement optimal des FATs (Stage ING4 Oran)
-    Évite les FATs avec trop peu d'abonnés (gaspillage de splitter N2)
+    Règle Algérie Télécom Oran - Stage ING4
+    Objectif : Nombre raisonnable de FATs par bâtiment
     """
     if n_abonnes <= 0:
         return 0
-
-    # Calcul de base : nombre minimum de FATs nécessaires
-    k = ceil(n_abonnes / settings.FAT_CAPACITY)
-
-    # Règle du remainder threshold
-    remainder = n_abonnes % settings.FAT_CAPACITY
-
-    # Si le reste est >= seuil (6,7,8) → on préfère ajouter 1 FAT pour "remplir" mieux
-    # Exemple : 13 abonnés → 1 FAT de 8 + 1 FAT de 5 → on passe à 2 FATs (8+5 mieux que 13 dans 1 FAT ? Non, mais selon ta règle métier)
-    if remainder >= settings.FAT_CAPACITY_REMAINDER_THRESHOLD and remainder != 0:
-        k += 1
-
-    # Cas particulier : si n_abonnes <= FAT_CAPACITY, toujours 1 FAT
-    if n_abonnes <= settings.FAT_CAPACITY:
+    if n_abonnes <= settings.FAT_CAPACITY:   # 8
         return 1
 
-    return max(1, k)
+    # Base minimum
+    k_min = math.ceil(n_abonnes / settings.FAT_CAPACITY)
+
+    # Règle remainder (on ajoute un FAT seulement si reste important)
+    remainder = n_abonnes % settings.FAT_CAPACITY
+    k = k_min
+    if remainder >= settings.FAT_CAPACITY_REMAINDER_THRESHOLD:
+        k += 1
+
+    # === LIMITATION METIER IMPORTANTE ===
+    # On ne met pas plus de 1 FAT tous les X logements selon le type
+    if building_type in ["AADL", "HLM", "LPP", "LSL"]:
+        max_fat_density = 12      # 1 FAT pour 12 logements max dans les grands ensembles AADL
+    elif building_type in ["PRIVE", "CNEP"]:
+        max_fat_density = 10
+    else:
+        max_fat_density = 11
+
+    k_max_reasonable = math.ceil(n_abonnes / max_fat_density)
+
+    # On prend la valeur la plus raisonnable
+    k = max(k_min, min(k, k_max_reasonable))
+
+    # Sécurité : ne jamais dépasser 25% de FATs en plus du minimum
+    k = min(k, math.ceil(k_min * 1.25))
+
+    return k
 
 # =============================================================================
 # CLASSE PRINCIPALE - 2D STRICT
@@ -129,8 +146,11 @@ class FATSmartPlanner:
     # =========================================================================
     # P3 + P4 : K-means contraint 2D + Positionnement centroïde
     # =========================================================================
-    def _constrained_kmeans_2d(self, df_u: pd.DataFrame, k: int):
-        """K-means 2D strict avec contrainte capacité ≤ 8"""
+    # =========================================================================
+    # P3 + P4 : K-MEANS CONTRAINT 2D AMÉLIORÉ (Version finale recommandée)
+    # =========================================================================
+    def _constrained_kmeans_2d(self, df_u: pd.DataFrame, k: int, max_radius_m: float = 120.0):
+        """K-means 2D avec contraintes : capacité ≤8 + rayon maximal par cluster"""
         if len(df_u) < 2:
             clat = df_u["lat_abonne"].mean()
             clon = df_u["lon_abonne"].mean()
@@ -142,32 +162,47 @@ class FATSmartPlanner:
         scaler = StandardScaler()
         X_scaled = scaler.fit_transform(X)
 
-        km = KMeans(n_clusters=k, n_init=15, max_iter=300, random_state=self.random_state)
-        km.fit(X_scaled)
+        # K-means initial avec bonne initialisation
+        km = KMeans(n_clusters=k, n_init=20, max_iter=400,
+                    random_state=self.random_state, init='k-means++')
+        labels = km.fit_predict(X_scaled)
         centroids_scaled = km.cluster_centers_
 
-        # Assignment contraint capacité
-        from scipy.spatial.distance import cdist
-        distances = cdist(X_scaled, centroids_scaled)
-        labels = np.full(len(X_scaled), -1)
-        cluster_counts = np.zeros(k, dtype=int)
+        # Centroïdes en coordonnées réelles
+        centroids_orig = scaler.inverse_transform(centroids_scaled)
 
-        pairs = sorted(((distances[i, j], i, j) for i in range(len(X_scaled)) for j in range(k)), key=lambda x: x[0])
+        # Correction itérative : split des clusters trop gros + respect rayon
+        from scipy.spatial.distance import cdist
+        distances = cdist(X_scaled, scaler.transform(centroids_orig))
+
+        # Réassignation finale avec contraintes capacité + distance
+        final_labels = np.full(len(X), -1, dtype=int)
+        cluster_counts = np.zeros(len(centroids_orig), dtype=int)
+
+        # Tri par distance croissante pour assigner les plus proches en premier
+        pairs = sorted(((distances[i, j], i, j)
+                       for i in range(len(X)) for j in range(len(centroids_orig))),
+                       key=lambda x: x[0])
 
         for _, i, j in pairs:
-            if labels[i] == -1 and cluster_counts[j] < settings.FAT_CAPACITY:
-                labels[i] = j
-                cluster_counts[j] += 1
+            if final_labels[i] == -1 and cluster_counts[j] < settings.FAT_CAPACITY:
+                # Vérification du rayon
+                dist_m = haversine_m(
+                    df_u.iloc[i]["lat_abonne"], df_u.iloc[i]["lon_abonne"],
+                    centroids_orig[j][0], centroids_orig[j][1]
+                )
+                if dist_m <= max_radius_m:
+                    final_labels[i] = j
+                    cluster_counts[j] += 1
 
-        # Recalcul centroïdes originaux (2D)
-        centroids_orig = np.zeros((k, 2))
-        for j in range(k):
-            mask = labels == j
+        # Recalcul final des centroïdes après réassignation
+        final_centroids = np.zeros((len(centroids_orig), 2))
+        for j in range(len(centroids_orig)):
+            mask = final_labels == j
             if np.any(mask):
-                centroids_orig[j] = X[mask].mean(axis=0)
+                final_centroids[j] = X[mask].mean(axis=0)
 
-        return labels, centroids_orig
-
+        return final_labels, final_centroids
     # =========================================================================
     # P5 : Validation contraintes
     # =========================================================================
@@ -234,43 +269,20 @@ class FATSmartPlanner:
                 continue
 
             n_sub = len(df_u)
-            k = calculate_k_optimal(n_sub)
+            btype = df_bat.get("type_batiment", pd.Series(["RESIDENTIEL"])).iloc[0]
+
+            k = calculate_k_optimal(n_sub, btype)
+
+            # Ligne de debug claire
+            print(f"   → Bâtiment {id_batiment} | {usage}: {n_sub} abonnés → k={k} FATs | type={btype}")
+
             if n_sub < 2:
                 k = 1
 
-            labels, centroids = self._constrained_kmeans_2d(df_u, k)
+            # Rayon max selon type de bâtiment (très important)
+            max_r = 80.0 if btype in ["AADL", "HLM", "LPP"] else 150.0
 
-            for cluster_id in range(k):
-                mask = labels == cluster_id
-                subset = df_u[mask]
-                if subset.empty:
-                    continue
-
-                clat, clon = centroids[cluster_id]
-
-                # Calcul rayon et distance max (2D)
-                distances_m = [haversine_m(r["lat_abonne"], r["lon_abonne"], clat, clon) 
-                              for _, r in subset.iterrows()]
-                max_dist_m = max(distances_m) if distances_m else 0.0
-                max_radius_deg = max(np.sqrt((r["lat_abonne"] - clat)**2 + (r["lon_abonne"] - clon)**2) 
-                                   for _, r in subset.iterrows()) if not subset.empty else 0.00001
-
-                fat = FATCandidate(
-                    fat_id=f"FAT-{cluster_id + 1 + label_offset:03d}-{'LOG' if usage == 'logements' else 'COM'}",
-                    cluster_label=cluster_id + label_offset,
-                    centroid_lat=round(clat, 6),
-                    centroid_lon=round(clon, 6),
-                    subscriber_ids=subset["code_client"].tolist(),
-                    n_subscribers=len(subset),
-                    usage=usage,
-                    fdt_assigned=subset["nom_FDT"].mode().iloc[0] if not subset["nom_FDT"].mode().empty else "FDT_INCONNU",
-                    capacity_ok=len(subset) <= settings.FAT_CAPACITY,
-                    radius_deg=max_radius_deg,
-                    max_dist_to_sub_m=round(max_dist_m, 2)
-                )
-                all_fat_candidates.append(fat)
-
-            label_offset += k
+            labels, centroids = self._constrained_kmeans_2d(df_u, k, max_radius_m=max_r)
 
         if not all_fat_candidates:
             return None
@@ -340,7 +352,14 @@ class FATSmartPlanner:
                 # r2_score avec deux colonnes retourne le R² multivarié (coefficient de
                 # détermination), entre -∞ (pire) et 1.0 (parfait).
                 # On multiplie par 100 pour avoir un pourcentage.
-                r2 = r2_score(y_true, y_pred) * 100
+                # R² stable basé sur les distances (pas sur lat/lon bruts)
+                if len(distances_m) > 0:
+                    dist_mean = np.mean(distances_m)
+                    ss_tot = np.sum((distances_m - dist_mean) ** 2)
+                    ss_res = np.sum(np.array(distances_m) ** 2)  # variance autour du centroïde
+                    r2 = (1 - ss_res / ss_tot) * 100 if ss_tot > 0 else 100.0
+                else:
+                    r2 = 0.0
 
             except Exception:
                 pass
@@ -436,14 +455,14 @@ class FATSmartPlanner:
 # LANCEMENT
 # =============================================================================
 if __name__ == "__main__":
-    DATASET_PATH = r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee_annaba2\dataset_fusionnee_final.csv"
+    DATASET_PATH = r"C:\Users\blabl\OneDrive\Desktop\New folder\donnee_annaba4v2\dataset_fusionnee_final.csv"
 
     df = pd.read_csv(DATASET_PATH, encoding="utf-8-sig")
     print(f"Dataset chargé → {len(df):,} abonnés | {df['id_batiment'].nunique():,} bâtiments")
 
     model = FATSmartPlanner(random_state=2026)
-    model.fit(df, max_buildings=None)
+    model.fit(df, max_buildings=20)
 
     os.makedirs("model", exist_ok=True)
-    joblib.dump(model, "model/fat_pipeline_2d_annaba.joblib")
-    print("✅ Modèle 2D complet sauvegardé → model/fat_pipeline_2d_annaba.joblib")
+    joblib.dump(model, "model/fat_pipeline_2d_annabav2.joblib")
+    print("✅ Modèle 2D complet sauvegardé → model/fat_pipeline_2d_annabav2.joblib")
