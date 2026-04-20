@@ -1,4 +1,7 @@
 from contextlib import asynccontextmanager
+import hashlib
+import math
+import time
 import joblib
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import JSONResponse
@@ -21,9 +24,18 @@ from dataclasses import dataclass
 
 from id_generator import ATIDGenerator
 
+# Configuration OSMNX
+ox.settings.use_cache = True
+ox.settings.log_console = False
+
+import warnings
+
+warnings.filterwarnings("ignore", category=UserWarning, module="geopandas")
+
 # ====================== CONFIG ======================
 config_module = types.ModuleType("config")
 FAT_CAPACITY = 8
+
 
 class _Settings:
     FAT_CAPACITY = 8
@@ -84,6 +96,24 @@ fat_model = None
 async def lifespan(app: FastAPI):
     global fat_model
     print("🔄 Démarrage - Chargement du modèle joblib...")
+
+    # ── Nettoyage des caches vides au démarrage ─────────────────────────────
+    # Les caches à 0 résidence (créés par un bug ou une erreur Overpass)
+    # sont supprimés pour forcer un re-fetch propre.
+    purged = 0
+    for f in RESIDENCE_CACHE_DIR.glob("*.json"):
+        try:
+            with open(f, "r", encoding="utf-8") as fh:
+                data = json.load(fh)
+            if isinstance(data, list) and len(data) == 0:
+                f.unlink()
+                purged += 1
+        except Exception:
+            f.unlink()  # fichier corrompu → supprimer
+            purged += 1
+    if purged:
+        print(f"🧹 {purged} cache(s) vide(s) ou corrompu(s) supprimé(s) au démarrage")
+
     if not MODEL_PATH.exists():
         print(f"⚠️ Modèle non trouvé : {MODEL_PATH}. Fonctionnement en mode Fallback K-Means.")
     else:
@@ -98,7 +128,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="FTTH Smart Planner API - Algérie Télécom",
-    version="5.0",
+    version="5.1",
     description="Wilaya → Commune → Quartier → Résidence",
     lifespan=lifespan
 )
@@ -112,6 +142,11 @@ ox.settings.cache_folder = str(_CACHE_DIR / "osmnx_http")
 
 JSON_CACHE_DIR = Path("osm_json_cache")
 JSON_CACHE_DIR.mkdir(exist_ok=True)
+
+# Cache résidences sur disque — expire après 24h
+RESIDENCE_CACHE_DIR = Path("residence_cache")
+RESIDENCE_CACHE_DIR.mkdir(exist_ok=True)
+RESIDENCE_CACHE_TTL_SECONDS = 86400  # 24 heures
 
 _WILAYAS_58 = {
     1: "Adrar", 2: "Chlef", 3: "Laghouat", 4: "Oum El Bouaghi", 5: "Batna", 6: "Béjaïa",
@@ -162,27 +197,88 @@ def load_from_json_cache(key: str):
     return None
 
 
-# ====================== OVERPASS (RÉSIDENTIEL STRICT) ======================
+# ====================== CACHE RÉSIDENCES DISQUE ======================
+# Leçon : le cache disque est l'optimisation la plus importante pour l'UX.
+# La 1ère visite d'une commune coûte 5-15s (Overpass).
+# Toutes les visites suivantes = lecture fichier JSON = < 50ms.
+# TTL de 24h : les données OSM ne changent pas à la minute.
+
+def _residence_cache_key(commune: str, wilaya_name: str) -> str:
+    """
+    Génère une clé de cache stable pour une commune donnée.
+    On utilise un hash MD5 tronqué pour éviter les problèmes
+    de caractères spéciaux (accents, apostrophes) dans les noms de fichiers.
+    """
+    raw = f"{wilaya_name.lower().strip()}::{commune.lower().strip()}"
+    h = hashlib.md5(raw.encode("utf-8")).hexdigest()[:12]
+    # On garde aussi un nom lisible pour le debug
+    safe = re.sub(r"[^\w]", "_", commune)[:20]
+    return f"{safe}_{h}"
+
+
+def _load_residence_cache(commune: str, wilaya_name: str) -> list | None:
+    """
+    Charge les résidences depuis le cache disque si le fichier existe
+    et n'a pas expiré (TTL = 24h).
+
+    Retourne None si cache absent ou expiré → déclenche fetch Overpass.
+    """
+    key = _residence_cache_key(commune, wilaya_name)
+    path = RESIDENCE_CACHE_DIR / f"{key}.json"
+    if not path.exists():
+        return None
+
+    # Vérification TTL : on compare mtime du fichier à maintenant
+    age_seconds = time.time() - path.stat().st_mtime
+    if age_seconds > RESIDENCE_CACHE_TTL_SECONDS:
+        print(f"⏰ Cache expiré ({age_seconds / 3600:.1f}h) pour {commune} — refresh Overpass")
+        path.unlink(missing_ok=True)
+        return None
+
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        print(f"⚡ Cache disque HIT : {len(data)} résidences pour {commune} ({age_seconds / 60:.0f}min)")
+        return data
+    except Exception as e:
+        print(f"⚠️ Cache corrompu pour {commune}: {e}")
+        return None
+
+
+def _save_residence_cache(commune: str, wilaya_name: str, residences: list) -> None:
+    """Persiste les résidences sur disque pour les requêtes futures."""
+    key = _residence_cache_key(commune, wilaya_name)
+    path = RESIDENCE_CACHE_DIR / f"{key}.json"
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(residences, f, ensure_ascii=False)
+        print(f"💾 Cache disque sauvegardé : {len(residences)} résidences → {path.name}")
+    except Exception as e:
+        print(f"⚠️ Impossible de sauvegarder le cache: {e}")
+
+
+# ====================== OVERPASS ======================
 OVERPASS_SERVERS = [
+    "https://overpass.kumi.systems/api/interpreter",
     "https://overpass-api.de/api/interpreter",
     "https://lz4.overpass-api.de/api/interpreter",
-    "https://overpass.kumi.systems/api/interpreter",
     "https://api.openstreetmap.fr/oapi/interpreter",
     "https://overpass.nchc.org.tw/api/interpreter"
 ]
 
 
-async def _overpass_request(query: str, timeout: int = 50, retries: int = 3) -> dict:
+async def _overpass_request(query: str, timeout: int = 60, retries: int = 3) -> dict:
     for attempt in range(retries):
         if attempt > 0:
-            wait_time = 2 * attempt
+            wait_time = 3 * attempt  # 3s, puis 6s
             print(f"⏳ Attente de {wait_time}s avant nouvelle tentative...")
             await asyncio.sleep(wait_time)
-            
+
         print(f"📡 Tentative Overpass {attempt + 1}/{retries}...")
-        
-        async def _try(url: str):
+
+        async def _try(url: str, jitter: float = 0.0):
             try:
+                await asyncio.sleep(jitter)  # décale les requêtes pour éviter le burst
                 async with httpx.AsyncClient(timeout=float(timeout)) as c:
                     resp = await c.post(url, data={"data": query.strip()})
                     if resp.status_code == 200:
@@ -193,135 +289,583 @@ async def _overpass_request(query: str, timeout: int = 50, retries: int = 3) -> 
                     elif resp.status_code == 429:
                         print(f"⚠️ 429 Too Many Requests sur {url}")
             except Exception as e:
-                # print(f"❌ Erreur sur {url}: {e}")
-                pass
+                print(f"⚠️ Erreur {url}: {type(e).__name__}")
             return None
 
-        tasks = [asyncio.create_task(_try(url)) for url in OVERPASS_SERVERS]
+        # On envoie les requêtes avec un jitter progressif (0s, 0.5s, 1s, 1.5s, 2s)
+        # pour ne pas taper tous les serveurs au même instant → évite les 429 groupés
+        tasks = [
+            asyncio.create_task(_try(url, jitter=i * 0.5))
+            for i, url in enumerate(OVERPASS_SERVERS)
+        ]
         for coro in asyncio.as_completed(tasks):
             result = await coro
             if result:
                 for t in tasks: t.cancel()
                 return result
-        
+
         for t in tasks: t.cancel()
-        if attempt < retries - 1:
-            await asyncio.sleep(2)
-            
+
     return {"elements": []}
 
 
-def _format_building_name(tags: dict, index: int) -> dict:
+# ====================== CLASSIFICATION RÉSIDENTIELLE ======================
+# Leçon sur les frozenset vs list :
+# frozenset → O(1) pour le test "x in S" (table de hachage)
+# list      → O(n) pour le test "x in L" (scan linéaire)
+# Pour 2000 bâtiments × N tags, ça compte.
+
+# Tags OSM → bâtiment résidentiel CONFIRMÉ
+_RESIDENTIAL_TAGS = frozenset({
+    "apartments", "residential", "house", "detached", "semidetached_house",
+    "terrace", "dormitory", "bungalow", "block", "flat",
+    # "yes" = tag générique → ambigu, on garde (vaut mieux un faux positif)
+    "yes",
+})
+
+# Tags OSM → bâtiment NON résidentiel CONFIRMÉ → à exclure
+_NON_RESIDENTIAL_TAGS = frozenset({
+    "mosque", "church", "cathedral", "temple", "synagogue", "chapel",
+    "school", "university", "college", "kindergarten",
+    "hospital", "clinic", "pharmacy", "doctors",
+    "industrial", "warehouse", "factory", "storage", "manufacture",
+    "retail", "supermarket", "mall", "kiosk", "shop", "commercial",
+    "office", "government", "civic", "public",
+    "stadium", "sports_hall", "grandstand", "sports_centre",
+    "garage", "garages", "parking",
+    "hotel", "hostel", "motel",
+    "train_station", "bus_station", "terminal", "transportation",
+    "power", "transformer_tower", "substation",
+    "barn", "farm_auxiliary", "greenhouse",
+    "construction",  # en construction → pas encore habitable
+})
+
+# Tags amenity= → signal fort NON résidentiel
+_NON_RESIDENTIAL_AMENITY = frozenset({
+    "place_of_worship", "school", "hospital", "clinic", "pharmacy",
+    "university", "college", "police", "fire_station", "post_office",
+    "bank", "marketplace", "fuel", "bus_station",
+})
+
+# Mots-clés dans le nom → CONFIRME caractère résidentiel
+# Pourquoi tuple et pas frozenset ici ?
+# → On itère séquentiellement avec `any()` et `break` implicite
+# → L'ordre importe (on peut mettre les plus fréquents en premier)
+_RESIDENTIAL_NAME_KW = (
+    "résidence", "residence", "cité", "cite", "logements", "logement",
+    "aadl", "opgi", "lpa", "enpi", "cnep",
+    "bloc", "tour", "immeuble", "ilot",
+    "villa", "appartement", "lotissement", "habitat",
+     "haouch",  # termes arabes courants
+)
+
+# Mots-clés dans le nom → CONFIRME caractère NON résidentiel
+_NON_RESIDENTIAL_NAME_KW = (
+    "mosquée", "mosque", "masjid", "جامع",
+    "église", "eglise",
+    "école", "ecole", "lycée", "lycee", "cem ", "primaire", "secondaire",
+    "hôpital", "hopital", "clinique", "pharmacie", "dispensaire",
+    "mairie", " apc ", "daïra", "daira", "wilaya",
+    "stade", "salle de sport", "piscine",
+    "marché", "marche", "souk", "centre commercial",
+    "gare", "aéroport", "aeroport",
+    "caserne", "brigade", "commissariat",
+)
+
+
+# ====================== REGROUPEMENT EN BLOCS ======================
+
+def _haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Distance en mètres entre deux points (Haversine). Précis pour < 500m."""
+    R = 6_371_000
+    dlat = (lat2 - lat1) * math.pi / 180
+    dlon = (lon2 - lon1) * math.pi / 180
+    a = math.sin(dlat / 2) ** 2 + math.cos(lat1 * math.pi / 180) * math.cos(lat2 * math.pi / 180) * math.sin(dlon / 2) ** 2
+    return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+
+def _bloc_letter(idx: int) -> str:
+    """Convertit un index (0-based) en lettre(s) : 0→A, 25→Z, 26→AA…"""
+    if idx < 26:
+        return chr(65 + idx)
+    return chr(65 + idx // 26 - 1) + chr(65 + idx % 26)
+
+
+def _compute_blocs(unnamed: list, commune: str) -> list:
+    """
+    Regroupe les bâtiments sans nom officiel par proximité géographique (rayon ≤ 100m).
+    Algorithme : Union-Find (DSU) — O(n²) en temps mais n ≤ 2000 en pratique.
+
+    Retourne une liste de dicts représentant les BLOCS (pas les bâtiments individuels) :
+    [
+      {
+        "name": "bir_el_djir-blocA",          ← affiché dans la liste
+        "bloc_letter": "A",
+        "osm_id": "<id du 1er bâtiment du bloc>",  ← pour la sélection
+        "lat": ..., "lon": ...,               ← centroïde du bloc
+        "buildings": [                         ← tous les bâtiments du bloc
+          {"osm_id":..., "lat":..., "lon":..., "name":"bir_el_djir-blocA-numero1", ...}
+        ],
+        "count": 12,
+        "has_official_name": False,
+        "is_bloc": True,
+        "type": "bloc",
+        "operator": None,
+        "levels": None, "units": None,
+      },
+      ...
+    ]
+    """
+    import math as _math
+
+    n = len(unnamed)
+    if n == 0:
+        return []
+
+    # ── Union-Find ────────────────────────────────────────────────────────────
+    parent = list(range(n))
+
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    def union(a, b):
+        parent[find(a)] = find(b)
+
+    # ── PHASE 2 : Regroupement Spatial (Optimisé via Grille/Hashing) ──────────
+    # Au lieu d'un O(n²) qui explose sur 15000 bâtiments, on utilise une grille.
+    cell_size = 0.001  # ~110m : rayon de recherche sûr pour grouper à 100m
+    grid: dict[tuple[int, int], list[int]] = {}
+    
+    for i in range(n):
+        cx = int(unnamed[i]["lat"] / cell_size)
+        cy = int(unnamed[i]["lon"] / cell_size)
+        grid.setdefault((cx, cy), []).append(i)
+
+    # On ne compare chaque bâtiment qu'avec ceux de sa cellule et des 8 voisines
+    for (cx, cy), current_indices in grid.items():
+        # Cellules à vérifier : (cx, cy) et ses voisines
+        for dx in range(-1, 2):
+            for dy in range(-1, 2):
+                neighbor_key = (cx + dx, cy + dy)
+                if neighbor_key not in grid:
+                    continue
+                
+                neighbor_indices = grid[neighbor_key]
+                for i in current_indices:
+                    for j in neighbor_indices:
+                        if i < j: # Evite double comparaison et i == j
+                            # Pré-calcul rapide (bounding box) avant Haversine
+                            if abs(unnamed[i]["lat"] - unnamed[j]["lat"]) < 0.001 and \
+                               abs(unnamed[i]["lon"] - unnamed[j]["lon"]) < 0.001:
+                                
+                                dist = _haversine_m(unnamed[i]["lat"], unnamed[i]["lon"],
+                                                   unnamed[j]["lat"], unnamed[j]["lon"])
+                                if dist <= 100:
+                                    union(i, j)
+
+    # ── Collecte des groupes ──────────────────────────────────────────────────
+    groups: dict[int, list[int]] = {}
+    for i in range(n):
+        root = find(i)
+        groups.setdefault(root, []).append(i)
+
+    # ── Tri des groupes par latitude décroissante du centroïde (nord → sud) ──
+    def group_centroid_lat(indices):
+        return sum(unnamed[i]["lat"] for i in indices) / len(indices)
+
+    sorted_groups = sorted(groups.values(), key=group_centroid_lat, reverse=True)
+
+    # ── Nom de commune normalisé pour le label ────────────────────────────────
+    commune_slug = (commune or "commune") \
+        .lower() \
+        .replace(" ", "_") \
+        .replace("-", "_") \
+        .replace("'", "") \
+        .replace("ï", "i") \
+        .replace("é", "e") \
+        .replace("è", "e") \
+        .replace("ê", "e") \
+        .replace("â", "a") \
+        .replace("î", "i") \
+        .replace("ô", "o") \
+        .replace("û", "u")
+
+    blocs = []
+    for group_idx, indices in enumerate(sorted_groups):
+        letter = _bloc_letter(group_idx)
+        bloc_key = f"{commune_slug}-bloc {letter}"
+
+        # Tri des bâtiments du groupe ouest → est (longitude croissante)
+        sorted_indices = sorted(indices, key=lambda i: unnamed[i]["lon"])
+
+        buildings_in_bloc = []
+        for num, orig_idx in enumerate(sorted_indices, start=1):
+            b = unnamed[orig_idx]
+            buildings_in_bloc.append({
+                **b,
+                "name": f"{bloc_key}-numero{num}",   # label carte
+                "bloc_letter": letter,
+                "bloc_numero": num,
+                "bloc_key": bloc_key,
+            })
+
+        # Centroïde du bloc
+        clat = sum(unnamed[i]["lat"] for i in indices) / len(indices)
+        clon = sum(unnamed[i]["lon"] for i in indices) / len(indices)
+
+        # On prend l'osm_id du bâtiment le plus à l'ouest comme représentant
+        repr_building = buildings_in_bloc[0]
+
+        blocs.append({
+            "name": bloc_key,                    # affiché dans la liste
+            "osm_id": repr_building["osm_id"],   # pour la sélection
+            "lat": round(clat, 6),
+            "lon": round(clon, 6),
+            "levels": None,
+            "units": None,
+            "type": "bloc",
+            "operator": None,
+            "has_official_name": False,
+            "is_bloc": True,
+            "is_apartment_block": True,
+            "bloc_letter": letter,
+            "count": len(indices),
+            "buildings": buildings_in_bloc,      # liste complète pour la carte
+        })
+
+    return blocs
+
+
+def _classify_building(tags: dict) -> tuple[bool, str]:
+    """
+    Classifie un élément OSM comme résidentiel ou non via un système de score.
+
+    Retourne (is_residential: bool, reason: str)
+
+    Architecture du score :
+    ┌─────────────────────────────────────────────┬───────┐
+    │ Condition                                   │ Score │
+    ├─────────────────────────────────────────────┼───────┤
+    │ amenity= non résidentiel (mosquée, école..) │  -10  │ ← veto immédiat
+    │ building= non résidentiel                   │   -3  │
+    │ nom contient mot-clé non résidentiel        │   -2  │
+    │ building= résidentiel confirmé              │  +2   │
+    │ nom contient mot-clé résidentiel            │  +1   │
+    └─────────────────────────────────────────────┴───────┘
+
+    Seuil de décision : score >= -1 → résidentiel (inclusif par défaut)
+
+    Pourquoi inclusif par défaut ?
+    En Algérie, ~60% des bâtiments ont building=yes (générique).
+    Si on est strict, on perd ces 60%. On préfère quelques faux positifs
+    (ex: un petit commerce tagué "yes") plutôt que rater des résidences.
+    """
+    building_tag = tags.get("building", "").lower().strip()
+    amenity_tag = tags.get("amenity", "").lower().strip()
+    landuse_tag = tags.get("landuse", "").lower().strip()
+
+    # Concaténation des champs textuels pertinents pour la recherche de mots-clés
+    # On met tout en minuscules une seule fois (pas à chaque comparaison)
+    name_text = " ".join(filter(None, [
+        tags.get("name", ""),
+        tags.get("addr:housename", ""),
+        tags.get("operator", ""),
+        tags.get("description", ""),
+    ])).lower()
+
+    score = 0
+
+    # ── Veto immédiat : amenity (signal le plus fiable d'OSM) ──────────────────
+    # Les mosquées ont TOUJOURS amenity=place_of_worship
+    # Les écoles ont TOUJOURS amenity=school
+    # Ce tag est plus fiable que building= car les contributeurs OSM
+    # oublient souvent de tagger building=mosque mais mettent amenity=
+    if amenity_tag in _NON_RESIDENTIAL_AMENITY:
+        return False, f"amenity={amenity_tag} [veto]"
+
+    # ── Landuse résidentiel → signal fort positif ──────────────────────────────
+    if landuse_tag == "residential":
+        score += 3
+
+    # ── Tag building= ─────────────────────────────────────────────────────────
+    if building_tag in _NON_RESIDENTIAL_TAGS:
+        score -= 3
+    elif building_tag in _RESIDENTIAL_TAGS:
+        score += 2
+    # building="" ou valeur inconnue → score neutre (0)
+
+    # ── Analyse du nom ────────────────────────────────────────────────────────
+    # On utilise any() qui court-circuite dès le premier match → rapide
+    if any(kw in name_text for kw in _NON_RESIDENTIAL_NAME_KW):
+        score -= 2
+
+    if any(kw in name_text for kw in _RESIDENTIAL_NAME_KW):
+        score += 1
+
+    is_residential = score >= -1
+    return is_residential, f"building={building_tag or 'N/A'}, score={score}"
+
+
+def _build_display_name(tags: dict, osm_id: str, index: int) -> str:
+    """
+    Génère le nom affiché à l'utilisateur en cascade de 6 niveaux.
+
+    Niveau 1 → Nom officiel OSM         : "Résidence El Feth"
+    Niveau 2 → Nom de maison (housename): "Bloc C AADL"
+    Niveau 3 → Adresse reconstruite     : "N°12 Rue Larbi Ben M'hidi"
+    Niveau 4 → Opérateur seul           : "AADL" (sans les niveaux pour éviter "Bât. 4 niv.")
+    Niveau 5 → Ref OSM                  : "Bât. REF-A3"
+    Niveau 6 → Code géo court           : "Bât. OSM-45678"
+
+    NB v6 : On supprime le niveau intermédiaire "Bât. X niv." qui générait
+    des noms peu lisibles dans la liste. Les bâtiments sans nom seront
+    groupés en blocs nommés côté frontend ({commune}-blocX-numeroN).
+    """
     name = tags.get("name", "").strip()
-    ref = tags.get("ref", "").strip()
+    housename = tags.get("addr:housename", "").strip()
     addr_nb = tags.get("addr:housenumber", "").strip()
     addr_st = tags.get("addr:street", "").strip()
-    levels = tags.get("building:levels", "").strip()
-    units = tags.get("building:units", "").strip() or tags.get("residential:units", "").strip()
+    ref = tags.get("ref", "").strip()
+    operator = tags.get("operator", "").strip().upper()
 
-    if name:
-        display_name = name
-    elif ref:
-        display_name = f"Bât. {ref}"
-    elif addr_nb and addr_st:
-        display_name = f"N°{addr_nb} {addr_st}"
-    elif addr_nb:
-        display_name = f"N°{addr_nb}"
-    else:
-        display_name = f"Bâtiment {index}"
+    # Niveau 1 & 2
+    if name:      return name
+    if housename: return housename
 
-    return {
-        "display_name": display_name,
-        "levels": int(levels) if levels.isdigit() else None,
-        "units": int(units) if units.isdigit() else None,
-    }
+    # Niveau 3 : adresse
+    if addr_nb and addr_st: return f"N°{addr_nb} {addr_st}"
+    if addr_nb:             return f"Bât. N°{addr_nb}"
+
+    # Niveau 4 : opérateur seul (SANS les niveaux — évite "Bât. 4 niv.")
+    for op_keyword in ("AADL", "OPGI", "LPA", "ENPI", "CNEP"):
+        if op_keyword in operator:
+            return f"{op_keyword} {ref}".strip() if ref else op_keyword
+
+    # Niveau 5 : ref seul
+    if ref:
+        return f"Bât. {ref}"
+
+    # Niveau 6 : code OSM court (5 derniers chiffres = lisible, stable)
+ #   short_id = str(osm_id)[-5:] if osm_id else str(index)
+  #  return f"Bât. OSM-{short_id}"
 
 
-async def fetch_residences_in_commune(commune: str, wilaya_name: str, lat_fallback: float = None, lon_fallback: float = None) -> List[Dict[str, Any]]:
+def _detect_operator_badge(tags: dict) -> str | None:
+    """
+    Détecte AADL / OPGI / LPA / ENPI pour afficher un badge dans le frontend.
+    Cherche dans operator=, name=, et addr:housename=
+    """
+    combined = " ".join(filter(None, [
+        tags.get("operator", ""),
+        tags.get("name", ""),
+        tags.get("addr:housename", ""),
+    ])).upper()
+
+    for op in ("AADL", "OPGI", "LPA", "ENPI", "CNEP"):
+        if op in combined:
+            return op
+    return None
+
+
+def _get_building_type_label(tags: dict, operator_badge: str | None) -> str:
+    """
+    Retourne le label de type affiché dans la liste résidences.
+    Ex: "Immeuble", "Maison", "AADL", "Résidence"
+    """
+    bt = tags.get("building", "").lower()
+
+    if bt in ("apartments", "flat", "block"):  return "Immeuble"
+    if bt in ("house", "detached", "bungalow"): return "Maison"
+    if bt in ("semidetached_house", "terrace"): return "Maison jumelée"
+    if bt == "dormitory":                       return "Résidence"
+    if bt == "residential":                     return "Résidence"
+    if operator_badge:                          return operator_badge
+    return "Bâtiment"
+
+
+# ====================== FETCH RÉSIDENCES (COEUR DU SYSTÈME) ======================
+
+async def fetch_residences_in_commune(
+        commune: str,
+        wilaya_name: str,
+        lat_fallback: float = None,
+        lon_fallback: float = None
+) -> List[Dict[str, Any]]:
+    """
+    Récupère tous les bâtiments résidentiels d'une commune.
+
+    Architecture en 3 phases :
+    ┌──────────────────────────────────────────────────────────┐
+    │ Phase 0 : Cache disque                                   │
+    │   → Si données < 24h : retour immédiat (< 50ms)         │
+    │   → Sinon : continue vers Phase 1                        │
+    ├──────────────────────────────────────────────────────────┤
+    │ Phase 1 : Fetch Overpass LARGE (sans filtre name)        │
+    │   → 1A : Bounding box (rapide, ~3-8s) si coords dispo   │
+    │   → 1B : Zone admin (précis, ~8-20s) en fallback        │
+    │   NB: "out tags center" = pas de géométrie complète     │
+    │       → payload 10x plus petit → bien plus rapide       │
+    ├──────────────────────────────────────────────────────────┤
+    │ Phase 2 : Filtrage Python par score de tags              │
+    │   → Classification résidentielle (O(n) tags)             │
+    │   → Déduplication par osm_id                            │
+    │   → Génération noms en cascade                          │
+    ├──────────────────────────────────────────────────────────┤
+    │ Phase 3 : Sauvegarde cache + tri + retour               │
+    └──────────────────────────────────────────────────────────┘
+    """
     wilaya_pure = wilaya_name.split(" - ")[1] if " - " in wilaya_name else wilaya_name
+
+    # ── PHASE 0 : Cache disque ────────────────────────────────────────────────
+    # On ne retourne le cache que s'il contient au moins 1 résidence.
+    # Un cache vide (0 éléments) est considéré comme invalide → on re-fetch.
+    cached = _load_residence_cache(commune, wilaya_pure)
+    if cached is not None and len(cached) > 0:
+        return cached
+
+    # ── PHASE 1A : Query Overpass par bounding box (prioritaire si coords) ────
+    # margin = 0.05° ≈ 5.5km — couvre les grandes communes comme Bir El Djir.
+    # L'ancienne valeur (0.022°) était trop petite et ratait les bâtiments
+    # en périphérie des communes étendues.
     elements = []
 
-    # STRATÉGIE 1 (RAPIDE) : Bounding Box si coordonnées dispo
     if lat_fallback and lon_fallback:
-        print(f"⚡ Stratégie 1 (Rapide): Bounding Box autour de {lat_fallback}, {lon_fallback}")
-        margin = 0.025 # ~2.5km
-        s, w, n, e = lat_fallback - margin, lon_fallback - margin, lat_fallback + margin, lon_fallback + margin
-        query_bbox = f"""
-        [out:json][timeout:25];
-        (
-          nwr["building"]["name"]({s},{w},{n},{e});
-          nwr["landuse"="residential"]["name"]({s},{w},{n},{e});
-          nwr["place"~"neighbourhood|quarter|suburb"]["name"]({s},{w},{n},{e});
-          nwr["addr:housename"]({s},{w},{n},{e});
-        );
-        out tags center;
-        """
-        data = await _overpass_request(query_bbox, timeout=25, retries=2)
-        elements = data.get("elements", [])
+        for margin in (0.05, 0.10):   # 2 tentatives : ~5.5km puis ~11km
+            s = lat_fallback - margin
+            w = lon_fallback - margin
+            n = lat_fallback + margin
+            e = lon_fallback + margin
 
-    # STRATÉGIE 2 (LENTE / COMPLÈTE) : Recherche par Zone Administrative
+            query_bbox = f"""
+[out:json][timeout:60];
+(
+  way["building"]({s},{w},{n},{e});
+  relation["building"]["type"="multipolygon"]({s},{w},{n},{e});
+);
+out tags center;
+"""
+            t0 = time.time()
+            data = await _overpass_request(query_bbox, timeout=60, retries=3)
+            elements = data.get("elements", [])
+            print(f"📦 Phase 1A (bbox ±{margin}°): {len(elements)} éléments en {time.time() - t0:.1f}s")
+            if elements:
+                break  # On a des résultats → on arrête d'élargir
+
+    # ── PHASE 1B : Fallback par zone administrative ────────────────────────────
+    # Utilisé uniquement si la bbox n'a rien retourné (commune sans coords,
+    # ou Overpass rate-limitée sur tous les serveurs).
     if not elements:
-        print(f"🔍 Stratégie 2 (Complète): Recherche par zone administrative pour {commune}")
+        # admin_level=4 en Algérie = wilaya
+        # admin_level=8 ou 9 = commune (varie selon la source OSM)
+        # On essaie les deux pour maximiser la chance de match
         query_area = f"""
-        [out:json][timeout:50];
-        area[name~"^{wilaya_pure}$",i][admin_level=4]->.w;
-        (
-          area[name~"^{commune}$",i][admin_level=8](area.w);
-          area[name~"{commune}",i][admin_level=8](area.w);
-          area[name~"^{commune}$",i](area.w);
-        )->.searchArea;
-        (
-          nwr["building"]["name"](area.searchArea);
-          nwr["landuse"="residential"]["name"](area.searchArea);
-          nwr["place"~"neighbourhood|quarter|suburb"]["name"](area.searchArea);
-          nwr["addr:housename"](area.searchArea);
-        );
-        out tags center;
-        """
-        data = await _overpass_request(query_area, timeout=50, retries=2)
+[out:json][timeout:90];
+area["name"~"^{wilaya_pure}$",i]["admin_level"~"4|6"]->.w;
+(
+  area["name"~"^{commune}$",i]["admin_level"~"8|9|10"](area.w);
+  area["name"~"^{commune}$",i](area.w);
+)->.searchArea;
+(
+  way["building"](area.searchArea);
+  relation["building"]["type"="multipolygon"](area.searchArea);
+);
+out tags center;
+"""
+        t0 = time.time()
+        data = await _overpass_request(query_area, timeout=90, retries=3)
         elements = data.get("elements", [])
-    
-    residences = []
-    seen_names = set()
+        print(f"📦 Phase 1B (admin area): {len(elements)} éléments en {time.time() - t0:.1f}s")
+
+    # ── PHASE 2 : Filtrage et transformation Python ────────────────────────────
+    named_residences   = []   # bâtiments avec nom officiel OSM
+    unnamed_residences = []   # bâtiments sans nom → seront groupés en blocs
+    seen_ids = set()
+    stats = {"total": len(elements), "excluded": 0, "no_coords": 0}
 
     for el in elements:
+        osm_id = str(el.get("id", ""))
+
+        if osm_id in seen_ids:
+            continue
+        seen_ids.add(osm_id)
+
         tags = el.get("tags", {})
-        # On récupère le nom le plus pertinent
-        name = tags.get("name") or tags.get("addr:housename") or tags.get("official_name")
 
-        if not name or len(name.strip()) < 2: continue
-        
-        # Filtre anti-digits simples (ex: "123")
-        if name.strip().isdigit(): continue
+        # ── Filtrage résidentiel ──────────────────────────────────────────────
+        is_residential, reason = _classify_building(tags)
+        if not is_residential:
+            stats["excluded"] += 1
+            continue
 
-        if name.lower() in seen_names: continue
-
+        # ── Coordonnées ──────────────────────────────────────────────────────
         center = el.get("center") or {}
-        # Fallback pour les nodes qui n'ont pas de champ "center" mais directement lat/lon
         lat = center.get("lat") or el.get("lat")
         lon = center.get("lon") or el.get("lon")
-        
-        if not lat: continue
+        if not lat or not lon:
+            stats["no_coords"] += 1
+            continue
 
-        # Détection du type pour l'icône dans le frontend
-        res_type = "Cité/Résidence"
-        if tags.get("building"): res_type = "Bâtiment"
-        if tags.get("place"): res_type = "Quartier/Zone"
+        # ── Métadonnées ───────────────────────────────────────────────────────
+        levels_raw    = tags.get("building:levels", "")
+        units_raw     = tags.get("building:units", "") or tags.get("residential:units", "")
+        operator_badge = _detect_operator_badge(tags)
+        type_label    = _get_building_type_label(tags, operator_badge)
+        has_official  = bool(tags.get("name") or tags.get("addr:housename"))
+        bt            = tags.get("building", "").lower()
+        is_apt_block  = bt in ("apartments", "flat", "block", "residential", "dormitory") or bool(operator_badge)
 
-        residences.append({
-            "name": name,
-            "osm_id": str(el.get("id", "")),
-            "lat": round(lat, 6),
-            "lon": round(lon, 6),
-            "levels": tags.get("building:levels") or tags.get("levels"),
-            "units": tags.get("building:units") or tags.get("residential:units"),
-            "type": res_type
-        })
-        seen_names.add(name.lower())
+        display_name = _build_display_name(tags, osm_id, len(named_residences) + len(unnamed_residences) + 1)
 
-    print(f"✅ {len(residences)} résidences trouvées dans {commune}")
-    # Tri par nom
-    return sorted(residences, key=lambda x: x["name"])[:2000]
+        entry = {
+            "name":              display_name,
+            "osm_id":            osm_id,
+            "lat":               round(lat, 6),
+            "lon":               round(lon, 6),
+            "levels":            int(levels_raw) if str(levels_raw).isdigit() else None,
+            "units":             int(units_raw)  if str(units_raw).isdigit()  else None,
+            "type":              type_label,
+            "operator":          operator_badge,
+            "has_official_name": has_official,
+            "is_apartment_block": is_apt_block,
+        }
+
+        if has_official:
+            named_residences.append(entry)
+        else:
+            unnamed_residences.append(entry)
+
+    print(
+        f"✅ Résultat brut : {len(named_residences)} nommés | "
+        f"{len(unnamed_residences)} sans nom | "
+        f"{stats['excluded']} exclus | {stats['no_coords']} sans coordonnées"
+    )
+
+    # ── PHASE 3 : Regroupement des sans-nom en blocs géographiques ────────────
+    # Les bâtiments sans nom sont groupés par proximité (≤100m) → un seul
+    # représentant par bloc dans la liste (ex: "bir_el_djir-blocA").
+    # Chaque bloc contient la liste complète de ses bâtiments pour la carte.
+    blocs = _compute_blocs(unnamed_residences, commune)
+    print(f"📦 {len(unnamed_residences)} bâtiments sans nom → {len(blocs)} blocs")
+
+    # ── PHASE 4 : Tri + assemblage final ──────────────────────────────────────
+    # Résidences nommées triées alphabétiquement en premier,
+    # puis les blocs triés par lettre (A, B, C…).
+    named_sorted = sorted(named_residences, key=lambda x: x["name"].lower())
+    blocs_sorted  = sorted(blocs,           key=lambda x: x["name"].lower())
+
+    result = named_sorted + blocs_sorted  # nommés d'abord, blocs ensuite
+    result = result[:2000]
+
+    if result:
+        _save_residence_cache(commune, wilaya_pure, result)
+    else:
+        print(f"⚠️ Aucune résidence trouvée pour {commune} — cache NON sauvegardé")
+
+    return result
+
 
 # ====================== PYDANTIC ======================
 class ImportOSMRequest(BaseModel):
@@ -374,11 +918,14 @@ async def get_commune(ville: str = Query(...)):
 
 
 @app.get("/api/residence")
-async def get_residence(ville: str = Query(...), commune: str = Query(...), search: str = Query(None)):
+async def get_residence(
+        ville: str = Query(...),
+        commune: str = Query(...),
+        search: str = Query(None)
+):
     print(f"GET /api/residence (ville={ville}, commune={commune}, search={search})")
     ville_pure = ville.split(" - ")[1] if " - " in ville else ville
-    
-    # Récupération des coordonnées de la commune depuis le cache pour le fallback
+
     lat_f, lon_f = None, None
     wilaya_data = _load_wilaya_cache(ville)
     if wilaya_data and wilaya_data.get("communes"):
@@ -387,18 +934,60 @@ async def get_residence(ville: str = Query(...), commune: str = Query(...), sear
                 lat_f = c.get("lat")
                 lon_f = c.get("lon")
                 break
-    
+
     residences = await fetch_residences_in_commune(commune, ville_pure, lat_f, lon_f)
+
+    # ── Filtrage par recherche textuelle ──────────────────────────────────────
+    # Fonctionne sur les nommés (name, type, operator) ET les blocs (name = "commune-blocA")
     if search and search.strip():
         q = search.strip().lower()
-        residences = [r for r in residences if q in r["name"].lower()]
-    print(f"✅ Résidences trouvées: {len(residences)}")
+        residences = [
+            r for r in residences
+            if q in r["name"].lower()
+               or q in (r.get("type") or "").lower()
+               or q in (r.get("operator") or "").lower()
+        ]
+
+    n_named = sum(1 for r in residences if r.get("has_official_name"))
+    n_blocs = sum(1 for r in residences if r.get("is_bloc"))
+
+    print(f"✅ Résidences retournées: {len(residences)} ({n_named} nommées + {n_blocs} blocs)")
     return {
         "residences": residences,
         "source": "overpass_live",
         "count": len(residences),
         "commune": commune,
+        "stats": {
+            "named": n_named,
+            "blocs": n_blocs,
+            # rétro-compatibilité
+            "with_official_name": n_named,
+            "without_official_name": n_blocs,
+        }
     }
+
+
+@app.delete("/api/residence/cache")
+async def clear_residence_cache(commune: str = Query(None)):
+    """
+    Endpoint utilitaire pour vider le cache résidences.
+    Utile quand les données OSM ont été mises à jour et qu'on veut forcer un refresh.
+
+    Usage : DELETE /api/residence/cache?commune=Bir+El+Djir
+            DELETE /api/residence/cache  (vide tout le cache)
+    """
+    if commune:
+        deleted = 0
+        for f in RESIDENCE_CACHE_DIR.glob("*.json"):
+            if commune.lower().replace(" ", "_")[:5] in f.name.lower():
+                f.unlink()
+                deleted += 1
+        return {"message": f"{deleted} fichier(s) cache supprimé(s) pour {commune}"}
+    else:
+        count = len(list(RESIDENCE_CACHE_DIR.glob("*.json")))
+        for f in RESIDENCE_CACHE_DIR.glob("*.json"):
+            f.unlink()
+        return {"message": f"Cache complet vidé ({count} fichiers)"}
 
 
 # ====================== IMPORT OSM ======================
@@ -419,8 +1008,7 @@ async def import_osm(req: ImportOSMRequest):
     print(f"🔍 Import OSM contexte pour : {req.residence}")
     try:
         if req.lat and req.lon:
-            # Récupère le contexte autour du bâtiment (150m)
-            gdf = ox.features_from_point((req.lat, req.lon), dist=150, tags={"building": True})
+            gdf = ox.features_from_point((req.lat, req.lon), dist=100, tags={"building": True})
         else:
             ville_pure = req.ville.split(" - ")[1] if " - " in req.ville else req.ville
             place = f"{req.residence}, {req.commune}, {ville_pure}, Algeria"
@@ -439,18 +1027,49 @@ async def import_osm(req: ImportOSMRequest):
 
         formatted_ids = []
         is_target_list = []
+        names_list = []
+        levels_list = []
+        units_list = []
+        lat_list = []
+        lon_list = []
+
         for i, row in gdf.iterrows():
             is_target = (i == target_idx)
             is_target_list.append(is_target)
-            bat_name = f"CIBLE-{req.residence[:15].upper()}" if is_target else f"VOISIN-B{i + 1}"
-            formatted_ids.append(bat_name)
+
+            real_name = None
+            if "name" in gdf.columns and pd.notna(row.get("name")):
+                real_name = row.get("name")
+            elif "addr:housename" in gdf.columns and pd.notna(row.get("addr:housename")):
+                real_name = row.get("addr:housename")
+
+            bat_name = req.residence if is_target else (real_name if real_name else f"Bloc A-numero {i + 1}")
+            names_list.append(bat_name)
+
+            internal_id = f"CIBLE-{req.residence[:15].upper()}" if is_target else f"BLOC-A-N{i + 1}"
+            formatted_ids.append(internal_id)
+
+            lvl = row.get("building:levels") if "building:levels" in gdf.columns else None
+            levels_list.append(int(lvl) if pd.notna(lvl) else None)
+
+            unt = row.get("building:units") if "building:units" in gdf.columns else None
+            units_list.append(int(unt) if pd.notna(unt) else None)
+
+            centroid = row.geometry.centroid
+            lat_list.append(centroid.y)
+            lon_list.append(centroid.x)
 
         gdf["id_batiment"] = formatted_ids
         gdf["is_target"] = is_target_list
+        gdf["nom_batiment"] = names_list
+        gdf["bat_levels"] = levels_list
+        gdf["bat_units"] = units_list
+        gdf["centroid_lat"] = lat_list
+        gdf["centroid_lon"] = lon_list
 
         target_bldg = gdf.iloc[target_idx]
-        osm_levels = target_bldg.get("building:levels")
-        osm_units = target_bldg.get("building:units")
+        osm_levels = target_bldg["bat_levels"]
+        osm_units = target_bldg["bat_units"]
 
         etages = int(osm_levels) if pd.notna(osm_levels) else req.nombre_etages
         if pd.notna(osm_units) and int(osm_units) > 0:
@@ -461,25 +1080,46 @@ async def import_osm(req: ImportOSMRequest):
         if etages <= 0: etages = 1
         if logements <= 0: logements = 1
 
+        gdf.loc[target_idx, "bat_levels"] = etages
+        gdf.loc[target_idx, "bat_units"] = etages * logements
+
+        # --- DISTRIBUTION LINÉAIRE (Ligne droite) & PORTE CONTINUE ---
+        m = logements
+        surface_deg2 = target_bldg.geometry.area
+        surface_m2 = surface_deg2 * (111000 ** 2)
+        taille_m2 = surface_m2 / m
+        espacement_m = np.sqrt(taille_m2)
+        espacement_deg = espacement_m / 111000
+        centroid = target_bldg.geometry.centroid
+
+        base_points = []
+        start_lon = centroid.x - (m - 1) * espacement_deg / 2
+        for i in range(m):
+            base_points.append(Point(start_lon + i * espacement_deg, centroid.y))
+
         rows = []
-        tot_log = etages * logements
-        pts_log = generate_random_point_in_polygon(target_bldg.geometry, tot_log)
-
         cc_counter = 1
-        for i in range(len(pts_log)):
-            etg = (i // logements) + 1
-            rows.append({
-                "code_client": f"AB{cc_counter:06d}",
-                "id_batiment": target_bldg["id_batiment"],
-                "lat_abonne": round(pts_log[i].y, 6),
-                "lon_abonne": round(pts_log[i].x, 6),
-                "etage": etg,
-                "porte": (etg * 100) + ((i % logements) + 1),
-                "usage": "logements",
-            })
-            cc_counter += 1
+        global_porte_idx = 1
+        for etg_idx in range(etages):
+            etg = etg_idx + 1
+            for log_idx in range(logements):
+                # Réutilisation des points de base pour l'alignement vertical
+                pt = base_points[log_idx]
+                rows.append({
+                    "code_client": f"AB{cc_counter:06d}",
+                    "id_batiment": target_bldg["id_batiment"],
+                    "lat_abonne": round(pt.y, 6),
+                    "lon_abonne": round(pt.x, 6),
+                    "etage": etg,
+                    "porte": global_porte_idx,
+                    "usage": "logements",
+                })
+                cc_counter += 1
+                global_porte_idx += 1
 
-        buildings_geojson = gdf[["id_batiment", "is_target", "geometry"]].to_json()
+        cols_to_keep = ["id_batiment", "is_target", "nom_batiment", "bat_levels", "bat_units", "centroid_lat",
+                        "centroid_lon", "geometry"]
+        buildings_geojson = gdf[cols_to_keep].to_json()
 
         print(f"✅ Import OSM réussi: {len(gdf)} bâtiments, {len(rows)} abonnés générés")
         return JSONResponse(content={
@@ -527,13 +1167,11 @@ async def get_emplacement_fats(req: FATPlacementRequest):
     print(f"POST /api/emplacementFATs ({len(req.subscribers)} abonnés)")
     df_sub = pd.DataFrame(req.subscribers)
     if df_sub.empty:
-        print("⚠️ Liste d'abonnés vide")
         raise HTTPException(status_code=400, detail="Liste d'abonnés vide")
 
     output_rows = []
     if fat_model is not None:
         try:
-            print("🤖 Utilisation du modèle Fat Planner...")
             fat_model.fit(df_sub)
             results = getattr(fat_model, "results_", None) or []
             for res in results:
@@ -541,24 +1179,24 @@ async def get_emplacement_fats(req: FATPlacementRequest):
                     output_rows.append({
                         "id_batiment": getattr(res, "id_batiment", "BAT-001"),
                         "id_zone": getattr(res, "id_zone", "Z310-001"),
-                        "fat_id": getattr(fat, "fat_id", ""), "cluster_label": getattr(fat, "cluster_label", 0),
+                        "fat_id": getattr(fat, "fat_id", ""),
+                        "cluster_label": getattr(fat, "cluster_label", 0),
                         "centroid_lat": getattr(fat, "centroid_lat", 0.0),
                         "centroid_lon": getattr(fat, "centroid_lon", 0.0),
-                        "n_subscribers": getattr(fat, "n_subscribers", 0), "usage": getattr(fat, "usage", "logements"),
+                        "n_subscribers": getattr(fat, "n_subscribers", 0),
+                        "usage": getattr(fat, "usage", "logements"),
                         "fdt_assigned": getattr(fat, "fdt_assigned", "F310-001-01"),
                         "capacity_ok": getattr(fat, "capacity_ok", True),
                         "cable_m_to_fdt_real": getattr(fat, "cable_m_to_fdt_real", 0.0),
                         "radius_deg": getattr(fat, "radius_deg", 0.0),
                         "subscriber_ids": getattr(fat, "subscriber_ids", []),
                     })
-            print(f"✅ {len(output_rows)} FATs identifiées par le modèle")
         except Exception as e:
             print(f"⚠️ Erreur modèle: {e}, fallback K-means...")
-            pass
+
     if not output_rows:
-        print("🔄 Exécution du fallback K-means...")
         output_rows = _fallback_clustering(df_sub)
-        print(f"✅ {len(output_rows)} FATs identifiées (fallback)")
+
     return {"fat_candidates": output_rows}
 
 
@@ -568,7 +1206,6 @@ async def generate_noms_fat(req: NamingFATRequest):
     df_cands = pd.DataFrame(req.fat_candidates)
     df_subs = pd.DataFrame(req.subscribers)
     if df_cands.empty:
-        print("⚠️ Candidats FAT vides")
         raise HTTPException(status_code=400, detail="Candidats FAT vides")
 
     generator = ATIDGenerator(wilaya_code="310")
@@ -598,10 +1235,8 @@ async def generate_noms_fat(req: NamingFATRequest):
             etage_depart=etq_min, sequence=1
         )
         ids_at.append(at_id)
-        print(f"🏷️ ID généré: {at_id}")
 
     df_cands["fat_id_AT"] = ids_at
-    print("✅ Nommage FAT terminé")
     return {"fat_candidates_with_ids": df_cands.to_dict(orient="records")}
 
 
