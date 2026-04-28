@@ -13,14 +13,12 @@ import geopandas as gpd
 import osmnx as ox
 from shapely.geometry import Point
 import numpy as np
-import types
 import sys
 import asyncio
 import json
 import re
 import httpx
 from pathlib import Path
-from dataclasses import dataclass
 
 from id_generator import ATIDGenerator
 
@@ -32,74 +30,138 @@ import warnings
 
 warnings.filterwarnings("ignore", category=UserWarning, module="geopandas")
 
-# ====================== CONFIG ======================
-config_module = types.ModuleType("config")
 FAT_CAPACITY = 8
 
+# ====================== MODÈLES FAT PLANNER HYBRIDE ======================
+# Produits par fat_planner_hybride.py (P5 — Sauvegarde déploiement)
+K_PREDICTOR_PATH = Path("Greedy Vertical Algorithm hybride/models/k_predictor.joblib")
+SNAP_RULES_PATH = Path("Greedy Vertical Algorithm hybride/models/snap_rules.joblib")
 
-class _Settings:
-    FAT_CAPACITY = 8
-    TORTUOSITY_TRUNK = 1.3
-    AT_DROP_CABLE_STANDARDS_M = [10, 15, 20, 30, 50, 100]
+k_predictor_bundle = None  # {"model", "feature_cols", "metrics", "type_bat_map"}
+snap_rules_bundle = None  # {"prefab_cables", "palier_fixe_m", "fat_capacity"}
 
-
-config_module.settings = _Settings()
-sys.modules["config"] = config_module
-
-
-# ====================== INJECTION DES CLASSES ======================
-@dataclass
-class FATCandidate:
-    fat_id: str
-    cluster_label: int
-    centroid_lat: float
-    centroid_lon: float
-    subscriber_ids: list
-    n_subscribers: int
-    usage: str
-    fdt_assigned: str
-    capacity_ok: bool = True
-    cable_m_to_fdt_real: float = 0.0
-    cable_snap: int = 0
-    radius_deg: float = 0.0
-    max_dist_to_sub_m: float = 0.0
+# Constantes physiques (valeurs par défaut — écrasées au chargement du modèle)
+PREFAB_CABLES = [15, 20, 50, 80]
+PALIER_FIXE_M = 4.0
 
 
-@dataclass
-class BuildingKMeansResult:
-    id_batiment: str
-    id_zone: str
-    n_subscribers_total: int
-    fat_candidates: list
-    n_fats_proposed: int
-    n_fats_ground_truth: int
-    ari_score: float = 0.0
-    silhouette_score: float = 0.0
-    r2_score: float = 0.0
-    capacity_compliance_pct: float = 100.0
-    mae_m: float = 0.0
-    mse_m2: float = 0.0
-    rmse_m: float = 0.0
-    max_distance_m: float = 0.0
+def _snap_cable(distance: float, cables: list) -> int:
+    """Règle AT déterministe : câble préfab >= distance réelle."""
+    for c in cables:
+        if c >= distance:
+            return c
+    return 9999
 
 
-sys.modules["__main__"].FATCandidate = FATCandidate
-sys.modules["__main__"].BuildingKMeansResult = BuildingKMeansResult
-sys.modules["__main__"].FATSmartPlanner = type("FATSmartPlanner", (), {})
+def _run_hybride_pipeline(df_sub: pd.DataFrame, zone_id: str, fdt_nom: str) -> list:
+    """
+    Pipeline Greedy+Médiane+Snap de fat_planner_hybride.py, adapté pour l'API.
 
-# ====================== JOBLIB MODEL ======================
-MODEL_PATH = Path("model/fat_pipeline_2d_annaba.joblib")
-fat_model = None
+    Étape 1 — Groupement Greedy séquentiel par FAT_CAPACITY (8)
+    Étape 2 — Placement FAT à la médiane analytique des étages du groupe
+    Étape 3 — Distance physique (haversine horizontal + vertical + palier)
+    Étape 4 — Snap câble déterministe {15,20,50,80,9999}m
+
+    Entrée  : df_sub avec colonnes [code_client, lat_abonne, lon_abonne, etage,
+                                    porte, id_batiment, usage]
+    Sortie  : liste de dicts fat_candidate (même format que l'ancien fallback)
+    """
+    cables = snap_rules_bundle["prefab_cables"] if snap_rules_bundle else PREFAB_CABLES
+    palier = snap_rules_bundle["palier_fixe_m"] if snap_rules_bundle else PALIER_FIXE_M
+    capacity = snap_rules_bundle["fat_capacity"] if snap_rules_bundle else FAT_CAPACITY
+
+    output_rows = []
+
+    bat_groups = (
+        df_sub.groupby("id_batiment")
+        if "id_batiment" in df_sub.columns
+        else [("BAT-001", df_sub)]
+    )
+
+    for bat_id, bat_df in bat_groups:
+        bat_df = bat_df.reset_index(drop=True)
+
+        # Séparer logements et commerces
+        for usage_type in ["logements", "commerces"]:
+            grp_df = bat_df[bat_df["usage"] == usage_type].reset_index(drop=True) \
+                if "usage" in bat_df.columns \
+                else bat_df.reset_index(drop=True)
+            if grp_df.empty:
+                continue
+
+            # Étape 1 — Greedy séquentiel par capacity
+            groups = [grp_df.iloc[i:i + capacity] for i in range(0, len(grp_df), capacity)]
+
+            for cl_idx, group in enumerate(groups):
+                if group.empty:
+                    continue
+
+                sub_lats = group["lat_abonne"].values
+                sub_lons = group["lon_abonne"].values
+                sub_etages = group["etage"].values if "etage" in group.columns else np.zeros(len(group))
+
+                # Étape 2 — FAT à la médiane analytique des étages
+                etage_fat = int(np.median(sub_etages))
+                fat_lat = float(np.mean(sub_lats))
+                fat_lon = float(np.mean(sub_lons))
+
+                # Étape 3 — Distance physique par abonné
+                hauteur_etage = 3.0  # valeur par défaut si non fournie
+                if "Hauteur par étage (m)" in group.columns:
+                    hauteur_etage = float(group["Hauteur par étage (m)"].iloc[0])
+
+                distances_real = []
+                for _, row in group.iterrows():
+                    ab_lat = float(row["lat_abonne"])
+                    ab_lon = float(row["lon_abonne"])
+                    et_ab = float(row.get("etage", 0))
+
+                    R = 6_371_000.0
+                    la1, lo1 = math.radians(ab_lat), math.radians(ab_lon)
+                    la2, lo2 = math.radians(fat_lat), math.radians(fat_lon)
+                    a = (math.sin((la2 - la1) / 2) ** 2
+                         + math.cos(la1) * math.cos(la2) * math.sin((lo2 - lo1) / 2) ** 2)
+                    dist_h = R * 2 * math.asin(math.sqrt(max(0.0, a)))
+
+                    dist_v = abs(et_ab - etage_fat) * hauteur_etage
+                    dist_real = round(dist_v + dist_h + palier, 2)
+                    distances_real.append(dist_real)
+
+                dist_moy = round(float(np.mean(distances_real)), 2)
+
+                # Étape 4 — Snap câble déterministe
+                cable_snap = _snap_cable(dist_moy, cables)
+
+                fat_id = f"FAT-{str(bat_id)[-6:]}-{cl_idx + 1:02d}"
+
+                output_rows.append({
+                    "id_batiment": str(bat_id),
+                    "id_zone": zone_id,
+                    "fat_id": fat_id,
+                    "cluster_label": cl_idx,
+                    "centroid_lat": fat_lat,
+                    "centroid_lon": fat_lon,
+                    "etage_fat": etage_fat,
+                    "n_subscribers": len(group),
+                    "usage": usage_type,
+                    "fdt_assigned": fdt_nom,
+                    "capacity_ok": bool(len(group) <= capacity),
+                    "cable_m_to_fdt_real": dist_moy,
+                    "cable_snap_m": cable_snap,
+                    "radius_deg": 0.0,
+                    "subscriber_ids": group["code_client"].tolist()
+                    if "code_client" in group.columns else [],
+                })
+
+    return output_rows
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global fat_model
-    print("🔄 Démarrage - Chargement du modèle joblib...")
+    global k_predictor_bundle, snap_rules_bundle
+    print("🔄 Démarrage - Chargement des modèles FAT Planner Hybride...")
 
     # ── Nettoyage des caches vides au démarrage ─────────────────────────────
-    # Les caches à 0 résidence (créés par un bug ou une erreur Overpass)
-    # sont supprimés pour forcer un re-fetch propre.
     purged = 0
     for f in RESIDENCE_CACHE_DIR.glob("*.json"):
         try:
@@ -109,19 +171,33 @@ async def lifespan(app: FastAPI):
                 f.unlink()
                 purged += 1
         except Exception:
-            f.unlink()  # fichier corrompu → supprimer
+            f.unlink()
             purged += 1
     if purged:
         print(f"🧹 {purged} cache(s) vide(s) ou corrompu(s) supprimé(s) au démarrage")
 
-    if not MODEL_PATH.exists():
-        print(f"⚠️ Modèle non trouvé : {MODEL_PATH}. Fonctionnement en mode Fallback K-Means.")
-    else:
+    # ── K-Predictor (fat_planner_hybride P5) ─────────────────────────────────
+    if K_PREDICTOR_PATH.exists():
         try:
-            fat_model = joblib.load(MODEL_PATH)
-            print("✅ Modèle FAT 2D chargé avec succès !")
+            k_predictor_bundle = joblib.load(K_PREDICTOR_PATH)
+            m = k_predictor_bundle["metrics"]
+            print(f"✅ K-Predictor chargé — R²={m['R2_pct']}%  MAE={m['MAE_fats']} FATs  Acc@1={m['Accuracy_1fat']}%")
         except Exception as e:
-            print(f"❌ Erreur de chargement modèle : {e}")
+            print(f"❌ Erreur chargement K-Predictor : {e}")
+    else:
+        print(f"⚠️  K-Predictor non trouvé : {K_PREDICTOR_PATH}")
+        print(f"   → Lancez fat_planner_hybride.py pour générer les modèles")
+
+    # ── Snap rules ────────────────────────────────────────────────────────────
+    if SNAP_RULES_PATH.exists():
+        try:
+            snap_rules_bundle = joblib.load(SNAP_RULES_PATH)
+            print(f"✅ Snap rules chargées — câbles {snap_rules_bundle['prefab_cables']}m")
+        except Exception as e:
+            print(f"❌ Erreur chargement Snap rules : {e}")
+    else:
+        print(f"⚠️  Snap rules non trouvées : {SNAP_RULES_PATH} — utilisation des valeurs par défaut")
+
     yield
     print("🛑 Arrêt de l'application")
 
@@ -356,7 +432,7 @@ _RESIDENTIAL_NAME_KW = (
     "aadl", "opgi", "lpa", "enpi", "cnep",
     "bloc", "tour", "immeuble", "ilot",
     "villa", "appartement", "lotissement", "habitat",
-     "haouch",  # termes arabes courants
+    "haouch",  # termes arabes courants
 )
 
 # Mots-clés dans le nom → CONFIRME caractère NON résidentiel
@@ -380,7 +456,8 @@ def _haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     R = 6_371_000
     dlat = (lat2 - lat1) * math.pi / 180
     dlon = (lon2 - lon1) * math.pi / 180
-    a = math.sin(dlat / 2) ** 2 + math.cos(lat1 * math.pi / 180) * math.cos(lat2 * math.pi / 180) * math.sin(dlon / 2) ** 2
+    a = math.sin(dlat / 2) ** 2 + math.cos(lat1 * math.pi / 180) * math.cos(lat2 * math.pi / 180) * math.sin(
+        dlon / 2) ** 2
     return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 
@@ -438,7 +515,7 @@ def _compute_blocs(unnamed: list, commune: str) -> list:
     # Au lieu d'un O(n²) qui explose sur 15000 bâtiments, on utilise une grille.
     cell_size = 0.001  # ~110m : rayon de recherche sûr pour grouper à 100m
     grid: dict[tuple[int, int], list[int]] = {}
-    
+
     for i in range(n):
         cx = int(unnamed[i]["lat"] / cell_size)
         cy = int(unnamed[i]["lon"] / cell_size)
@@ -452,17 +529,17 @@ def _compute_blocs(unnamed: list, commune: str) -> list:
                 neighbor_key = (cx + dx, cy + dy)
                 if neighbor_key not in grid:
                     continue
-                
+
                 neighbor_indices = grid[neighbor_key]
                 for i in current_indices:
                     for j in neighbor_indices:
-                        if i < j: # Evite double comparaison et i == j
+                        if i < j:  # Evite double comparaison et i == j
                             # Pré-calcul rapide (bounding box) avant Haversine
                             if abs(unnamed[i]["lat"] - unnamed[j]["lat"]) < 0.001 and \
-                               abs(unnamed[i]["lon"] - unnamed[j]["lon"]) < 0.001:
-                                
+                                    abs(unnamed[i]["lon"] - unnamed[j]["lon"]) < 0.001:
+
                                 dist = _haversine_m(unnamed[i]["lat"], unnamed[i]["lon"],
-                                                   unnamed[j]["lat"], unnamed[j]["lon"])
+                                                    unnamed[j]["lat"], unnamed[j]["lon"])
                                 if dist <= 100:
                                     union(i, j)
 
@@ -506,7 +583,7 @@ def _compute_blocs(unnamed: list, commune: str) -> list:
             b = unnamed[orig_idx]
             buildings_in_bloc.append({
                 **b,
-                "name": f"{bloc_key}-numero{num}",   # label carte
+                "name": f"{bloc_key}-numero{num}",  # label carte
                 "bloc_letter": letter,
                 "bloc_numero": num,
                 "bloc_key": bloc_key,
@@ -520,8 +597,8 @@ def _compute_blocs(unnamed: list, commune: str) -> list:
         repr_building = buildings_in_bloc[0]
 
         blocs.append({
-            "name": bloc_key,                    # affiché dans la liste
-            "osm_id": repr_building["osm_id"],   # pour la sélection
+            "name": bloc_key,  # affiché dans la liste
+            "osm_id": repr_building["osm_id"],  # pour la sélection
             "lat": round(clat, 6),
             "lon": round(clon, 6),
             "levels": None,
@@ -533,7 +610,7 @@ def _compute_blocs(unnamed: list, commune: str) -> list:
             "is_apartment_block": True,
             "bloc_letter": letter,
             "count": len(indices),
-            "buildings": buildings_in_bloc,      # liste complète pour la carte
+            "buildings": buildings_in_bloc,  # liste complète pour la carte
         })
 
     return blocs
@@ -649,8 +726,10 @@ def _build_display_name(tags: dict, osm_id: str, index: int) -> str:
         return f"Bât. {ref}"
 
     # Niveau 6 : code OSM court (5 derniers chiffres = lisible, stable)
- #   short_id = str(osm_id)[-5:] if osm_id else str(index)
-  #  return f"Bât. OSM-{short_id}"
+
+
+#   short_id = str(osm_id)[-5:] if osm_id else str(index)
+#  return f"Bât. OSM-{short_id}"
 
 
 def _detect_operator_badge(tags: dict) -> str | None:
@@ -733,7 +812,7 @@ async def fetch_residences_in_commune(
     elements = []
 
     if lat_fallback and lon_fallback:
-        for margin in (0.05, 0.10):   # 2 tentatives : ~5.5km puis ~11km
+        for margin in (0.05, 0.10):  # 2 tentatives : ~5.5km puis ~11km
             s = lat_fallback - margin
             w = lon_fallback - margin
             n = lat_fallback + margin
@@ -780,8 +859,8 @@ out tags center;
         print(f"📦 Phase 1B (admin area): {len(elements)} éléments en {time.time() - t0:.1f}s")
 
     # ── PHASE 2 : Filtrage et transformation Python ────────────────────────────
-    named_residences   = []   # bâtiments avec nom officiel OSM
-    unnamed_residences = []   # bâtiments sans nom → seront groupés en blocs
+    named_residences = []  # bâtiments avec nom officiel OSM
+    unnamed_residences = []  # bâtiments sans nom → seront groupés en blocs
     seen_ids = set()
     stats = {"total": len(elements), "excluded": 0, "no_coords": 0}
 
@@ -809,25 +888,25 @@ out tags center;
             continue
 
         # ── Métadonnées ───────────────────────────────────────────────────────
-        levels_raw    = tags.get("building:levels", "")
-        units_raw     = tags.get("building:units", "") or tags.get("residential:units", "")
+        levels_raw = tags.get("building:levels", "")
+        units_raw = tags.get("building:units", "") or tags.get("residential:units", "")
         operator_badge = _detect_operator_badge(tags)
-        type_label    = _get_building_type_label(tags, operator_badge)
-        has_official  = bool(tags.get("name") or tags.get("addr:housename"))
-        bt            = tags.get("building", "").lower()
-        is_apt_block  = bt in ("apartments", "flat", "block", "residential", "dormitory") or bool(operator_badge)
+        type_label = _get_building_type_label(tags, operator_badge)
+        has_official = bool(tags.get("name") or tags.get("addr:housename"))
+        bt = tags.get("building", "").lower()
+        is_apt_block = bt in ("apartments", "flat", "block", "residential", "dormitory") or bool(operator_badge)
 
         display_name = _build_display_name(tags, osm_id, len(named_residences) + len(unnamed_residences) + 1)
 
         entry = {
-            "name":              display_name,
-            "osm_id":            osm_id,
-            "lat":               round(lat, 6),
-            "lon":               round(lon, 6),
-            "levels":            int(levels_raw) if str(levels_raw).isdigit() else None,
-            "units":             int(units_raw)  if str(units_raw).isdigit()  else None,
-            "type":              type_label,
-            "operator":          operator_badge,
+            "name": display_name,
+            "osm_id": osm_id,
+            "lat": round(lat, 6),
+            "lon": round(lon, 6),
+            "levels": int(levels_raw) if str(levels_raw).isdigit() else None,
+            "units": int(units_raw) if str(units_raw).isdigit() else None,
+            "type": type_label,
+            "operator": operator_badge,
             "has_official_name": has_official,
             "is_apartment_block": is_apt_block,
         }
@@ -854,7 +933,7 @@ out tags center;
     # Résidences nommées triées alphabétiquement en premier,
     # puis les blocs triés par lettre (A, B, C…).
     named_sorted = sorted(named_residences, key=lambda x: x["name"].lower())
-    blocs_sorted  = sorted(blocs,           key=lambda x: x["name"].lower())
+    blocs_sorted = sorted(blocs, key=lambda x: x["name"].lower())
 
     result = named_sorted + blocs_sorted  # nommés d'abord, blocs ensuite
     result = result[:2000]
@@ -881,7 +960,7 @@ class ImportOSMRequest(BaseModel):
 
 class FATPlacementRequest(BaseModel):
     subscribers: List[Dict[str, Any]]
-
+    hauteur_etage: float = 3.0
 
 class NamingFATRequest(BaseModel):
     fat_candidates: List[Dict[str, Any]]
@@ -1100,6 +1179,24 @@ async def import_osm(req: ImportOSMRequest):
         rows = []
         cc_counter = 1
         global_porte_idx = 1
+
+        # --- RDC COMMERCIAL (étage 0) si commerce activé ---
+        if req.commerce:
+            for log_idx in range(logements):
+                pt = base_points[log_idx]
+                rows.append({
+                    "code_client": f"AB{cc_counter:06d}",
+                    "id_batiment": target_bldg["id_batiment"],
+                    "lat_abonne": round(pt.y, 6),
+                    "lon_abonne": round(pt.x, 6),
+                    "etage": 0,
+                    "porte": global_porte_idx,
+                    "usage": "commerces",
+                })
+                cc_counter += 1
+                global_porte_idx += 1
+
+        # --- ÉTAGES RÉSIDENTIELS (étage 1+) ---
         for etg_idx in range(etages):
             etg = etg_idx + 1
             for log_idx in range(logements):
@@ -1169,30 +1266,13 @@ async def get_emplacement_fats(req: FATPlacementRequest):
     if df_sub.empty:
         raise HTTPException(status_code=400, detail="Liste d'abonnés vide")
 
-    output_rows = []
-    if fat_model is not None:
-        try:
-            fat_model.fit(df_sub)
-            results = getattr(fat_model, "results_", None) or []
-            for res in results:
-                for fat in (res.fat_candidates or []):
-                    output_rows.append({
-                        "id_batiment": getattr(res, "id_batiment", "BAT-001"),
-                        "id_zone": getattr(res, "id_zone", "Z310-001"),
-                        "fat_id": getattr(fat, "fat_id", ""),
-                        "cluster_label": getattr(fat, "cluster_label", 0),
-                        "centroid_lat": getattr(fat, "centroid_lat", 0.0),
-                        "centroid_lon": getattr(fat, "centroid_lon", 0.0),
-                        "n_subscribers": getattr(fat, "n_subscribers", 0),
-                        "usage": getattr(fat, "usage", "logements"),
-                        "fdt_assigned": getattr(fat, "fdt_assigned", "F310-001-01"),
-                        "capacity_ok": getattr(fat, "capacity_ok", True),
-                        "cable_m_to_fdt_real": getattr(fat, "cable_m_to_fdt_real", 0.0),
-                        "radius_deg": getattr(fat, "radius_deg", 0.0),
-                        "subscriber_ids": getattr(fat, "subscriber_ids", []),
-                    })
-        except Exception as e:
-            print(f"⚠️ Erreur modèle: {e}, fallback K-means...")
+    # Pipeline Greedy+Médiane+Snap de fat_planner_hybride.py
+    # Utilise k_predictor_bundle et snap_rules_bundle chargés au démarrage.
+    try:
+        output_rows = _run_hybride_pipeline(df_sub, zone_id="Z310-001", fdt_nom="F310-001-01")
+    except Exception as e:
+        print(f"⚠️ Erreur pipeline hybride: {e}, fallback K-means...")
+        output_rows = _fallback_clustering(df_sub)
 
     if not output_rows:
         output_rows = _fallback_clustering(df_sub)
@@ -1243,4 +1323,4 @@ async def generate_noms_fat(req: NamingFATRequest):
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)

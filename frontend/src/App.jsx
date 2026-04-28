@@ -1,10 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import ATLogoImg from "./assets/algerie-telecom-logo-png_seeklogo-210074.png";
 
-/* ============================================================
-   FTTH SMART PLANNER — React · Light Theme · Algérie Télécom
-   Version v6.0 : Blocs géographiques + UX améliorée
-   ============================================================ */
 
 const AT_BLUE = "#005BAA";
 const AT_BLUE_DARK = "#004080";
@@ -16,6 +12,7 @@ const GRAY_100 = "#F3F4F6";
 const GRAY_200 = "#E5E7EB";
 const GRAY_300 = "#D1D5DB";
 const GRAY_400 = "#9CA3AF";
+const GRAY_500 = "#6B7280";
 const GRAY_600 = "#4B5563";
 const GRAY_700 = "#374151";
 const GRAY_800 = "#1F2937";
@@ -97,108 +94,232 @@ const KPICard = ({ label, value, suffix = "", sub, color, icon }) => {
 };
 
 // ── FATNode ────────────────────────────────────────────────
-const FATNode = ({ id, connected, totalPorts, onHover, onLeave }) => (
-  <div onMouseEnter={onHover} onMouseLeave={onLeave} style={{ background: "white", border: `2px solid ${AT_ORANGE}`, borderRadius: 8, padding: "5px 8px", cursor: "pointer", boxShadow: `0 2px 8px rgba(247,148,29,0.25)`, minWidth: 90, textAlign: "center", transition: "transform 0.2s", zIndex: 10 }}>
-    <div style={{ fontSize: 8, fontWeight: 800, color: AT_ORANGE, letterSpacing: "0.5px", textTransform: "uppercase" }}>POINT FAT</div>
-    <div style={{ fontSize: 9, fontWeight: 700, color: GRAY_700, fontFamily: "monospace", marginTop: 2 }}>FAT-ORA-{String(100 + id).padStart(3, "0")}</div>
-    <div style={{ display: "flex", gap: 2, justifyContent: "center", marginTop: 3, flexWrap: "wrap" }}>
-      {Array.from({ length: totalPorts || 8 }).map((_, i) => (
-        <div key={i} style={{ width: 5, height: 5, borderRadius: "50%", background: i < connected ? GREEN : AT_BLUE }} />
-      ))}
+const FATNode = ({ id, connected, totalPorts, onHover, onLeave, realName, emplacement, isHovered }) => (
+  <div
+    className="fat-node-container"
+    onMouseEnter={onHover}
+    onMouseLeave={onLeave}
+    style={{
+      position: "relative",
+      zIndex: isHovered ? 10000 : 10,
+      transition: "z-index 0s"
+    }}
+  >
+    <div style={{ background: "white", border: `2px solid ${AT_ORANGE}`, borderRadius: 8, padding: "5px 10px", cursor: "pointer", boxShadow: `0 2px 8px rgba(247,148,29,0.25)`, minWidth: 90, textAlign: "center", transition: "transform 0.2s" }}>
+      <div style={{ fontSize: 11, fontWeight: 800, color: GRAY_800, marginTop: 2 }}>FAT {id}</div>
+      <div style={{ display: "flex", gap: 3, justifyContent: "center", marginTop: 4, flexWrap: "wrap" }}>
+        {Array.from({ length: totalPorts || 8 }).map((_, i) => (
+          <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: i < connected ? GREEN : AT_BLUE, border: "1px solid rgba(0,0,0,0.05)" }} />
+        ))}
+      </div>
+    </div>
+    <div className="fat-tooltip">
+      {realName}
     </div>
   </div>
 );
 
 // ── BuildingPlan ────────────────────────────────────────────
-const BuildingPlan = ({ etages, logements, residenceName, presenceCommercial }) => {
+const BuildingPlan = ({ etages, logements, residenceName, presenceCommercial, fatResults, subscribersData }) => {
   const [hoveredFatId, setHoveredFatId] = useState(null);
-  const numCommercial = presenceCommercial ? logements : 0;
-  const totalAbonnes = (etages * logements) + numCommercial;
-  const fatsNeeded = Math.ceil(totalAbonnes / 10) || 1;
-  const limitPerFat = Math.ceil(totalAbonnes / fatsNeeded) || 8;
 
-  const fatFloors = [];
-  if (fatsNeeded === 1) fatFloors.push(Math.floor(etages / 2));
-  else if (fatsNeeded === 2) { fatFloors.push(Math.floor(etages * 0.7)); fatFloors.push(Math.floor(etages * 0.25)); }
-  else { for (let i = 0; i < fatsNeeded; i++) fatFloors.push(Math.round(i * (etages - 1) / (fatsNeeded - 1))); }
+  if (!fatResults || fatResults.length === 0) {
+    return (
+      <div style={{ textAlign: "center", padding: 80, color: GRAY_400 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>Sélectionnez et chargez un bâtiment</div>
+        <div style={{ fontSize: 12 }}>Puis lancez l'ingénierie pour générer l'architecture.</div>
+      </div>
+    );
+  }
 
-  const buildingWidth = 600;
+  // ── Index abonnés : code_client → subscriber ──
+  const subByCode = {};
+  (subscribersData || []).forEach(s => { subByCode[s.code_client] = s; });
+
+  // ── Séparation et Tri des FATs pour numérotation globale ──
+  // On trie d'abord les FATs commerciaux (RDC), puis les résidentiels par étage.
+  const commercialFats = [...fatResults]
+    .filter(f => f.usage === "commerces")
+    .sort((a, b) => (a.centroid_lon ?? 0) - (b.centroid_lon ?? 0));
+
+  const residentialFats = [...fatResults]
+    .filter(f => f.usage === "logements")
+    .sort((a, b) => (a.etage_fat ?? 1) - (b.etage_fat ?? 1) || (a.centroid_lon ?? 0) - (b.centroid_lon ?? 0));
+
+  const allSortedFats = [...commercialFats, ...residentialFats];
+
+  // ── Grouper FATs par étage ──
+  const fatsByFloor = (fatResults || []).reduce((acc, fat) => {
+    const fl = Math.floor(fat.etage_fat ?? 0);
+    if (!acc[fl]) acc[fl] = [];
+    acc[fl].push(fat);
+    return acc;
+  }, {});
+
+  // ── Abonnés triés par étage et longitude ──
+  const subsByFloorSorted = {};
+  const startFloor = presenceCommercial ? 0 : 1;
+  for (let e = startFloor; e <= etages; e++) {
+    const usage = e === 0 ? "commerces" : "logements";
+    const floorSubs = (subscribersData || [])
+      .filter(s => s.etage === e && s.usage === usage)
+      .sort((a, b) => a.lon_abonne - b.lon_abonne);
+    subsByFloorSorted[e] = floorSubs;
+  }
+
+  // ── Calcul position horizontale d'un FAT ──
+  const getFatColumnPosition = (fat, floorNum) => {
+    const floorSubs = subsByFloorSorted[floorNum] || [];
+    if (floorSubs.length === 0) return (logements - 1) / 2;
+
+    const minLon = floorSubs[0].lon_abonne;
+    const maxLon = floorSubs[floorSubs.length - 1].lon_abonne;
+    const range = maxLon - minLon;
+
+    const fatSubsOnFloor = (fat.subscriber_ids || [])
+      .map(id => subByCode[id])
+      .filter(s => s && s.etage === floorNum);
+
+    let fatLon = fat.centroid_lon;
+    if (fatSubsOnFloor.length > 0) {
+      fatLon = fatSubsOnFloor.reduce((sum, s) => sum + s.lon_abonne, 0) / fatSubsOnFloor.length;
+    }
+
+    if (range < 1e-8) {
+      const fatsOnFloor = fatsByFloor[floorNum] || [];
+      const idx = fatsOnFloor.indexOf(fat);
+      return (idx / Math.max(fatsOnFloor.length - 1, 1)) * (logements - 1);
+    }
+
+    const pct = Math.max(0, Math.min(1, (fatLon - minLon) / range));
+    return pct * (logements - 1);
+  };
+
+  // ── Floors à afficher : de etages → 1 (puis 0 si commercial) ──
+  const floorsToRender = [];
+  for (let e = etages; e >= 1; e--) floorsToRender.push(e);
+  if (presenceCommercial) floorsToRender.push(0);
+
+  const FLOOR_HEIGHT = 90;
+
   return (
     <div style={{ padding: 20, overflowX: "auto" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
         <div>
           <div style={{ fontWeight: 700, fontSize: 14, color: GRAY_800 }}>{residenceName || "Résidence"}</div>
-          <div style={{ fontSize: 11, color: GRAY_400 }}>{etages} étages · {logements} logements/étage · {fatsNeeded} FAT(s)</div>
+          <div style={{ fontSize: 11, color: GRAY_400 }}>
+            {etages} étages · {presenceCommercial ? "RDC Commercial" : "Résidentiel pur"} · {logements} unités/étage
+          </div>
         </div>
       </div>
-      {(() => {
-        let fi = 0;
-        return Array.from({ length: etages + 1 }, (_, i) => etages - i).map((e) => {
-          const isFatFloor = fatFloors.includes(e);
-          const rawFatId = isFatFloor ? fi++ : null;
-          const logicalFatId = isFatFloor ? fatsNeeded - 1 - rawFatId : null;
-          return (
-            <div key={e} style={{ marginBottom: 2 }}>
-              <div style={{ display: "flex", alignItems: "stretch", gap: 0 }}>
-                <div style={{ width: 64, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: 10, fontSize: 9, fontWeight: 700, color: GRAY_400, letterSpacing: "0.5px", textTransform: "uppercase" }}>
-                  {e === 0 ? "RDC" : `ÉT. ${e}`}
-                </div>
-                <div style={{ width: 6, background: AT_BLUE, borderRadius: "4px 0 0 4px", opacity: 0.7 }} />
-                <div style={{ width: buildingWidth, display: "flex", background: GRAY_50, border: `1px solid ${GRAY_200}`, borderLeft: "none", borderRight: "none", minHeight: isFatFloor ? 90 : 64, position: "relative" }}>
-                  {(() => {
-                    const slots = [];
-                    const nLog = logements;
-                    const fatPos = Math.floor(nLog / 2);
 
-                    for (let l = 0; l < nLog; l++) {
-                      if (isFatFloor && l === fatPos) {
-                        slots.push({ type: "FAT", key: `fat-${e}` });
-                      }
-                      slots.push({ type: "UNIT", key: `unit-${e}-${l}`, l });
-                    }
+      {floorsToRender.map((e) => {
+        const isCommercialFloor = (e === 0);
+        // Filtrer les FATs par étage ET usage pour une séparation stricte
+        const fatsOnFloor = (fatsByFloor[e] || []).filter(f =>
+          isCommercialFloor ? f.usage === "commerces" : f.usage === "logements"
+        );
+        const hasFat = fatsOnFloor.length > 0;
+        const floorSubsSorted = subsByFloorSorted[e] || [];
 
-                    return slots.map((slot) => {
-                      if (slot.type === "FAT") {
-                        return (
-                          <div key={slot.key} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", background: AT_ORANGE_LIGHT, borderLeft: `1px dashed ${GRAY_200}`, borderRight: `1px dashed ${GRAY_200}`, padding: "0 4px" }}>
-                            <FATNode id={logicalFatId} connected={Math.min(limitPerFat, totalAbonnes - logicalFatId * limitPerFat)} totalPorts={limitPerFat} onHover={() => setHoveredFatId(logicalFatId)} onLeave={() => setHoveredFatId(null)} />
-                          </div>
-                        );
-                      }
-
-                      const l = slot.l;
-                      const isVisible = (e > 0) || (e === 0 && presenceCommercial);
-                      let idx = -1;
-                      if (e === 0 && presenceCommercial) idx = l;
-                      else if (e > 0) idx = numCommercial + (e - 1) * logements + l;
-                      const fatAssignId = idx >= 0 ? Math.floor(idx / limitPerFat) : -1;
-                      const isHovered = hoveredFatId !== null && hoveredFatId === fatAssignId;
-
-                      return (
-                        <div key={slot.key} style={{ flex: 1, display: "flex", alignItems: "stretch" }}>
-                          {isVisible ? (
-                            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "8px 4px", gap: 4, zIndex: 5, background: isHovered ? AT_ORANGE_LIGHT : "white", border: isHovered ? `2px solid ${AT_ORANGE}` : `1px solid ${GRAY_200}`, borderRadius: 4, margin: "4px 2px", minWidth: 30 }}>
-                              <div style={{ fontSize: 9, fontWeight: 700, color: GRAY_600, fontFamily: "monospace" }}>
-                                {e === 0 ? `C.${l + 1}` : `P.${(e - 1) * logements + l + 1}`}
-                              </div>
-                              <div style={{ width: 6, height: 6, borderRadius: "50%", background: isHovered ? AT_ORANGE : AT_BLUE }} />
-                            </div>
-                          ) : (
-                            <div style={{ flex: 1, margin: "4px 2px" }} />
-                          )}
-                        </div>
-                      );
-                    });
-                  })()}
-                </div>
-                <div style={{ width: 6, background: AT_BLUE, borderRadius: "0 4px 4px 0", opacity: 0.7 }} />
+        return (
+          <div key={e} style={{ marginBottom: 2 }}>
+            <div style={{ display: "flex", alignItems: "stretch", gap: 0 }}>
+              <div style={{ width: 64, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: 10, fontSize: 9, fontWeight: 700, color: isCommercialFloor ? AT_ORANGE : GRAY_400, letterSpacing: "0.5px", textTransform: "uppercase" }}>
+                {isCommercialFloor ? "RDC (C)" : `ÉT. ${e}`}
               </div>
+
+              <div style={{ width: 6, background: isCommercialFloor ? AT_ORANGE : AT_BLUE, borderRadius: "4px 0 0 4px", opacity: 0.7 }} />
+
+              <div style={{
+                flex: 1,
+                position: "relative",
+                background: isCommercialFloor ? AT_ORANGE_LIGHT : GRAY_50,
+                border: `1px solid ${isCommercialFloor ? AT_ORANGE : GRAY_200}`,
+                borderLeft: "none",
+                borderRight: "none",
+                minHeight: hasFat ? FLOOR_HEIGHT : 64,
+                display: "flex",
+                alignItems: "stretch",
+              }}>
+                <div style={{ display: "flex", flex: 1, alignItems: "stretch", padding: hasFat ? "36px 4px 4px 4px" : "4px" }}>
+                  {Array.from({ length: logements }, (_, colIdx) => {
+                    const sub = floorSubsSorted[colIdx];
+                    const codeClient = sub ? sub.code_client : null;
+
+                    // Label C.x pour commercial, P.x pour résidentiel
+                    const label = isCommercialFloor ? `C.${colIdx + 1}` : `P.${(e - 1) * logements + colIdx + 1}`;
+
+                    // On vérifie si ce logement appartient au FAT survolé
+                    const assignedToHovered = hoveredFatId && codeClient &&
+                      fatResults.find(f => (f.fat_id_AT === hoveredFatId || f.fat_id === hoveredFatId) &&
+                        Array.isArray(f.subscriber_ids) && f.subscriber_ids.includes(codeClient));
+
+                    return (
+                      <div key={colIdx} style={{ flex: 1, display: "flex", padding: "0 2px" }}>
+                        <div style={{
+                          flex: 1,
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          background: assignedToHovered ? (isCommercialFloor ? AT_ORANGE : AT_BLUE) : "white",
+                          color: assignedToHovered ? "white" : (isCommercialFloor ? AT_ORANGE : GRAY_600),
+                          border: `1px solid ${isCommercialFloor ? AT_ORANGE : GRAY_200}`,
+                          borderRadius: 4,
+                          padding: "6px 4px",
+                          minWidth: 30,
+                          transition: "all 0.15s",
+                          opacity: sub ? 1 : 0.3
+                        }}>
+                          <div style={{ fontSize: 9, fontWeight: 800, fontFamily: "monospace" }}>
+                            {label}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {fatsOnFloor.map((fat) => {
+                  const fatKey = fat.fat_id_AT || fat.fat_id;
+                  const fatIndex = allSortedFats.findIndex(f => (f.fat_id_AT || f.fat_id) === fatKey) + 1;
+                  const colPos = getFatColumnPosition(fat, e);
+                  const leftPct = (colPos / (logements - 1)) * 100;
+
+                  return (
+                    <div key={fatKey} style={{
+                      position: "absolute",
+                      top: 3,
+                      left: `${Math.max(5, Math.min(95, leftPct))}%`,
+                      transform: "translateX(-50%)",
+                      zIndex: hoveredFatId === fatKey ? 200 : 10,
+                    }}>
+                      <FATNode
+                        id={fatIndex}
+                        connected={fat.n_subscribers || 0}
+                        totalPorts={8}
+                        realName={fat.fat_id_AT || fat.fat_id}
+                        emplacement={isCommercialFloor ? `RDC Commercial` : `Étage ${e}`}
+                        onHover={() => setHoveredFatId(fatKey)}
+                        onLeave={() => setHoveredFatId(null)}
+                        isHovered={hoveredFatId === fatKey}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ width: 6, background: isCommercialFloor ? AT_ORANGE : AT_BLUE, borderRadius: "0 4px 4px 0", opacity: 0.7 }} />
             </div>
-          );
-        });
-      })()}
+          </div>
+        );
+      })}
+
       <div style={{ display: "flex", alignItems: "center", paddingLeft: 70, marginTop: 4 }}>
         <div style={{ flex: 1, height: 8, background: `linear-gradient(90deg, ${GRAY_400}, ${GRAY_300})`, borderRadius: 4 }} />
+      </div>
+      <div style={{ paddingLeft: 70, marginTop: 20, fontSize: 11, color: GRAY_400 }}>
+        FAT positionnés par usage : <span style={{ color: AT_ORANGE, fontWeight: 700 }}>Commerces (RDC)</span> et <span style={{ color: AT_BLUE, fontWeight: 700 }}>Logements (Étages)</span>.
       </div>
     </div>
   );
@@ -537,6 +658,7 @@ export default function FTTHSmartPlanner() {
 
   const [etages, setEtages] = useState(5);
   const [logements, setLogements] = useState(4);
+  const [hauteurEtage, setHauteurEtage] = useState(3.0);
   const [presenceCommercial, setPresenceCommercial] = useState(false);
   const [fatCap, setFatCap] = useState(8);
 
@@ -549,6 +671,7 @@ export default function FTTHSmartPlanner() {
   const [fatResults, setFatResults] = useState([]);
   const [primaryTargetId, setPrimaryTargetId] = useState(null);
   const [lastImportedId, setLastImportedId] = useState(null);
+  const [sectorisationSnapshot, setSectorisationSnapshot] = useState(null);
 
   const notify = useCallback((type, title, sub) => setNotif({ type, title, sub }), []);
 
@@ -559,7 +682,7 @@ export default function FTTHSmartPlanner() {
     setResidenceObj(newObj);
     if (properties.bat_levels) setEtages(properties.bat_levels);
     if (properties.bat_units) setLogements(Math.max(1, Math.floor(properties.bat_units / Math.max(1, properties.bat_levels || 1))));
-    setPlanGenerated(false); setFatResults([]); setKpis(null);
+    setPlanGenerated(false); setFatResults([]); setKpis(null); setSectorisationSnapshot(null);
     notify("info", "Bâtiment sélectionné", `Infos mises à jour pour : ${properties.nom_batiment}`);
   };
 
@@ -568,7 +691,7 @@ export default function FTTHSmartPlanner() {
     setResidenceObj(res);
     setPrimaryTargetId(null); setLastImportedId(null);
     setOsmLoaded(false); setRawBuildings(null);
-    setPlanGenerated(false); setSubscribersData([]); setFatResults([]); setKpis(null);
+    setPlanGenerated(false); setSubscribersData([]); setFatResults([]); setKpis(null); setSectorisationSnapshot(null);
   };
 
   useEffect(() => {
@@ -596,11 +719,11 @@ export default function FTTHSmartPlanner() {
   }, [ville, notify]);
 
   useEffect(() => {
-    setResidenceObj(null); setPrimaryTargetId(null); setLastImportedId(null);
+    setResidenceObj(null); setPrimaryTargetId(null); setLastImportedId(null); setSectorisationSnapshot(null);
   }, [commune]);
 
   useEffect(() => {
-    setPlanGenerated(false); setFatResults([]); setKpis(null);
+    setPlanGenerated(false); setFatResults([]); setKpis(null); setSectorisationSnapshot(null);
   }, [ville, commune]);
 
   const login = () => {
@@ -619,7 +742,7 @@ export default function FTTHSmartPlanner() {
     setOsmLoading(true);
     console.log("🚀 Lancement de l'import OSM pour :", residenceObj.name);
     try {
-      const resp = await fetch(`${API}/api/importOSM`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ville, commune, residence: residenceObj.name, lat: residenceObj.lat, lon: residenceObj.lon, nombre_etages: etages, logements_par_etage: logements, presence_commerciale: presenceCommercial }) });
+      const resp = await fetch(`${API}/api/importOSM`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ville, commune, residence: residenceObj.name, lat: residenceObj.lat, lon: residenceObj.lon, nombre_etages: etages, logements_par_etage: logements, commerce: presenceCommercial }) });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.detail || "Erreur Import");
 
@@ -662,8 +785,18 @@ export default function FTTHSmartPlanner() {
       };
       console.log("📊 KPIs de planification :", kpiObj);
 
+
       setFatResults(finalFats);
       setKpis(kpiObj);
+      setSectorisationSnapshot({
+        fatResults: finalFats,
+        subscribersData: [...subscribersData],
+        etages: etages,
+        logements: logements,
+        residenceName: residenceObj?.name,
+        presenceCommercial: presenceCommercial,
+        timestamp: Date.now()
+      });
       setPlanGenerated(true);
       notify("success", "Sectorisation terminée", `Topologie générée pour ${finalFats.length} boîtiers`);
     } catch (err) { notify("error", "Échec process", err.message); }
@@ -683,6 +816,43 @@ export default function FTTHSmartPlanner() {
     .radius-label { background: rgba(0, 91, 170, 0.85) !important; border: none !important; color: white !important; font-weight: 700 !important; font-size: 9px !important; border-radius: 4px !important; padding: 2px 6px !important; box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important; }
     .radius-label:before { border-top-color: rgba(0, 91, 170, 0.85) !important; }
     .leaflet-tooltip-top:before,.leaflet-tooltip-bottom:before,.leaflet-tooltip-left:before,.leaflet-tooltip-right:before { border:none !important; display:none; }
+
+    .fat-node-container:hover { transform: translateY(-3px); transition: transform 0.2s; }
+    .fat-tooltip {
+      position: absolute;
+      bottom: 115%;
+      left: 50%;
+      transform: translateX(-50%) translateY(8px);
+      background: #1F2937;
+      color: white;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 700;
+      white-space: nowrap;
+      z-index: 9999;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      display: flex;
+      flex-direction: column;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+    .fat-node-container:hover .fat-tooltip {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    .fat-tooltip:after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      margin-left: -6px;
+      border-width: 6px;
+      border-style: solid;
+      border-color: #1F2937 transparent transparent transparent;
+    }
   `;
 
   const steps = [
@@ -855,12 +1025,6 @@ export default function FTTHSmartPlanner() {
         <div style={{ fontSize: 11, color: GRAY_400 }}>Planification Architecturale</div>
       </nav>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, padding: "16px 20px", background: GRAY_50, borderBottom: `1px solid ${GRAY_200}` }}>
-        <KPICard label="Abonnés Estimés" value={kpis?.totalAbonnes ?? null} color="blue" icon="👥" />
-        <KPICard label="FATs Proposées" value={kpis?.fatsNeeded ?? null} sub="8 ports/FAT" color="orange" icon="📡" />
-        <KPICard label="Câble fibre estimé" value={kpis?.lineaire ?? null} suffix="m" color="purple" icon="🔌" />
-        <KPICard label="Taux d'utilisation de ports" value={kpis?.fatsPortsUsed ?? null} suffix="%" color="green" icon="📶" />
-      </div>
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
         <aside style={{ width: 310, background: "white", borderRight: `1px solid ${GRAY_200}`, padding: 20, overflowY: "auto" }}>
@@ -938,6 +1102,10 @@ export default function FTTHSmartPlanner() {
                   <label style={labelStyle}>Logements / Étage</label>
                   <input type="number" style={inputStyle} value={logements} onChange={e => setLogements(parseInt(e.target.value) || 1)} min={1} />
                 </div>
+                <div style={{ marginBottom: 10 }}>
+                  <label style={labelStyle}>Hauteur d'étage (m)</label>
+                  <input type="number" step="0.1" style={inputStyle} value={hauteurEtage} onChange={e => setHauteurEtage(parseFloat(e.target.value) || 3.0)} min={1} />
+                </div>
 
                 <div style={{ marginBottom: 15 }}>
                   <label style={labelStyle}>Présence Commerciale</label>
@@ -996,8 +1164,16 @@ export default function FTTHSmartPlanner() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, alignItems: "stretch" }}>
               <div style={{ background: "white", borderRadius: 12, border: `1px solid ${GRAY_200}`, padding: 0, overflow: "hidden", minHeight: 450, display: "flex", flexDirection: "column" }}>
                 <div style={{ fontWeight: 700, fontSize: 14, color: GRAY_800, padding: "16px 20px", borderBottom: `1px solid ${GRAY_100}` }}>Plan de Sectorisation</div>
-                {planGenerated ? (
-                  <BuildingPlan etages={etages} logements={logements} residenceName={residenceObj?.name} presenceCommercial={presenceCommercial} />
+                {planGenerated && sectorisationSnapshot ? (
+                  <BuildingPlan
+                    key={sectorisationSnapshot.timestamp}
+                    etages={sectorisationSnapshot.etages}
+                    logements={sectorisationSnapshot.logements}
+                    residenceName={sectorisationSnapshot.residenceName}
+                    presenceCommercial={sectorisationSnapshot.presenceCommercial}
+                    fatResults={sectorisationSnapshot.fatResults}
+                    subscribersData={sectorisationSnapshot.subscribersData}
+                  />
                 ) : (
                   <div style={{ textAlign: "center", padding: 80, color: GRAY_400 }}>
                     <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>Sélectionnez et chargez un bâtiment</div>
@@ -1020,6 +1196,40 @@ export default function FTTHSmartPlanner() {
                 </div>
               </div>
             </div>
+
+            {kpis && (
+              <div style={{ background: "white", borderRadius: 12, border: `1px solid ${GRAY_200}`, padding: "20px", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
+                <div style={{ fontWeight: 700, fontSize: 14, color: GRAY_800, marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ width: 4, height: 16, background: AT_ORANGE, borderRadius: 2 }} />
+                  Indicateurs de Performance (KPIs)
+                </div>
+                <div style={{ overflow: "hidden", borderRadius: 8, border: `1px solid ${GRAY_200}` }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", background: "white" }}>
+                    <thead>
+                      <tr style={{ background: AT_BLUE }}>
+                        <th style={{ padding: "14px 20px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "white", textTransform: "uppercase", letterSpacing: "0.5px" }}>Indicateur</th>
+                        <th style={{ padding: "14px 20px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "white", textTransform: "uppercase", letterSpacing: "0.5px" }}>Valeur</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        { label: "Total Abonnés estimés", value: kpis.totalAbonnes, suffix: "" },
+                        { label: "Nombre de FATs nécessaires", value: kpis.fatsNeeded, suffix: "" },
+                        { label: "Taux d'occupation des ports", value: kpis.fatsPortsUsed, suffix: " %" },
+                        { label: "Linéaire fibre estimé", value: kpis.lineaire, suffix: " m" },
+                      ].map((row, i) => (
+                        <tr key={row.label} style={{ borderBottom: i === 3 ? "none" : `1px solid ${GRAY_100}`, background: i % 2 === 0 ? "white" : GRAY_50 }}>
+                          <td style={{ padding: "14px 20px", fontSize: 13, color: GRAY_600, fontWeight: 500 }}>{row.label}</td>
+                          <td style={{ padding: "14px 20px", fontSize: 14, color: GRAY_800, fontWeight: 800 }}>
+                            {row.value}<span style={{ fontSize: 12, color: GRAY_400, marginLeft: 2, fontWeight: 600 }}>{row.suffix}</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
