@@ -1,0 +1,82 @@
+{
+  "code": 3,
+  "nom": "Laghouat",
+  "label": "03 - Laghouat",
+  "communes": [
+    {
+      "nom": "Ain Mahdi",
+      "lat": 33.7955179,
+      "lon": 2.2924947
+    },
+    {
+      "nom": "Benacer Ben Chohra",
+      "lat": 33.7522913,
+      "lon": 2.9939138
+    },
+    {
+      "nom": "El Assafia",
+      "lat": 33.8269722,
+      "lon": 2.9816293
+    },
+    {
+      "nom": "El Haouaita",
+      "lat": 37.0505755,
+      "lon": 10.9904863
+    },
+    {
+      "nom": "El Kheneg",
+      "lat": 33.7441108,
+      "lon": 2.7841758
+    },
+    {
+      "nom": "Hadj Mechri",
+      "lat": 33.9572842,
+      "lon": 1.5908605
+    },
+    {
+      "nom": "Hassi Delaa",
+      "lat": 33.4154299,
+      "lon": 3.5410309
+    },
+    {
+      "nom": "Hassi R'Mel",
+      "lat": 32.9412958,
+      "lon": 3.2443135
+    },
+    {
+      "nom": "Ksar El Hirane",
+      "lat": 33.7855481,
+      "lon": 3.119366
+    },
+    {
+      "nom": "Laghouat",
+      "lat": 33.7939523,
+      "lon": 2.8368501
+    },
+    {
+      "nom": "Oued M'Zi",
+      "lat": 33.9410427,
+      "lon": 2.4231133
+    },
+    {
+      "nom": "Sidi Makhlouf",
+      "lat": 34.1276242,
+      "lon": 3.0060262
+    },
+    {
+      "nom": "Tadjmout",
+      "lat": 33.8376241,
+      "lon": 2.5234705
+    },
+    {
+      "nom": "Tadjrouna",
+      "lat": 33.5036312,
+      "lon": 2.0924622
+    },
+    {
+      "nom": "Taouiala",
+      "lat": 33.8715595,
+      "lon": 1.8530845
+    }
+  ]
+}

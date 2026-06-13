@@ -1,0 +1,127 @@
+{
+  "code": 17,
+  "nom": "Djelfa",
+  "label": "17 - Djelfa",
+  "communes": [
+    {
+      "nom": "Ain Chouhada",
+      "lat": 34.2421928,
+      "lon": 2.510569
+    },
+    {
+      "nom": "Ain El Ibel",
+      "lat": 34.3539985,
+      "lon": 3.2157325
+    },
+    {
+      "nom": "Ain Maabed",
+      "lat": 34.8059782,
+      "lon": 3.1152247
+    },
+    {
+      "nom": "Amourah",
+      "lat": 34.3553852,
+      "lon": 3.8660287
+    },
+    {
+      "nom": "Beni Yacoub",
+      "lat": 34.4666662,
+      "lon": 2.7745782
+    },
+    {
+      "nom": "Bouira Lahdeb",
+      "lat": 35.2444181,
+      "lon": 3.1338179
+    },
+    {
+      "nom": "Charef",
+      "lat": 34.619593,
+      "lon": 2.792244
+    },
+    {
+      "nom": "Dar Chouikh",
+      "lat": 34.8946674,
+      "lon": 3.4691904
+    },
+    {
+      "nom": "Djelfa",
+      "lat": 34.6741226,
+      "lon": 3.2504381
+    },
+    {
+      "nom": "Douis",
+      "lat": 34.3739232,
+      "lon": 2.6978792
+    },
+    {
+      "nom": "El Guedid",
+      "lat": 34.646898,
+      "lon": 2.6057338
+    },
+    {
+      "nom": "El Idrissia",
+      "lat": 34.4515826,
+      "lon": 2.5095583
+    },
+    {
+      "nom": "El Khemis",
+      "lat": 35.2876616,
+      "lon": 2.5915396
+    },
+    {
+      "nom": "Feidh El Botma",
+      "lat": 34.5303577,
+      "lon": 3.7719368
+    },
+    {
+      "nom": "Guettara",
+      "lat": 33.1614178,
+      "lon": 4.6788776
+    },
+    {
+      "nom": "Hassi Bahbah",
+      "lat": 35.0764297,
+      "lon": 2.9959141
+    },
+    {
+      "nom": "Hassi El Euch",
+      "lat": 35.1540377,
+      "lon": 3.2426298
+    },
+    {
+      "nom": "M'Liliha",
+      "lat": 34.7546461,
+      "lon": 3.4761
+    },
+    {
+      "nom": "Moudjebara",
+      "lat": 34.5040006,
+      "lon": 3.4597278
+    },
+    {
+      "nom": "Oum Laadham",
+      "lat": 33.7195744,
+      "lon": 4.5251226
+    },
+    {
+      "nom": "Sidi Baizid",
+      "lat": 35.0582537,
+      "lon": 3.425889
+    },
+    {
+      "nom": "Tadmit",
+      "lat": 34.2833322,
+      "lon": 2.9745782
+    },
+    {
+      "nom": "Zaafrane",
+      "lat": 34.8540509,
+      "lon": 2.8442416
+    },
+    {
+      "nom": "Zaccar",
+      "lat": 34.4305669,
+      "lon": 3.3213472
+    }
+  ]
+}

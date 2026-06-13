@@ -1,0 +1,307 @@
+{
+  "code": 19,
+  "nom": "Sétif",
+  "label": "19 - Sétif",
+  "communes": [
+    {
+      "nom": "Ain Abessa",
+      "lat": 36.3045155,
+      "lon": 5.1522342
+    },
+    {
+      "nom": "Ain Arnat",
+      "lat": 36.1756548,
+      "lon": 5.173013
+    },
+    {
+      "nom": "Ain Azal",
+      "lat": 35.8195556,
+      "lon": 5.4648373
+    },
+    {
+      "nom": "Ain El Kebira",
+      "lat": 36.3773932,
+      "lon": 5.4503964
+    },
+    {
+      "nom": "Ain Lahdjar",
+      "lat": 35.960213,
+      "lon": 5.4198543
+    },
+    {
+      "nom": "Ain Legraj",
+      "lat": 36.4102318,
+      "lon": 4.7998641
+    },
+    {
+      "nom": "Ain Oulmane",
+      "lat": 35.9239262,
+      "lon": 5.2415487
+    },
+    {
+      "nom": "Ain Roua",
+      "lat": 36.3210122,
+      "lon": 5.1291535
+    },
+    {
+      "nom": "Ain Sebt",
+      "lat": 36.4924439,
+      "lon": 5.649352
+    },
+    {
+      "nom": "Ait Naoual Mezada",
+      "lat": 36.5453859,
+      "lon": 5.0547929
+    },
+    {
+      "nom": "Ait Tizi",
+      "lat": 36.5360367,
+      "lon": 5.1052087
+    },
+    {
+      "nom": "Amoucha",
+      "lat": 36.3748316,
+      "lon": 5.3447173
+    },
+    {
+      "nom": "Babor",
+      "lat": 36.5019013,
+      "lon": 5.3674976
+    },
+    {
+      "nom": "Bazer Sakhra",
+      "lat": 36.0795448,
+      "lon": 5.6140969
+    },
+    {
+      "nom": "Beidha Bordj",
+      "lat": 35.8379281,
+      "lon": 5.5996773
+    },
+    {
+      "nom": "Belaa",
+      "lat": 36.2217494,
+      "lon": 5.7975172
+    },
+    {
+      "nom": "Beni Aziz",
+      "lat": 36.4732335,
+      "lon": 5.5735848
+    },
+    {
+      "nom": "Beni Chebana",
+      "lat": 36.4681034,
+      "lon": 4.8420284
+    },
+    {
+      "nom": "Beni Fouda",
+      "lat": 36.2770368,
+      "lon": 5.4987834
+    },
+    {
+      "nom": "Beni Hocine",
+      "lat": 36.2590992,
+      "lon": 5.0521419
+    },
+    {
+      "nom": "Beni Mouhli",
+      "lat": 36.5137668,
+      "lon": 4.858188
+    },
+    {
+      "nom": "Beni Ouartilane",
+      "lat": 36.4307623,
+      "lon": 4.7427652
+    },
+    {
+      "nom": "Bir El Arch",
+      "lat": 36.1012237,
+      "lon": 5.7440447
+    },
+    {
+      "nom": "Bir Haddada",
+      "lat": 35.9625421,
+      "lon": 5.3953788
+    },
+    {
+      "nom": "Bouandas",
+      "lat": 36.5042094,
+      "lon": 5.0698679
+    },
+    {
+      "nom": "Bougaa",
+      "lat": 36.3394384,
+      "lon": 5.0449321
+    },
+    {
+      "nom": "Bousselam",
+      "lat": 36.4937736,
+      "lon": 4.9369786
+    },
+    {
+      "nom": "Boutaleb",
+      "lat": 35.6858444,
+      "lon": 5.1806519
+    },
+    {
+      "nom": "Dehamcha",
+      "lat": 36.3786819,
+      "lon": 5.5425141
+    },
+    {
+      "nom": "Djemila",
+      "lat": 36.3469977,
+      "lon": 5.6877397
+    },
+    {
+      "nom": "Draa Kebila",
+      "lat": 36.4219572,
+      "lon": 4.9356912
+    },
+    {
+      "nom": "El Eulma",
+      "lat": 36.1657394,
+      "lon": 5.620148
+    },
+    {
+      "nom": "El Ouldja",
+      "lat": 36.0876231,
+      "lon": 5.8494875
+    },
+    {
+      "nom": "El Ouricia",
+      "lat": 36.2706726,
+      "lon": 5.3148483
+    },
+    {
+      "nom": "Guellal",
+      "lat": 36.036461,
+      "lon": 5.2209924
+    },
+    {
+      "nom": "Guelta Zerka",
+      "lat": 36.2047344,
+      "lon": 5.6012867
+    },
+    {
+      "nom": "Guenzet",
+      "lat": 36.3357504,
+      "lon": 4.7548888
+    },
+    {
+      "nom": "Guidjel",
+      "lat": 36.0807516,
+      "lon": 5.4235957
+    },
+    {
+      "nom": "Hamma",
+      "lat": 35.6877227,
+      "lon": 5.31252
+    },
+    {
+      "nom": "Hammam Essokhna",
+      "lat": 35.9499435,
+      "lon": 5.6908217
+    },
+    {
+      "nom": "Hammam Guergour",
+      "lat": 36.3463283,
+      "lon": 4.932553
+    },
+    {
+      "nom": "Harbil",
+      "lat": 36.3471017,
+      "lon": 4.8497854
+    },
+    {
+      "nom": "Ksar El Abtal",
+      "lat": 35.9761631,
+      "lon": 5.1490233
+    },
+    {
+      "nom": "Maaouia",
+      "lat": 36.3748054,
+      "lon": 5.6401895
+    },
+    {
+      "nom": "Maouklane",
+      "lat": 36.4012018,
+      "lon": 5.0266852
+    },
+    {
+      "nom": "Mezloug",
+      "lat": 36.1050372,
+      "lon": 5.2373002
+    },
+    {
+      "nom": "Oued El Barad",
+      "lat": 36.4982198,
+      "lon": 5.3679794
+    },
+    {
+      "nom": "Ouled Addouane",
+      "lat": 36.3363273,
+      "lon": 5.4260439
+    },
+    {
+      "nom": "Ouled Sabor",
+      "lat": 36.180991,
+      "lon": 5.4739354
+    },
+    {
+      "nom": "Ouled Sidi Ahmed",
+      "lat": 35.907478,
+      "lon": 5.1083824
+    },
+    {
+      "nom": "Ouled Tebben",
+      "lat": 35.787273,
+      "lon": 5.0449536
+    },
+    {
+      "nom": "Rosfa",
+      "lat": 35.7790515,
+      "lon": 5.182669
+    },
+    {
+      "nom": "Salah Bey",
+      "lat": 35.8237361,
+      "lon": 5.2648518
+    },
+    {
+      "nom": "Serdj El Ghoul",
+      "lat": 36.475214,
+      "lon": 5.5168507
+    },
+    {
+      "nom": "Setif",
+      "lat": 36.1904969,
+      "lon": 5.350173
+    },
+    {
+      "nom": "Tachouda",
+      "lat": 36.2670155,
+      "lon": 5.6616471
+    },
+    {
+      "nom": "Talaifacene",
+      "lat": 35.9637883,
+      "lon": 5.6440518
+    },
+    {
+      "nom": "Taya",
+      "lat": 35.9253339,
+      "lon": 5.8147183
+    },
+    {
+      "nom": "Tella",
+      "lat": 35.9637883,
+      "lon": 5.6440518
+    },
+    {
+      "nom": "Tizi Nbechar",
+      "lat": 36.4317298,
+      "lon": 5.2875111
+    }
+  ]
+}

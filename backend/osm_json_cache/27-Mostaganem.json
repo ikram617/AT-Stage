@@ -1,0 +1,167 @@
+{
+  "code": 27,
+  "nom": "Mostaganem",
+  "label": "27 - Mostaganem",
+  "communes": [
+    {
+      "nom": "Abdelmalek Ramdane",
+      "lat": 36.1034611,
+      "lon": 0.2672312
+    },
+    {
+      "nom": "Achaacha",
+      "lat": 36.2449302,
+      "lon": 0.6235599
+    },
+    {
+      "nom": "Ain Boudinar",
+      "lat": 36.0091691,
+      "lon": 0.1825405
+    },
+    {
+      "nom": "Ain Nouissy",
+      "lat": 35.8032737,
+      "lon": 0.0398253
+    },
+    {
+      "nom": "Ain Sidi Cherif",
+      "lat": 35.8358105,
+      "lon": 0.1163113
+    },
+    {
+      "nom": "Ain Tadles",
+      "lat": 35.9940136,
+      "lon": 0.2932405
+    },
+    {
+      "nom": "Bouguirat",
+      "lat": 35.751283,
+      "lon": 0.2465079
+    },
+    {
+      "nom": "El Hassiane",
+      "lat": 35.7530845,
+      "lon": 0.1155925
+    },
+    {
+      "nom": "Fornaka",
+      "lat": 35.7604979,
+      "lon": -0.0327569
+    },
+    {
+      "nom": "Hadjadj",
+      "lat": 36.0963942,
+      "lon": 0.3163505
+    },
+    {
+      "nom": "Hassi Maameche",
+      "lat": 35.8606343,
+      "lon": 0.0229141
+    },
+    {
+      "nom": "Khadra",
+      "lat": 36.2538598,
+      "lon": 0.5688214
+    },
+    {
+      "nom": "Kheiredine",
+      "lat": 35.9549081,
+      "lon": 0.1016209
+    },
+    {
+      "nom": "Mansourah",
+      "lat": 35.8432384,
+      "lon": 0.2285671
+    },
+    {
+      "nom": "Mesra",
+      "lat": 35.8389326,
+      "lon": 0.1574992
+    },
+    {
+      "nom": "Mezghrane",
+      "lat": 35.8844492,
+      "lon": 0.0250619
+    },
+    {
+      "nom": "Mostaganem",
+      "lat": 35.9751637,
+      "lon": 0.0448868
+    },
+    {
+      "nom": "Nekmaria",
+      "lat": 36.1880382,
+      "lon": 0.6165754
+    },
+    {
+      "nom": "Oued El Kheir",
+      "lat": 35.9498792,
+      "lon": 0.3768825
+    },
+    {
+      "nom": "Ouled Boughalem",
+      "lat": 36.3160232,
+      "lon": 0.661025
+    },
+    {
+      "nom": "Ouled Maallah",
+      "lat": 36.0072076,
+      "lon": 0.5870175
+    },
+    {
+      "nom": "Safsaf",
+      "lat": 35.8436642,
+      "lon": 0.3698229
+    },
+    {
+      "nom": "Sayada",
+      "lat": 35.9321147,
+      "lon": 0.0894758
+    },
+    {
+      "nom": "Sidi Ali",
+      "lat": 36.0968612,
+      "lon": 0.3972458
+    },
+    {
+      "nom": "Sidi Bellater",
+      "lat": 36.0267851,
+      "lon": 0.2672123
+    },
+    {
+      "nom": "Sidi Lakhdar",
+      "lat": 36.1633785,
+      "lon": 0.4315995
+    },
+    {
+      "nom": "Sirat",
+      "lat": 35.780582,
+      "lon": 0.183571
+    },
+    {
+      "nom": "Souaflia",
+      "lat": 35.8616131,
+      "lon": 0.3271866
+    },
+    {
+      "nom": "Sour",
+      "lat": 36.0006026,
+      "lon": 0.3356516
+    },
+    {
+      "nom": "Stidia",
+      "lat": 35.8286516,
+      "lon": -0.0143553
+    },
+    {
+      "nom": "Tazgait",
+      "lat": 36.0944945,
+      "lon": 0.5438018
+    },
+    {
+      "nom": "Touahria",
+      "lat": 35.8109224,
+      "lon": 0.2054358
+    }
+  ]
+}

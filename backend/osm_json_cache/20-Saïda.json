@@ -1,0 +1,87 @@
+{
+  "code": 20,
+  "nom": "Saïda",
+  "label": "20 - Saïda",
+  "communes": [
+    {
+      "nom": "Ain El Hadjar",
+      "lat": 34.7609324,
+      "lon": 0.1333378
+    },
+    {
+      "nom": "Ain Sekhouna",
+      "lat": 34.5044436,
+      "lon": 0.8354119
+    },
+    {
+      "nom": "Ain Soltane",
+      "lat": 34.9675528,
+      "lon": 0.3012402
+    },
+    {
+      "nom": "Doui Thabet",
+      "lat": 34.8926538,
+      "lon": -0.0842
+    },
+    {
+      "nom": "El Hassasna",
+      "lat": 34.8248463,
+      "lon": 0.3121231
+    },
+    {
+      "nom": "Hounet",
+      "lat": 35.1193494,
+      "lon": -0.1492344
+    },
+    {
+      "nom": "Maamora",
+      "lat": 34.68074,
+      "lon": 0.4905867
+    },
+    {
+      "nom": "Moulay Larbi",
+      "lat": 34.6487428,
+      "lon": 0.0046133
+    },
+    {
+      "nom": "Ouled Brahim",
+      "lat": 34.986248,
+      "lon": 0.4696722
+    },
+    {
+      "nom": "Ouled Khaled",
+      "lat": 34.841945,
+      "lon": 0.1483583
+    },
+    {
+      "nom": "Saida",
+      "lat": 34.84194,
+      "lon": 0.1133388
+    },
+    {
+      "nom": "Sidi Ahmed",
+      "lat": 34.5499905,
+      "lon": 0.2527392
+    },
+    {
+      "nom": "Sidi Amar",
+      "lat": 35.0264293,
+      "lon": 0.1049602
+    },
+    {
+      "nom": "Sidi Boubekeur",
+      "lat": 35.0307334,
+      "lon": 0.0453185
+    },
+    {
+      "nom": "Tircine",
+      "lat": 34.9016504,
+      "lon": 0.549488
+    },
+    {
+      "nom": "Youb",
+      "lat": 34.9207469,
+      "lon": -0.2177601
+    }
+  ]
+}

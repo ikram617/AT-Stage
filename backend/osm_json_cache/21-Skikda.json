@@ -1,0 +1,197 @@
+{
+  "code": 21,
+  "nom": "Skikda",
+  "label": "21 - Skikda",
+  "communes": [
+    {
+      "nom": "Ain Bouziane",
+      "lat": 36.6036397,
+      "lon": 6.6793845
+    },
+    {
+      "nom": "Ain Cherchar",
+      "lat": 36.7329798,
+      "lon": 7.2109578
+    },
+    {
+      "nom": "Ain Kechra",
+      "lat": 36.745039,
+      "lon": 6.423676
+    },
+    {
+      "nom": "Ain Zouit",
+      "lat": 36.8887165,
+      "lon": 6.7802703
+    },
+    {
+      "nom": "Azzaba",
+      "lat": 36.7430777,
+      "lon": 7.0997212
+    },
+    {
+      "nom": "Bein El Ouiden",
+      "lat": 36.8057424,
+      "lon": 6.5480875
+    },
+    {
+      "nom": "Bekkouche Lakhdar",
+      "lat": 36.7011643,
+      "lon": 7.2953939
+    },
+    {
+      "nom": "Ben Azzouz",
+      "lat": 36.8648574,
+      "lon": 7.2885273
+    },
+    {
+      "nom": "Beni Bachir",
+      "lat": 36.7833322,
+      "lon": 6.9245782
+    },
+    {
+      "nom": "Beni Oulbane",
+      "lat": 36.6282861,
+      "lon": 6.6174172
+    },
+    {
+      "nom": "Beni Zid",
+      "lat": 36.8166662,
+      "lon": 6.4912452
+    },
+    {
+      "nom": "Bouchtata",
+      "lat": 36.7833322,
+      "lon": 6.7912452
+    },
+    {
+      "nom": "Cheraia",
+      "lat": 37.0030051,
+      "lon": 6.4972247
+    },
+    {
+      "nom": "Collo",
+      "lat": 37.0006567,
+      "lon": 6.537659
+    },
+    {
+      "nom": "Djendel",
+      "lat": 36.7814565,
+      "lon": 7.1617769
+    },
+    {
+      "nom": "El Ghedir",
+      "lat": 36.6870219,
+      "lon": 6.9730998
+    },
+    {
+      "nom": "El Hadaik",
+      "lat": 36.8244178,
+      "lon": 6.878085
+    },
+    {
+      "nom": "El Harrouch",
+      "lat": 36.6547652,
+      "lon": 6.8234108
+    },
+    {
+      "nom": "El Marsa",
+      "lat": 37.0091437,
+      "lon": 7.116813
+    },
+    {
+      "nom": "Emdjez Edchich",
+      "lat": 36.7047297,
+      "lon": 6.7961489
+    },
+    {
+      "nom": "Es Sebt",
+      "lat": 36.659999,
+      "lon": 7.0612452
+    },
+    {
+      "nom": "Filfila",
+      "lat": 36.8880361,
+      "lon": 7.0082877
+    },
+    {
+      "nom": "Hamadi Krouma",
+      "lat": 36.8471689,
+      "lon": 6.9208716
+    },
+    {
+      "nom": "Kanoua",
+      "lat": 37.0381362,
+      "lon": 6.4001584
+    },
+    {
+      "nom": "Kerkera",
+      "lat": 36.9297905,
+      "lon": 6.5761113
+    },
+    {
+      "nom": "Kheneg Mayoum",
+      "lat": 36.8777912,
+      "lon": 6.9357204
+    },
+    {
+      "nom": "Oued Zehour",
+      "lat": 36.922037,
+      "lon": 6.3040281
+    },
+    {
+      "nom": "Ouldja Boulbalout",
+      "lat": 36.73896,
+      "lon": 6.344292
+    },
+    {
+      "nom": "Ouled Attia",
+      "lat": 35.5368952,
+      "lon": 2.1427722
+    },
+    {
+      "nom": "Ouled Hebaba",
+      "lat": 36.8777912,
+      "lon": 6.9357204
+    },
+    {
+      "nom": "Oum Toub",
+      "lat": 36.6889452,
+      "lon": 6.5584944
+    },
+    {
+      "nom": "Ramdane Djamel",
+      "lat": 36.7585337,
+      "lon": 6.8745445
+    },
+    {
+      "nom": "Salah Bouchaour",
+      "lat": 36.6997005,
+      "lon": 6.8379484
+    },
+    {
+      "nom": "Sidi Mezghiche",
+      "lat": 36.6779093,
+      "lon": 6.7110264
+    },
+    {
+      "nom": "Skikda",
+      "lat": 36.8777706,
+      "lon": 6.86568
+    },
+    {
+      "nom": "Tamalous",
+      "lat": 36.8366625,
+      "lon": 6.6275453
+    },
+    {
+      "nom": "Zerdazas",
+      "lat": 36.8777912,
+      "lon": 6.9357204
+    },
+    {
+      "nom": "Zitouna",
+      "lat": 36.9888779,
+      "lon": 6.4497961
+    }
+  ]
+}

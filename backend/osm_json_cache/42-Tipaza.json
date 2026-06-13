@@ -1,0 +1,147 @@
+{
+  "code": 42,
+  "nom": "Tipaza",
+  "label": "42 - Tipaza",
+  "communes": [
+    {
+      "nom": "Aghabal",
+      "lat": 36.429,
+      "lon": 1.8402
+    },
+    {
+      "nom": "Ahmer El Ain",
+      "lat": 36.4158,
+      "lon": 2.5626
+    },
+    {
+      "nom": "Ain Tagourait",
+      "lat": 36.5416,
+      "lon": 2.6093
+    },
+    {
+      "nom": "Attatba",
+      "lat": 36.5107,
+      "lon": 2.6752
+    },
+    {
+      "nom": "Beni Milleuk",
+      "lat": 36.3538,
+      "lon": 1.7496
+    },
+    {
+      "nom": "Bou Haroun",
+      "lat": 36.5615,
+      "lon": 2.6559
+    },
+    {
+      "nom": "Bou Ismail",
+      "lat": 36.5791,
+      "lon": 2.6889
+    },
+    {
+      "nom": "Bourkika",
+      "lat": 36.4312,
+      "lon": 2.4747
+    },
+    {
+      "nom": "Chaiba",
+      "lat": 36.5615,
+      "lon": 2.7301
+    },
+    {
+      "nom": "Cherchel",
+      "lat": 36.5461,
+      "lon": 2.1973
+    },
+    {
+      "nom": "Damous",
+      "lat": 36.4865,
+      "lon": 1.7056
+    },
+    {
+      "nom": "Douaouda",
+      "lat": 36.6034,
+      "lon": 2.7823
+    },
+    {
+      "nom": "Fouka",
+      "lat": 36.6034,
+      "lon": 2.7493
+    },
+    {
+      "nom": "Gouraya",
+      "lat": 36.5041,
+      "lon": 1.9061
+    },
+    {
+      "nom": "Hadjerat Ennous",
+      "lat": 36.5107,
+      "lon": 2.0517
+    },
+    {
+      "nom": "Hadjout",
+      "lat": 36.4489,
+      "lon": 2.4142
+    },
+    {
+      "nom": "Khemisti",
+      "lat": 36.5637,
+      "lon": 2.6807
+    },
+    {
+      "nom": "Kolea",
+      "lat": 36.5769,
+      "lon": 2.7658
+    },
+    {
+      "nom": "Larhat",
+      "lat": 36.4953,
+      "lon": 1.8018
+    },
+    {
+      "nom": "Menaceur",
+      "lat": 36.4312,
+      "lon": 2.2412
+    },
+    {
+      "nom": "Messelmoun",
+      "lat": 36.4997,
+      "lon": 2.0023
+    },
+    {
+      "nom": "Meurad",
+      "lat": 36.4135,
+      "lon": 2.428
+    },
+    {
+      "nom": "Nodor",
+      "lat": 36.5063,
+      "lon": 2.3923
+    },
+    {
+      "nom": "Sidi Amar",
+      "lat": 36.4798,
+      "lon": 2.3071
+    },
+    {
+      "nom": "Sidi Ghiles",
+      "lat": 36.5196,
+      "lon": 2.1231
+    },
+    {
+      "nom": "Sidi Rached",
+      "lat": 36.4997,
+      "lon": 2.5323
+    },
+    {
+      "nom": "Sidi Semiane",
+      "lat": 36.4401,
+      "lon": 2.0984
+    },
+    {
+      "nom": "Tipaza",
+      "lat": 36.5284,
+      "lon": 2.45
+    }
+  ]
+}

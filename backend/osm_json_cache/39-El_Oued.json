@@ -1,0 +1,132 @@
+{
+  "code": 39,
+  "nom": "El Oued",
+  "label": "39 - El Oued",
+  "communes": [
+    {
+      "nom": "Bayadha",
+      "lat": 33.2697,
+      "lon": 6.9159
+    },
+    {
+      "nom": "Beni Guecha",
+      "lat": 33.9331,
+      "lon": 7.3361
+    },
+    {
+      "nom": "Debila",
+      "lat": 33.4418,
+      "lon": 6.9379
+    },
+    {
+      "nom": "Douar El Ma",
+      "lat": 33.1962,
+      "lon": 7.3746
+    },
+    {
+      "nom": "El Mghair",
+      "lat": 33.8852,
+      "lon": 5.9244
+    },
+    {
+      "nom": "El Ogla",
+      "lat": 33.1801,
+      "lon": 6.9461
+    },
+    {
+      "nom": "El Oued",
+      "lat": 33.3018,
+      "lon": 6.8665
+    },
+    {
+      "nom": "Guemar",
+      "lat": 33.428,
+      "lon": 6.7978
+    },
+    {
+      "nom": "Hamraia",
+      "lat": 34.047,
+      "lon": 6.2292
+    },
+    {
+      "nom": "Hassani Abdelkrim",
+      "lat": 33.412,
+      "lon": 6.8939
+    },
+    {
+      "nom": "Hassi Khelifa",
+      "lat": 33.5357,
+      "lon": 7.0285
+    },
+    {
+      "nom": "Kouinine",
+      "lat": 33.3386,
+      "lon": 6.8253
+    },
+    {
+      "nom": "Magrane",
+      "lat": 33.5174,
+      "lon": 6.9489
+    },
+    {
+      "nom": "Mih Ouansa",
+      "lat": 33.1318,
+      "lon": 6.7044
+    },
+    {
+      "nom": "Mrara",
+      "lat": 33.5883,
+      "lon": 5.2872
+    },
+    {
+      "nom": "Nakhla",
+      "lat": 33.2123,
+      "lon": 6.9516
+    },
+    {
+      "nom": "Oued El Alenda",
+      "lat": 33.164,
+      "lon": 6.7566
+    },
+    {
+      "nom": "Ourmas",
+      "lat": 33.3477,
+      "lon": 6.7813
+    },
+    {
+      "nom": "Reguiba",
+      "lat": 33.499,
+      "lon": 6.7126
+    },
+    {
+      "nom": "Robbah",
+      "lat": 33.2146,
+      "lon": 6.9104
+    },
+    {
+      "nom": "Sidi Aoun",
+      "lat": 33.4761,
+      "lon": 6.9022
+    },
+    {
+      "nom": "Sidi Khellil",
+      "lat": 33.7734,
+      "lon": 5.9601
+    },
+    {
+      "nom": "Taghzout",
+      "lat": 33.4097,
+      "lon": 6.795
+    },
+    {
+      "nom": "Taleb Larbi",
+      "lat": 33.6615,
+      "lon": 7.5174
+    },
+    {
+      "nom": "Trifaoui",
+      "lat": 33.3569,
+      "lon": 6.9351
+    }
+  ]
+}

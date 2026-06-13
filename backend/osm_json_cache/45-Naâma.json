@@ -1,0 +1,67 @@
+{
+  "code": 45,
+  "nom": "Naâma",
+  "label": "45 - Naâma",
+  "communes": [
+    {
+      "nom": "Ain Ben Khelil",
+      "lat": 33.2226,
+      "lon": -0.7635
+    },
+    {
+      "nom": "Ain Sefra",
+      "lat": 32.6879,
+      "lon": -0.585
+    },
+    {
+      "nom": "Assela",
+      "lat": 32.9372,
+      "lon": -0.0769
+    },
+    {
+      "nom": "Djeniane Bourzeg",
+      "lat": 32.3057,
+      "lon": -0.8047
+    },
+    {
+      "nom": "El Biod",
+      "lat": 33.6969,
+      "lon": -0.1346
+    },
+    {
+      "nom": "Kasdir",
+      "lat": 33.6443,
+      "lon": -1.3596
+    },
+    {
+      "nom": "Makman Ben Amer",
+      "lat": 33.6512,
+      "lon": -0.7278
+    },
+    {
+      "nom": "Mechria",
+      "lat": 33.4841,
+      "lon": -0.2829
+    },
+    {
+      "nom": "Moghrar",
+      "lat": 32.4495,
+      "lon": -0.5795
+    },
+    {
+      "nom": "Naama",
+      "lat": 33.195,
+      "lon": -0.3131
+    },
+    {
+      "nom": "Sfissifa",
+      "lat": 32.6648,
+      "lon": -0.8679
+    },
+    {
+      "nom": "Tiout",
+      "lat": 32.7041,
+      "lon": -0.4202
+    }
+  ]
+}

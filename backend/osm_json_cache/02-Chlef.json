@@ -1,0 +1,182 @@
+{
+  "code": 2,
+  "nom": "Chlef",
+  "label": "02 - Chlef",
+  "communes": [
+    {
+      "nom": "Abou El Hassen",
+      "lat": 36.407875,
+      "lon": 1.1184571
+    },
+    {
+      "nom": "Ain Merane",
+      "lat": 36.1625642,
+      "lon": 0.9651016
+    },
+    {
+      "nom": "Benairia",
+      "lat": 36.3849733,
+      "lon": 1.3150523
+    },
+    {
+      "nom": "Beni Bouateb",
+      "lat": 35.9895844,
+      "lon": 1.5589402
+    },
+    {
+      "nom": "Beni Haoua",
+      "lat": 36.4938241,
+      "lon": 1.5198873
+    },
+    {
+      "nom": "Beni Rached",
+      "lat": 36.2930145,
+      "lon": 1.4611361
+    },
+    {
+      "nom": "Boukadir",
+      "lat": 36.0617947,
+      "lon": 1.1083316
+    },
+    {
+      "nom": "Bouzghaia",
+      "lat": 36.3604333,
+      "lon": 1.1871646
+    },
+    {
+      "nom": "Breira",
+      "lat": 36.4476233,
+      "lon": 1.5221188
+    },
+    {
+      "nom": "Chettia",
+      "lat": 36.1782742,
+      "lon": 1.1791394
+    },
+    {
+      "nom": "Chlef",
+      "lat": 36.1691042,
+      "lon": 1.2838598
+    },
+    {
+      "nom": "Dahra",
+      "lat": 36.2551398,
+      "lon": 0.8432006
+    },
+    {
+      "nom": "El Hadjadj",
+      "lat": 35.6908338,
+      "lon": 1.538967
+    },
+    {
+      "nom": "El Karimia",
+      "lat": 36.0774092,
+      "lon": 1.5112398
+    },
+    {
+      "nom": "El Marsa",
+      "lat": 36.2599947,
+      "lon": 0.722512
+    },
+    {
+      "nom": "Harchoun",
+      "lat": 36.1184786,
+      "lon": 1.4187143
+    },
+    {
+      "nom": "Herenfa",
+      "lat": 36.2438569,
+      "lon": 1.0440444
+    },
+    {
+      "nom": "Labiod Medjadja",
+      "lat": 36.2682804,
+      "lon": 1.3325618
+    },
+    {
+      "nom": "Moussadek",
+      "lat": 36.3521334,
+      "lon": 1.0004317
+    },
+    {
+      "nom": "Oued Fodda",
+      "lat": 36.1995109,
+      "lon": 1.4672731
+    },
+    {
+      "nom": "Oued Goussine",
+      "lat": 36.4949721,
+      "lon": 1.3928579
+    },
+    {
+      "nom": "Oued Sly",
+      "lat": 36.0806537,
+      "lon": 1.1443351
+    },
+    {
+      "nom": "Ouled Abbes",
+      "lat": 36.2139534,
+      "lon": 1.4578336
+    },
+    {
+      "nom": "Ouled Ben Abdelkader",
+      "lat": 35.9670371,
+      "lon": 1.192049
+    },
+    {
+      "nom": "Ouled Fares",
+      "lat": 36.2302131,
+      "lon": 1.0951463
+    },
+    {
+      "nom": "Oum Drou",
+      "lat": 36.2034869,
+      "lon": 1.3460801
+    },
+    {
+      "nom": "Sendjas",
+      "lat": 36.0396831,
+      "lon": 1.2713566
+    },
+    {
+      "nom": "Sidi Abderrahmane",
+      "lat": 36.4236714,
+      "lon": 1.0492304
+    },
+    {
+      "nom": "Sidi Akacha",
+      "lat": 36.4357802,
+      "lon": 1.2554858
+    },
+    {
+      "nom": "Sobha",
+      "lat": 36.1084781,
+      "lon": 1.1017012
+    },
+    {
+      "nom": "Tadjna",
+      "lat": 36.3240803,
+      "lon": 1.1303901
+    },
+    {
+      "nom": "Talassa",
+      "lat": 36.4266341,
+      "lon": 1.0790634
+    },
+    {
+      "nom": "Taougrite",
+      "lat": 36.2460876,
+      "lon": 0.8993445
+    },
+    {
+      "nom": "Tenes",
+      "lat": 36.508324,
+      "lon": 1.2426542
+    },
+    {
+      "nom": "Zeboudja",
+      "lat": 36.3910799,
+      "lon": 1.3907765
+    }
+  ]
+}

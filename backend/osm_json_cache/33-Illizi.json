@@ -1,0 +1,27 @@
+{
+  "code": 33,
+  "nom": "Illizi",
+  "label": "33 - Illizi",
+  "communes": [
+    {
+      "nom": "Bordj Omar Driss",
+      "lat": 28.0793,
+      "lon": 6.817
+    },
+    {
+      "nom": "Debdeb",
+      "lat": 29.8978,
+      "lon": 9.4208
+    },
+    {
+      "nom": "Illizi",
+      "lat": 26.4361,
+      "lon": 8.4842
+    },
+    {
+      "nom": "In Amenas",
+      "lat": 27.9677,
+      "lon": 9.5663
+    }
+  ]
+}

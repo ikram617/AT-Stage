@@ -1,0 +1,87 @@
+{
+  "code": 32,
+  "nom": "El Bayadh",
+  "label": "32 - El Bayadh",
+  "communes": [
+    {
+      "nom": "Boualem",
+      "lat": 33.6626,
+      "lon": 1.5353
+    },
+    {
+      "nom": "Bougtoub",
+      "lat": 33.9775,
+      "lon": 0.0879
+    },
+    {
+      "nom": "Brezina",
+      "lat": 33.0317,
+      "lon": 1.2607
+    },
+    {
+      "nom": "Cheguig",
+      "lat": 34.1027,
+      "lon": 1.2277
+    },
+    {
+      "nom": "El Bayadh",
+      "lat": 33.6146,
+      "lon": 1.019
+    },
+    {
+      "nom": "El Bnoud",
+      "lat": 32.2453,
+      "lon": 0.2444
+    },
+    {
+      "nom": "El Kheither",
+      "lat": 34.0777,
+      "lon": 0.0742
+    },
+    {
+      "nom": "Ghassoul",
+      "lat": 33.3099,
+      "lon": 1.203
+    },
+    {
+      "nom": "Kef El Ahmar",
+      "lat": 33.7837,
+      "lon": 0.6317
+    },
+    {
+      "nom": "Krakda",
+      "lat": 33.2525,
+      "lon": 0.9586
+    },
+    {
+      "nom": "Rogassa",
+      "lat": 33.9525,
+      "lon": 0.9256
+    },
+    {
+      "nom": "Sidi Ameur",
+      "lat": 33.7015,
+      "lon": 1.4337
+    },
+    {
+      "nom": "Sidi Slimane",
+      "lat": 33.7814,
+      "lon": 1.7303
+    },
+    {
+      "nom": "Sidi Tifour",
+      "lat": 33.6512,
+      "lon": 1.6837
+    },
+    {
+      "nom": "Stitten",
+      "lat": 33.6924,
+      "lon": 1.2222
+    },
+    {
+      "nom": "Tousmouline",
+      "lat": 33.5849,
+      "lon": 0.3076
+    }
+  ]
+}

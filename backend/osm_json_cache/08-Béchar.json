@@ -1,0 +1,77 @@
+{
+  "code": 8,
+  "nom": "Béchar",
+  "label": "08 - Béchar",
+  "communes": [
+    {
+      "nom": "Abadla",
+      "lat": 31.0174866,
+      "lon": -2.7615494
+    },
+    {
+      "nom": "Bechar",
+      "lat": 31.5965368,
+      "lon": -2.4145248
+    },
+    {
+      "nom": "Beni Ikhlef",
+      "lat": 29.5802183,
+      "lon": -1.6128088
+    },
+    {
+      "nom": "Beni Ounif",
+      "lat": 32.0512638,
+      "lon": -1.2519046
+    },
+    {
+      "nom": "Boukais",
+      "lat": 31.9230182,
+      "lon": -2.4714058
+    },
+    {
+      "nom": "Erg Ferradj",
+      "lat": 31.0835905,
+      "lon": -2.8630916
+    },
+    {
+      "nom": "Kenedsa",
+      "lat": 31.5570599,
+      "lon": -2.4381801
+    },
+    {
+      "nom": "Lahmar",
+      "lat": 31.9312184,
+      "lon": -2.2681563
+    },
+    {
+      "nom": "Mechraa Houari Boumedienne",
+      "lat": 30.9318258,
+      "lon": -2.741164
+    },
+    {
+      "nom": "Meridja",
+      "lat": 31.5494045,
+      "lon": -2.95583
+    },
+    {
+      "nom": "Mogheul",
+      "lat": 32.0219943,
+      "lon": -2.2227252
+    },
+    {
+      "nom": "Tabalbala",
+      "lat": 28.9735664,
+      "lon": -5.9957642
+    },
+    {
+      "nom": "Taghit",
+      "lat": 30.9150725,
+      "lon": -2.0472123
+    },
+    {
+      "nom": "Tamtert",
+      "lat": 29.9166662,
+      "lon": -1.9087548
+    }
+  ]
+}

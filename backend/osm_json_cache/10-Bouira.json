@@ -1,0 +1,232 @@
+{
+  "code": 10,
+  "nom": "Bouira",
+  "label": "10 - Bouira",
+  "communes": [
+    {
+      "nom": "Aghbalou",
+      "lat": 36.4259787,
+      "lon": 4.2679284
+    },
+    {
+      "nom": "Ahl El Ksar",
+      "lat": 36.2426022,
+      "lon": 3.9606117
+    },
+    {
+      "nom": "Ain Bessam",
+      "lat": 36.3364461,
+      "lon": 3.5562554
+    },
+    {
+      "nom": "Ain El Hadjar",
+      "lat": 36.3598252,
+      "lon": 3.7160585
+    },
+    {
+      "nom": "Ain Laloui",
+      "lat": 36.3067411,
+      "lon": 3.6860828
+    },
+    {
+      "nom": "Ain Turk",
+      "lat": 36.4049144,
+      "lon": 3.7447465
+    },
+    {
+      "nom": "Ait Laaziz",
+      "lat": 36.4453381,
+      "lon": 3.8484757
+    },
+    {
+      "nom": "Aomar",
+      "lat": 36.5022135,
+      "lon": 3.7122176
+    },
+    {
+      "nom": "Ath Mansour",
+      "lat": 36.2991769,
+      "lon": 4.2484448
+    },
+    {
+      "nom": "Bechloul",
+      "lat": 36.3745093,
+      "lon": 3.9607305
+    },
+    {
+      "nom": "Bir Ghbalou",
+      "lat": 36.268461,
+      "lon": 3.5073827
+    },
+    {
+      "nom": "Bordj Oukhriss",
+      "lat": 36.09281,
+      "lon": 3.8468001
+    },
+    {
+      "nom": "Bouderbala",
+      "lat": 36.5662885,
+      "lon": 3.4137415
+    },
+    {
+      "nom": "Bouira",
+      "lat": 36.3728066,
+      "lon": 3.8350413
+    },
+    {
+      "nom": "Boukram",
+      "lat": 36.5178782,
+      "lon": 3.2987712
+    },
+    {
+      "nom": "Chorfa",
+      "lat": 36.3782491,
+      "lon": 4.3082238
+    },
+    {
+      "nom": "Dechmia",
+      "lat": 36.1366443,
+      "lon": 3.5034345
+    },
+    {
+      "nom": "Dirah",
+      "lat": 36.0038981,
+      "lon": 3.5835066
+    },
+    {
+      "nom": "Djebahia",
+      "lat": 36.4603324,
+      "lon": 3.6520932
+    },
+    {
+      "nom": "El Adjiba",
+      "lat": 36.3723036,
+      "lon": 4.0139476
+    },
+    {
+      "nom": "El Asnam",
+      "lat": 36.3709809,
+      "lon": 3.8941923
+    },
+    {
+      "nom": "El Hachimia",
+      "lat": 36.2227385,
+      "lon": 3.7198058
+    },
+    {
+      "nom": "El Hakimia",
+      "lat": 36.0907204,
+      "lon": 3.72668
+    },
+    {
+      "nom": "El Khebouzia",
+      "lat": 36.3091266,
+      "lon": 3.5599129
+    },
+    {
+      "nom": "El Mokrani",
+      "lat": 36.4249768,
+      "lon": 3.5341619
+    },
+    {
+      "nom": "Guerrouma",
+      "lat": 36.4678041,
+      "lon": 3.3603546
+    },
+    {
+      "nom": "Hadjera Zerga",
+      "lat": 35.9465348,
+      "lon": 3.6906234
+    },
+    {
+      "nom": "Haizer",
+      "lat": 36.4068708,
+      "lon": 3.9487242
+    },
+    {
+      "nom": "Hanif",
+      "lat": 36.2632628,
+      "lon": 4.0687934
+    },
+    {
+      "nom": "Kadiria",
+      "lat": 36.5253163,
+      "lon": 3.5963676
+    },
+    {
+      "nom": "Lakhdaria",
+      "lat": 36.5613265,
+      "lon": 3.5173819
+    },
+    {
+      "nom": "Maala",
+      "lat": 36.4945576,
+      "lon": 3.4880279
+    },
+    {
+      "nom": "Maamora",
+      "lat": 35.9979399,
+      "lon": 3.525493
+    },
+    {
+      "nom": "Mchedallah",
+      "lat": 36.3633061,
+      "lon": 4.1871831
+    },
+    {
+      "nom": "Mezdour",
+      "lat": 36.0722819,
+      "lon": 3.923954
+    },
+    {
+      "nom": "Oued El Berdi",
+      "lat": 36.257285,
+      "lon": 3.8546965
+    },
+    {
+      "nom": "Ouled Rached",
+      "lat": 36.2020432,
+      "lon": 3.9321509
+    },
+    {
+      "nom": "Raouraoua",
+      "lat": 36.2168126,
+      "lon": 3.5492681
+    },
+    {
+      "nom": "Ridane",
+      "lat": 36.0701573,
+      "lon": 3.399751
+    },
+    {
+      "nom": "Saharidj",
+      "lat": 36.4310532,
+      "lon": 4.1825268
+    },
+    {
+      "nom": "Souk El Khemis",
+      "lat": 36.3941664,
+      "lon": 3.5550187
+    },
+    {
+      "nom": "Sour El Ghozlane",
+      "lat": 36.1694764,
+      "lon": 3.55647
+    },
+    {
+      "nom": "Taghzout",
+      "lat": 36.4161178,
+      "lon": 3.9036414
+    },
+    {
+      "nom": "Taguedit",
+      "lat": 35.9534858,
+      "lon": 3.7969676
+    },
+    {
+      "nom": "Zbarbar",
+      "lat": 36.4732903,
+      "lon": 3.4459708
+    }
+  ]
+}

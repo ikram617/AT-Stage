@@ -1,0 +1,112 @@
+{
+  "code": 40,
+  "nom": "Khenchela",
+  "label": "40 - Khenchela",
+  "communes": [
+    {
+      "nom": "Ain Touila",
+      "lat": 35.3723,
+      "lon": 7.3526
+    },
+    {
+      "nom": "Babar",
+      "lat": 35.1053,
+      "lon": 7.0999
+    },
+    {
+      "nom": "Baghai",
+      "lat": 35.4573,
+      "lon": 7.1136
+    },
+    {
+      "nom": "Bouhmama",
+      "lat": 35.2557,
+      "lon": 6.7456
+    },
+    {
+      "nom": "Chelia",
+      "lat": 35.3006,
+      "lon": 6.7786
+    },
+    {
+      "nom": "Cherchar",
+      "lat": 34.9749,
+      "lon": 7.0038
+    },
+    {
+      "nom": "Djellal",
+      "lat": 34.8533,
+      "lon": 6.8994
+    },
+    {
+      "nom": "El Hamma",
+      "lat": 35.3991,
+      "lon": 7.0834
+    },
+    {
+      "nom": "El Mahmal",
+      "lat": 35.3095,
+      "lon": 7.2125
+    },
+    {
+      "nom": "El Oueldja",
+      "lat": 34.851,
+      "lon": 6.6797
+    },
+    {
+      "nom": "Ensigha",
+      "lat": 35.3342,
+      "lon": 7.1439
+    },
+    {
+      "nom": "Kais",
+      "lat": 35.4305,
+      "lon": 6.9241
+    },
+    {
+      "nom": "Khenchela",
+      "lat": 35.3678,
+      "lon": 7.1439
+    },
+    {
+      "nom": "Khirane",
+      "lat": 34.9344,
+      "lon": 6.7593
+    },
+    {
+      "nom": "Msara",
+      "lat": 35.1749,
+      "lon": 6.5726
+    },
+    {
+      "nom": "Mtoussa",
+      "lat": 35.5356,
+      "lon": 7.2455
+    },
+    {
+      "nom": "Ouled Rechache",
+      "lat": 35.2333,
+      "lon": 7.3526
+    },
+    {
+      "nom": "Remila",
+      "lat": 35.5065,
+      "lon": 6.9351
+    },
+    {
+      "nom": "Tamza",
+      "lat": 35.2535,
+      "lon": 6.8335
+    },
+    {
+      "nom": "Taouzianat",
+      "lat": 35.4506,
+      "lon": 6.7538
+    },
+    {
+      "nom": "Yabous",
+      "lat": 35.3454,
+      "lon": 6.6412
+    }
+  ]
+}

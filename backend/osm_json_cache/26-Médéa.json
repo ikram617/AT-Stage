@@ -1,0 +1,297 @@
+{
+  "code": 26,
+  "nom": "Médéa",
+  "label": "26 - Médéa",
+  "communes": [
+    {
+      "nom": "Ain Boucif",
+      "lat": 35.8347645,
+      "lon": 3.0031194
+    },
+    {
+      "nom": "Ain Ouksir",
+      "lat": 35.7760055,
+      "lon": 3.3282462
+    },
+    {
+      "nom": "Aissaouia",
+      "lat": 36.4109256,
+      "lon": 3.1566785
+    },
+    {
+      "nom": "Baata",
+      "lat": 36.3720772,
+      "lon": 3.059561
+    },
+    {
+      "nom": "Benchicao",
+      "lat": 36.1913329,
+      "lon": 2.7682088
+    },
+    {
+      "nom": "Beni Slimane",
+      "lat": 36.2181313,
+      "lon": 3.2412217
+    },
+    {
+      "nom": "Berrouaghia",
+      "lat": 36.1528037,
+      "lon": 2.8436539
+    },
+    {
+      "nom": "Bir Ben Laabed",
+      "lat": 36.1905774,
+      "lon": 3.3408711
+    },
+    {
+      "nom": "Boghar",
+      "lat": 35.9371699,
+      "lon": 2.6326821
+    },
+    {
+      "nom": "Bouaiche",
+      "lat": 35.6097793,
+      "lon": 2.1731367
+    },
+    {
+      "nom": "Bouaichoune",
+      "lat": 36.1351828,
+      "lon": 2.5703691
+    },
+    {
+      "nom": "Bouchrahil",
+      "lat": 36.2735556,
+      "lon": 3.1350492
+    },
+    {
+      "nom": "Boughezoul",
+      "lat": 35.6795297,
+      "lon": 2.6264943
+    },
+    {
+      "nom": "Bouskene",
+      "lat": 36.1950571,
+      "lon": 3.1348775
+    },
+    {
+      "nom": "Chelalet El Adhaoura",
+      "lat": 35.9605086,
+      "lon": 3.3358071
+    },
+    {
+      "nom": "Cheniguel",
+      "lat": 35.9572465,
+      "lon": 3.4658406
+    },
+    {
+      "nom": "Derrag",
+      "lat": 35.8431534,
+      "lon": 2.2165241
+    },
+    {
+      "nom": "Deux Bassins",
+      "lat": 36.4676678,
+      "lon": 3.2670586
+    },
+    {
+      "nom": "Djouab",
+      "lat": 36.1117003,
+      "lon": 3.3535741
+    },
+    {
+      "nom": "Draa Essamar",
+      "lat": 36.2689828,
+      "lon": 2.6257727
+    },
+    {
+      "nom": "El Azizia",
+      "lat": 36.3151797,
+      "lon": 3.4549421
+    },
+    {
+      "nom": "El Guelbelkebir",
+      "lat": 36.2477512,
+      "lon": 3.3416865
+    },
+    {
+      "nom": "El Hamdania",
+      "lat": 36.3465239,
+      "lon": 2.7878641
+    },
+    {
+      "nom": "El Ouinet",
+      "lat": 35.8638348,
+      "lon": 2.9963896
+    },
+    {
+      "nom": "Hannacha",
+      "lat": 36.1693058,
+      "lon": 2.5216172
+    },
+    {
+      "nom": "Kef Lakhdar",
+      "lat": 35.9218925,
+      "lon": 3.1958172
+    },
+    {
+      "nom": "Khams Djouamaa",
+      "lat": 36.1478178,
+      "lon": 3.0538534
+    },
+    {
+      "nom": "Medea",
+      "lat": 36.2838204,
+      "lon": 2.7028058
+    },
+    {
+      "nom": "Medjebar",
+      "lat": 35.9562974,
+      "lon": 2.7541324
+    },
+    {
+      "nom": "Meftaha",
+      "lat": 35.8821773,
+      "lon": 0.0
+    },
+    {
+      "nom": "Meghraoua",
+      "lat": 36.3822217,
+      "lon": 3.4680723
+    },
+    {
+      "nom": "Mezerena",
+      "lat": 36.3467956,
+      "lon": 3.2758115
+    },
+    {
+      "nom": "Mihoub",
+      "lat": 36.3861353,
+      "lon": 3.3691094
+    },
+    {
+      "nom": "Ouamri",
+      "lat": 36.2537814,
+      "lon": 2.4798606
+    },
+    {
+      "nom": "Oued Harbil",
+      "lat": 36.2397747,
+      "lon": 2.5734161
+    },
+    {
+      "nom": "Ouled Bouachra",
+      "lat": 36.0987018,
+      "lon": 2.6346133
+    },
+    {
+      "nom": "Ouled Brahim",
+      "lat": 36.2195223,
+      "lon": 2.8815053
+    },
+    {
+      "nom": "Ouled Deide",
+      "lat": 36.1013316,
+      "lon": 2.9097357
+    },
+    {
+      "nom": "Ouled Hellal",
+      "lat": 36.0034964,
+      "lon": 2.3924341
+    },
+    {
+      "nom": "Ouled Maaref",
+      "lat": 35.7948583,
+      "lon": 2.9102508
+    },
+    {
+      "nom": "Oum El Djalil",
+      "lat": 35.8304434,
+      "lon": 2.6069329
+    },
+    {
+      "nom": "Ouzera",
+      "lat": 36.2615351,
+      "lon": 2.8073906
+    },
+    {
+      "nom": "Rebaia",
+      "lat": 36.0223957,
+      "lon": 3.0759976
+    },
+    {
+      "nom": "Sedraia",
+      "lat": 36.2330914,
+      "lon": 3.4389756
+    },
+    {
+      "nom": "Seghouane",
+      "lat": 35.9968593,
+      "lon": 2.8356717
+    },
+    {
+      "nom": "Si Mahdjoub",
+      "lat": 36.1691158,
+      "lon": 2.7172917
+    },
+    {
+      "nom": "Sidi Damed",
+      "lat": 35.8219378,
+      "lon": 3.2306644
+    },
+    {
+      "nom": "Sidi Errabia",
+      "lat": 36.282548,
+      "lon": 3.2951253
+    },
+    {
+      "nom": "Sidi Naamane",
+      "lat": 36.2654589,
+      "lon": 3.0135987
+    },
+    {
+      "nom": "Sidi Zahar",
+      "lat": 36.0709876,
+      "lon": 3.2656834
+    },
+    {
+      "nom": "Sidi Ziane",
+      "lat": 36.0275429,
+      "lon": 3.1710122
+    },
+    {
+      "nom": "Souagui",
+      "lat": 36.1114893,
+      "lon": 3.1635449
+    },
+    {
+      "nom": "Tablat",
+      "lat": 36.4231476,
+      "lon": 3.2734726
+    },
+    {
+      "nom": "Tafraout",
+      "lat": 35.9953336,
+      "lon": 3.2743524
+    },
+    {
+      "nom": "Tamesguida",
+      "lat": 36.3206865,
+      "lon": 2.6122974
+    },
+    {
+      "nom": "Tizi Mahdi",
+      "lat": 36.2131052,
+      "lon": 2.7286213
+    },
+    {
+      "nom": "Tlatet Eddouair",
+      "lat": 35.9963494,
+      "lon": 2.8731719
+    },
+    {
+      "nom": "Zoubiria",
+      "lat": 36.065692,
+      "lon": 2.7869199
+    }
+  ]
+}

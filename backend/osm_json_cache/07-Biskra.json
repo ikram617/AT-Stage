@@ -1,0 +1,127 @@
+{
+  "code": 7,
+  "nom": "Biskra",
+  "label": "07 - Biskra",
+  "communes": [
+    {
+      "nom": "Ain Naga",
+      "lat": 34.6508231,
+      "lon": 6.0189093
+    },
+    {
+      "nom": "Biskra",
+      "lat": 34.851484,
+      "lon": 5.6546304
+    },
+    {
+      "nom": "Bordj Ben Azzouz",
+      "lat": 34.7281944,
+      "lon": 5.281975
+    },
+    {
+      "nom": "Bouchagroun",
+      "lat": 34.7378859,
+      "lon": 5.4169652
+    },
+    {
+      "nom": "Chetma",
+      "lat": 34.8655388,
+      "lon": 5.7729266
+    },
+    {
+      "nom": "Djemorah",
+      "lat": 35.0989288,
+      "lon": 5.6954643
+    },
+    {
+      "nom": "Ech Chaiba",
+      "lat": 34.6257746,
+      "lon": 4.5572238
+    },
+    {
+      "nom": "El Feidh",
+      "lat": 34.4990192,
+      "lon": 6.1924699
+    },
+    {
+      "nom": "El Ghrous",
+      "lat": 34.7175474,
+      "lon": 5.0903931
+    },
+    {
+      "nom": "El Hadjab",
+      "lat": 34.7967888,
+      "lon": 5.4551949
+    },
+    {
+      "nom": "El Haouch",
+      "lat": 34.5603287,
+      "lon": 5.8852281
+    },
+    {
+      "nom": "Foughala",
+      "lat": 34.7598362,
+      "lon": 5.2212069
+    },
+    {
+      "nom": "Khanguet Sidinadji",
+      "lat": 34.784537,
+      "lon": 6.6327354
+    },
+    {
+      "nom": "Lichana",
+      "lat": 34.7379403,
+      "lon": 5.3672479
+    },
+    {
+      "nom": "Lioua",
+      "lat": 34.5726359,
+      "lon": 5.224675
+    },
+    {
+      "nom": "M'lili",
+      "lat": 34.5781616,
+      "lon": 5.4617608
+    },
+    {
+      "nom": "M'ziraa",
+      "lat": 34.8853471,
+      "lon": 6.0060458
+    },
+    {
+      "nom": "Mchouneche",
+      "lat": 34.9063847,
+      "lon": 5.8993044
+    },
+    {
+      "nom": "Mekhadma",
+      "lat": 34.5636943,
+      "lon": 5.3092183
+    },
+    {
+      "nom": "Oumache",
+      "lat": 34.586303,
+      "lon": 5.5181413
+    },
+    {
+      "nom": "Ourlal",
+      "lat": 34.563429,
+      "lon": 5.3748787
+    },
+    {
+      "nom": "Sidi Okba",
+      "lat": 34.776526,
+      "lon": 5.8344242
+    },
+    {
+      "nom": "Tolga",
+      "lat": 34.894129,
+      "lon": 4.9483543
+    },
+    {
+      "nom": "Zeribet El Oued",
+      "lat": 34.683456,
+      "lon": 6.3748921
+    }
+  ]
+}

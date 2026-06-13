@@ -1,0 +1,22 @@
+{
+  "code": 56,
+  "nom": "Djanet",
+  "label": "56 - Djanet",
+  "communes": [
+    {
+      "nom": "Bordj El Haouas",
+      "lat": 8.4833,
+      "lon": 24.8833
+    },
+    {
+      "nom": "Bordj El Haouasse",
+      "lat": 24.5146,
+      "lon": 9.451
+    },
+    {
+      "nom": "Djanet",
+      "lat": 24.4821,
+      "lon": 9.4839
+    }
+  ]
+}

@@ -1,0 +1,267 @@
+{
+  "code": 6,
+  "nom": "Béjaïa",
+  "label": "06 - Béjaïa",
+  "communes": [
+    {
+      "nom": "Adekar",
+      "lat": 36.7343709,
+      "lon": 4.5420287
+    },
+    {
+      "nom": "Ait Djellil",
+      "lat": 36.5626795,
+      "lon": 4.7643966
+    },
+    {
+      "nom": "Ait R'zine",
+      "lat": 36.3866561,
+      "lon": 4.4646094
+    },
+    {
+      "nom": "Ait Smail",
+      "lat": 36.554314,
+      "lon": 5.1892262
+    },
+    {
+      "nom": "Akbou",
+      "lat": 36.4583204,
+      "lon": 4.4639658
+    },
+    {
+      "nom": "Akfadou",
+      "lat": 36.6580416,
+      "lon": 4.5747965
+    },
+    {
+      "nom": "Amalou",
+      "lat": 36.4780606,
+      "lon": 4.5674507
+    },
+    {
+      "nom": "Amizour",
+      "lat": 36.6429158,
+      "lon": 4.8679708
+    },
+    {
+      "nom": "Aokas",
+      "lat": 36.6195851,
+      "lon": 5.2038174
+    },
+    {
+      "nom": "Barbacha",
+      "lat": 36.5628189,
+      "lon": 4.8862205
+    },
+    {
+      "nom": "Bejaia",
+      "lat": 36.7695763,
+      "lon": 4.938545
+    },
+    {
+      "nom": "Beni Ksila",
+      "lat": 36.8280602,
+      "lon": 4.6309708
+    },
+    {
+      "nom": "Beni Maouch",
+      "lat": 36.4881459,
+      "lon": 4.72105
+    },
+    {
+      "nom": "Beni Melikeche",
+      "lat": 36.4475154,
+      "lon": 4.3846601
+    },
+    {
+      "nom": "Boudjellil",
+      "lat": 36.3223972,
+      "lon": 4.3477724
+    },
+    {
+      "nom": "Bouhamza",
+      "lat": 36.4393229,
+      "lon": 4.5700544
+    },
+    {
+      "nom": "Boukhelifa",
+      "lat": 36.6367939,
+      "lon": 5.0058926
+    },
+    {
+      "nom": "Chelata",
+      "lat": 36.5079843,
+      "lon": 4.4892072
+    },
+    {
+      "nom": "Chemini",
+      "lat": 36.5928345,
+      "lon": 4.5601731
+    },
+    {
+      "nom": "Darguina",
+      "lat": 36.5537403,
+      "lon": 5.3057073
+    },
+    {
+      "nom": "Draa Kaid",
+      "lat": 36.4405974,
+      "lon": 5.168301
+    },
+    {
+      "nom": "El Kseur",
+      "lat": 36.7187382,
+      "lon": 4.7678254
+    },
+    {
+      "nom": "Ferraoun",
+      "lat": 36.5654312,
+      "lon": 4.8417715
+    },
+    {
+      "nom": "Ifelain Ilmathen",
+      "lat": 36.6673126,
+      "lon": 4.7479832
+    },
+    {
+      "nom": "Ighil Ali",
+      "lat": 36.2905404,
+      "lon": 4.4345472
+    },
+    {
+      "nom": "Ighram",
+      "lat": 36.4765457,
+      "lon": 4.3924687
+    },
+    {
+      "nom": "Kendira",
+      "lat": 36.5568449,
+      "lon": 4.948437
+    },
+    {
+      "nom": "Kherrata",
+      "lat": 36.4719307,
+      "lon": 5.2047107
+    },
+    {
+      "nom": "Leflaye",
+      "lat": 36.597995,
+      "lon": 4.6441959
+    },
+    {
+      "nom": "M'cisna",
+      "lat": 36.5646521,
+      "lon": 4.6922142
+    },
+    {
+      "nom": "Melbou",
+      "lat": 36.6217049,
+      "lon": 5.351135
+    },
+    {
+      "nom": "Oued Ghir",
+      "lat": 36.7149207,
+      "lon": 4.9085928
+    },
+    {
+      "nom": "Ouzallaguen",
+      "lat": 36.5473904,
+      "lon": 4.5075207
+    },
+    {
+      "nom": "Seddouk",
+      "lat": 36.5367869,
+      "lon": 4.6409049
+    },
+    {
+      "nom": "Semaoun",
+      "lat": 36.6163121,
+      "lon": 4.8029022
+    },
+    {
+      "nom": "Sidi Aich",
+      "lat": 36.6223093,
+      "lon": 4.6792592
+    },
+    {
+      "nom": "Sidi Ayad",
+      "lat": 36.6095992,
+      "lon": 4.6956681
+    },
+    {
+      "nom": "Souk El Thenine",
+      "lat": 36.6150269,
+      "lon": 5.2777913
+    },
+    {
+      "nom": "Souk Oufella",
+      "lat": 36.5880436,
+      "lon": 4.5992053
+    },
+    {
+      "nom": "Tala Hamza",
+      "lat": 36.6904609,
+      "lon": 4.9432228
+    },
+    {
+      "nom": "Tamokra",
+      "lat": 36.3916342,
+      "lon": 4.5814411
+    },
+    {
+      "nom": "Tamridjet",
+      "lat": 36.5729424,
+      "lon": 5.3775099
+    },
+    {
+      "nom": "Taourirt Ighil",
+      "lat": 36.7329317,
+      "lon": 4.6709356
+    },
+    {
+      "nom": "Taskriout",
+      "lat": 36.5565707,
+      "lon": 5.2237624
+    },
+    {
+      "nom": "Tazmalt",
+      "lat": 36.3980947,
+      "lon": 4.3892305
+    },
+    {
+      "nom": "Thinabdher",
+      "lat": 36.6333952,
+      "lon": 4.6645332
+    },
+    {
+      "nom": "Tibane",
+      "lat": 36.6131706,
+      "lon": 4.6360841
+    },
+    {
+      "nom": "Tichi",
+      "lat": 36.620329,
+      "lon": 5.0944646
+    },
+    {
+      "nom": "Tifra",
+      "lat": 36.6626768,
+      "lon": 4.6505501
+    },
+    {
+      "nom": "Timzrit",
+      "lat": 36.6161452,
+      "lon": 4.7342109
+    },
+    {
+      "nom": "Tizi N'berber",
+      "lat": 36.5899196,
+      "lon": 5.1307333
+    },
+    {
+      "nom": "Toudja",
+      "lat": 36.7862498,
+      "lon": 4.7209914
+    }
+  ]
+}

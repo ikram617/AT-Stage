@@ -1,0 +1,177 @@
+{
+  "code": 24,
+  "nom": "Guelma",
+  "label": "24 - Guelma",
+  "communes": [
+    {
+      "nom": "Ain Ben Beida",
+      "lat": 36.6166662,
+      "lon": 7.6912452
+    },
+    {
+      "nom": "Ain Larbi",
+      "lat": 36.4569088,
+      "lon": 7.4334312
+    },
+    {
+      "nom": "Ain Makhlouf",
+      "lat": 36.2433466,
+      "lon": 7.2423719
+    },
+    {
+      "nom": "Ain Reggada",
+      "lat": 36.2606161,
+      "lon": 7.0637584
+    },
+    {
+      "nom": "Ain Sandel",
+      "lat": 36.2432261,
+      "lon": 7.5088549
+    },
+    {
+      "nom": "Belkhir",
+      "lat": 36.4607299,
+      "lon": 7.4686431
+    },
+    {
+      "nom": "Ben Djarah",
+      "lat": 36.4323579,
+      "lon": 7.3656034
+    },
+    {
+      "nom": "Beni Mezline",
+      "lat": 36.4813374,
+      "lon": 7.5999319
+    },
+    {
+      "nom": "Bordj Sabat",
+      "lat": 36.4020468,
+      "lon": 7.038288
+    },
+    {
+      "nom": "Bou Hachana",
+      "lat": 36.3062461,
+      "lon": 7.5039195
+    },
+    {
+      "nom": "Bou Hamdane",
+      "lat": 36.4607875,
+      "lon": 7.0672535
+    },
+    {
+      "nom": "Bouati Mahmoud",
+      "lat": 36.5895674,
+      "lon": 7.3207353
+    },
+    {
+      "nom": "Bouchegouf",
+      "lat": 36.4698174,
+      "lon": 7.7139471
+    },
+    {
+      "nom": "Boumahra Ahmed",
+      "lat": 36.4588487,
+      "lon": 7.5044774
+    },
+    {
+      "nom": "Dahouara",
+      "lat": 36.3509675,
+      "lon": 7.728399
+    },
+    {
+      "nom": "Djeballah Khemissi",
+      "lat": 36.4642865,
+      "lon": 7.5646019
+    },
+    {
+      "nom": "El Fedjoudj",
+      "lat": 36.5092883,
+      "lon": 7.3712466
+    },
+    {
+      "nom": "Guelaat Bou Sbaa",
+      "lat": 36.5487411,
+      "lon": 7.4658322
+    },
+    {
+      "nom": "Guelma",
+      "lat": 36.4569037,
+      "lon": 7.3984116
+    },
+    {
+      "nom": "Hammam Maskhoutine",
+      "lat": 36.4599991,
+      "lon": 7.2612452
+    },
+    {
+      "nom": "Hamman Nbail",
+      "lat": 36.3240283,
+      "lon": 7.6336956
+    },
+    {
+      "nom": "Heliopolis",
+      "lat": 36.5051137,
+      "lon": 7.4183462
+    },
+    {
+      "nom": "Houari Boumediene",
+      "lat": 36.4170552,
+      "lon": 7.2737237
+    },
+    {
+      "nom": "Khezara",
+      "lat": 36.3706489,
+      "lon": 7.5256133
+    },
+    {
+      "nom": "Medjez Amar",
+      "lat": 36.4453028,
+      "lon": 7.3073994
+    },
+    {
+      "nom": "Medjez Sfa",
+      "lat": 36.4343861,
+      "lon": 7.7743936
+    },
+    {
+      "nom": "Nechmaya",
+      "lat": 36.611178,
+      "lon": 7.5036084
+    },
+    {
+      "nom": "Oued Cheham",
+      "lat": 36.3814206,
+      "lon": 7.75918
+    },
+    {
+      "nom": "Oued Fragha",
+      "lat": 36.5567569,
+      "lon": 7.7080895
+    },
+    {
+      "nom": "Oued Zenati",
+      "lat": 36.3153995,
+      "lon": 7.1469496
+    },
+    {
+      "nom": "Ras El Agba",
+      "lat": 36.3734915,
+      "lon": 7.2205067
+    },
+    {
+      "nom": "Roknia",
+      "lat": 36.5448453,
+      "lon": 7.2242832
+    },
+    {
+      "nom": "Salaoua Announa",
+      "lat": 36.3864653,
+      "lon": 7.2468782
+    },
+    {
+      "nom": "Tamlouka",
+      "lat": 36.1569512,
+      "lon": 7.1315431
+    }
+  ]
+}

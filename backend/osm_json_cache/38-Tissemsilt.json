@@ -1,0 +1,117 @@
+{
+  "code": 38,
+  "nom": "Tissemsilt",
+  "label": "38 - Tissemsilt",
+  "communes": [
+    {
+      "nom": "Ammari",
+      "lat": 35.5132,
+      "lon": 1.6617
+    },
+    {
+      "nom": "Beni Chaib",
+      "lat": 35.7565,
+      "lon": 1.799
+    },
+    {
+      "nom": "Beni Lahcene",
+      "lat": 35.7499,
+      "lon": 1.6891
+    },
+    {
+      "nom": "Bordj Bou Naama",
+      "lat": 35.7855,
+      "lon": 1.6177
+    },
+    {
+      "nom": "Bordj El Emir Abdelkader",
+      "lat": 35.8523,
+      "lon": 2.2714
+    },
+    {
+      "nom": "Boucaid",
+      "lat": 35.8278,
+      "lon": 1.6205
+    },
+    {
+      "nom": "Khemisti",
+      "lat": 35.6026,
+      "lon": 1.9501
+    },
+    {
+      "nom": "Larbaa",
+      "lat": 35.8501,
+      "lon": 1.4749
+    },
+    {
+      "nom": "Lardjem",
+      "lat": 35.6852,
+      "lon": 1.5491
+    },
+    {
+      "nom": "Layoune",
+      "lat": 35.6316,
+      "lon": 1.9995
+    },
+    {
+      "nom": "Lazharia",
+      "lat": 35.8746,
+      "lon": 1.5601
+    },
+    {
+      "nom": "Maasem",
+      "lat": 35.5959,
+      "lon": 1.5546
+    },
+    {
+      "nom": "Melaab",
+      "lat": 35.6517,
+      "lon": 1.3321
+    },
+    {
+      "nom": "Ouled Bessem",
+      "lat": 35.6227,
+      "lon": 1.8649
+    },
+    {
+      "nom": "Sidi Abed",
+      "lat": 35.6807,
+      "lon": 1.7056
+    },
+    {
+      "nom": "Sidi Boutouchent",
+      "lat": 35.761,
+      "lon": 1.9501
+    },
+    {
+      "nom": "Sidi Lantri",
+      "lat": 35.6383,
+      "lon": 1.4035
+    },
+    {
+      "nom": "Sidi Slimane",
+      "lat": 35.7967,
+      "lon": 1.6809
+    },
+    {
+      "nom": "Tamalaht",
+      "lat": 35.7499,
+      "lon": 1.6232
+    },
+    {
+      "nom": "Theniet El Had",
+      "lat": 35.8078,
+      "lon": 2.0297
+    },
+    {
+      "nom": "Tissemsilt",
+      "lat": 35.5445,
+      "lon": 1.8127
+    },
+    {
+      "nom": "Youssoufia",
+      "lat": 35.8857,
+      "lon": 2.1121
+    }
+  ]
+}

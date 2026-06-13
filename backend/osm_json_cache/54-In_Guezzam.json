@@ -1,0 +1,22 @@
+{
+  "code": 54,
+  "nom": "In Guezzam",
+  "label": "54 - In Guezzam",
+  "communes": [
+    {
+      "nom": "El Meniaa",
+      "lat": 2.8833,
+      "lon": 30.5833
+    },
+    {
+      "nom": "Hassi Fehal",
+      "lat": 31.5364,
+      "lon": 3.6749
+    },
+    {
+      "nom": "Hassi Gara",
+      "lat": 30.4842,
+      "lon": 2.9141
+    }
+  ]
+}

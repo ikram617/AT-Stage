@@ -1,0 +1,177 @@
+{
+  "code": 34,
+  "nom": "Bordj Bou Arréridj",
+  "label": "34 - Bordj Bou Arréridj",
+  "communes": [
+    {
+      "nom": "Ain Taghrout",
+      "lat": 36.0646,
+      "lon": 5.0757
+    },
+    {
+      "nom": "Ain Tesra",
+      "lat": 35.9713,
+      "lon": 5.0015
+    },
+    {
+      "nom": "Belimour",
+      "lat": 35.9157,
+      "lon": 4.8807
+    },
+    {
+      "nom": "Ben Daoud",
+      "lat": 36.0757,
+      "lon": 4.1721
+    },
+    {
+      "nom": "Bir Kasdali",
+      "lat": 36.0846,
+      "lon": 5.0345
+    },
+    {
+      "nom": "Bordj Bou Arreridj",
+      "lat": 36.0025,
+      "lon": 4.7653
+    },
+    {
+      "nom": "Bordj Ghdir",
+      "lat": 35.8356,
+      "lon": 4.8889
+    },
+    {
+      "nom": "Bordj Zemoura",
+      "lat": 36.2288,
+      "lon": 4.856
+    },
+    {
+      "nom": "Colla",
+      "lat": 36.1977,
+      "lon": 4.6609
+    },
+    {
+      "nom": "Djaafra",
+      "lat": 36.2288,
+      "lon": 4.6637
+    },
+    {
+      "nom": "El Ach",
+      "lat": 35.8846,
+      "lon": 4.6829
+    },
+    {
+      "nom": "El Achir",
+      "lat": 36.0025,
+      "lon": 4.6335
+    },
+    {
+      "nom": "El Anseur",
+      "lat": 36.1357,
+      "lon": 4.4907
+    },
+    {
+      "nom": "El Hamadia",
+      "lat": 35.9157,
+      "lon": 4.7461
+    },
+    {
+      "nom": "El Main",
+      "lat": 36.3018,
+      "lon": 4.7488
+    },
+    {
+      "nom": "El Mhir",
+      "lat": 36.0535,
+      "lon": 4.3835
+    },
+    {
+      "nom": "Ghilassa",
+      "lat": 35.8067,
+      "lon": 4.9054
+    },
+    {
+      "nom": "Haraza",
+      "lat": 36.0913,
+      "lon": 4.2242
+    },
+    {
+      "nom": "Hasnaoua",
+      "lat": 36.0891,
+      "lon": 4.7955
+    },
+    {
+      "nom": "Khelil",
+      "lat": 36.1113,
+      "lon": 5.029
+    },
+    {
+      "nom": "Ksour",
+      "lat": 35.9269,
+      "lon": 4.5978
+    },
+    {
+      "nom": "Mansoura",
+      "lat": 36.018,
+      "lon": 4.4604
+    },
+    {
+      "nom": "Medjana",
+      "lat": 36.0669,
+      "lon": 4.6692
+    },
+    {
+      "nom": "Ouled Brahem",
+      "lat": 35.8067,
+      "lon": 5.0757
+    },
+    {
+      "nom": "Ouled Dahmane",
+      "lat": 36.3018,
+      "lon": 3.4662
+    },
+    {
+      "nom": "Ouled Sidi Brahim",
+      "lat": 36.1645,
+      "lon": 4.3341
+    },
+    {
+      "nom": "Rabta",
+      "lat": 35.8579,
+      "lon": 4.7488
+    },
+    {
+      "nom": "Ras El Oued",
+      "lat": 35.8846,
+      "lon": 5.0372
+    },
+    {
+      "nom": "Sidi Embarek",
+      "lat": 36.0402,
+      "lon": 4.9109
+    },
+    {
+      "nom": "Tafreg",
+      "lat": 36.2531,
+      "lon": 4.7324
+    },
+    {
+      "nom": "Taglait",
+      "lat": 35.7064,
+      "lon": 4.9988
+    },
+    {
+      "nom": "Teniet En Nasr",
+      "lat": 36.1667,
+      "lon": 4.6005
+    },
+    {
+      "nom": "Tesmart",
+      "lat": 36.2044,
+      "lon": 4.823
+    },
+    {
+      "nom": "Tixter",
+      "lat": 35.9825,
+      "lon": 5.0812
+    }
+  ]
+}

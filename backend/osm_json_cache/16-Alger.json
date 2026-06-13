@@ -1,0 +1,292 @@
+{
+  "code": 16,
+  "nom": "Alger",
+  "label": "16 - Alger",
+  "communes": [
+    {
+      "nom": "Ain Benian",
+      "lat": 36.7941279,
+      "lon": 2.9099606
+    },
+    {
+      "nom": "Ain Taya",
+      "lat": 36.7880614,
+      "lon": 3.2742797
+    },
+    {
+      "nom": "Alger Centre",
+      "lat": 36.7681618,
+      "lon": 3.0404258
+    },
+    {
+      "nom": "Bab Azzouar",
+      "lat": 36.7228311,
+      "lon": 3.1689279
+    },
+    {
+      "nom": "Bab El Oued",
+      "lat": 36.7917802,
+      "lon": 3.0445432
+    },
+    {
+      "nom": "Baba Hassen",
+      "lat": 36.6959627,
+      "lon": 2.9591094
+    },
+    {
+      "nom": "Bachedjerah",
+      "lat": 36.723121,
+      "lon": 3.0940781
+    },
+    {
+      "nom": "Baraki",
+      "lat": 36.6701186,
+      "lon": 3.0635219
+    },
+    {
+      "nom": "Belouizdad",
+      "lat": 36.7504548,
+      "lon": 3.0639145
+    },
+    {
+      "nom": "Ben Aknoun",
+      "lat": 36.7571759,
+      "lon": 2.9946244
+    },
+    {
+      "nom": "Beni Messous",
+      "lat": 36.7844574,
+      "lon": 2.9591524
+    },
+    {
+      "nom": "Bir Mourad Rais",
+      "lat": 36.730271,
+      "lon": 3.0257462
+    },
+    {
+      "nom": "Birkhadem",
+      "lat": 36.7146375,
+      "lon": 3.0311349
+    },
+    {
+      "nom": "Birtouta",
+      "lat": 36.6424589,
+      "lon": 2.9745906
+    },
+    {
+      "nom": "Bologhine",
+      "lat": 36.8039256,
+      "lon": 3.0296193
+    },
+    {
+      "nom": "Bordj El Bahri",
+      "lat": 36.7880016,
+      "lon": 3.2321689
+    },
+    {
+      "nom": "Bordj El Kiffan",
+      "lat": 36.7533604,
+      "lon": 3.1868338
+    },
+    {
+      "nom": "Bourouba",
+      "lat": 36.7166963,
+      "lon": 3.0955372
+    },
+    {
+      "nom": "Bouzareah",
+      "lat": 36.7891132,
+      "lon": 2.9938601
+    },
+    {
+      "nom": "Casbah",
+      "lat": 36.7847303,
+      "lon": 3.0504945
+    },
+    {
+      "nom": "Cheraga",
+      "lat": 36.7596098,
+      "lon": 2.8933198
+    },
+    {
+      "nom": "Dar El Beida",
+      "lat": 36.7024372,
+      "lon": 3.1766575
+    },
+    {
+      "nom": "Dely Ibrahim",
+      "lat": 36.7567281,
+      "lon": 2.962446
+    },
+    {
+      "nom": "Djasr Kasentina",
+      "lat": 36.6927735,
+      "lon": 3.0610977
+    },
+    {
+      "nom": "Douera",
+      "lat": 36.6681547,
+      "lon": 2.8979868
+    },
+    {
+      "nom": "Draria",
+      "lat": 36.7132847,
+      "lon": 2.9677778
+    },
+    {
+      "nom": "El Achour",
+      "lat": 36.7269712,
+      "lon": 2.9530471
+    },
+    {
+      "nom": "El Biar",
+      "lat": 36.7671977,
+      "lon": 3.0119382
+    },
+    {
+      "nom": "El Hammamet",
+      "lat": 36.8024015,
+      "lon": 2.9559659
+    },
+    {
+      "nom": "El Harrach",
+      "lat": 36.7120702,
+      "lon": 3.1217531
+    },
+    {
+      "nom": "El Madania",
+      "lat": 36.7422816,
+      "lon": 3.0604942
+    },
+    {
+      "nom": "El Magharia",
+      "lat": 36.7305475,
+      "lon": 3.1026854
+    },
+    {
+      "nom": "El Mouradia",
+      "lat": 36.7490236,
+      "lon": 3.0384439
+    },
+    {
+      "nom": "Haraoua",
+      "lat": 36.7726194,
+      "lon": 3.3006834
+    },
+    {
+      "nom": "Hussein Dey",
+      "lat": 36.7402922,
+      "lon": 3.0914013
+    },
+    {
+      "nom": "Hydra",
+      "lat": 36.7407683,
+      "lon": 3.0079149
+    },
+    {
+      "nom": "Khracia",
+      "lat": 36.6691421,
+      "lon": 2.9639691
+    },
+    {
+      "nom": "Kouba",
+      "lat": 36.7241467,
+      "lon": 3.0598317
+    },
+    {
+      "nom": "Les Eucalyptus",
+      "lat": 36.668168,
+      "lon": 3.1306093
+    },
+    {
+      "nom": "Mahelma",
+      "lat": 36.6721514,
+      "lon": 2.8158789
+    },
+    {
+      "nom": "Marsa",
+      "lat": 36.8081013,
+      "lon": 3.2263432
+    },
+    {
+      "nom": "Mohammadia",
+      "lat": 36.7353224,
+      "lon": 3.1359743
+    },
+    {
+      "nom": "Oued Koriche",
+      "lat": 36.7850295,
+      "lon": 3.0243678
+    },
+    {
+      "nom": "Oued Smar",
+      "lat": 36.7098628,
+      "lon": 3.1596368
+    },
+    {
+      "nom": "Ouled Chebel",
+      "lat": 36.6082831,
+      "lon": 2.9737753
+    },
+    {
+      "nom": "Ouled Fayet",
+      "lat": 36.725135,
+      "lon": 2.9078787
+    },
+    {
+      "nom": "Rahmania",
+      "lat": 36.6805606,
+      "lon": 2.8805201
+    },
+    {
+      "nom": "Rais Hamidou",
+      "lat": 36.8077359,
+      "lon": 2.9921434
+    },
+    {
+      "nom": "Reghaia",
+      "lat": 36.7538466,
+      "lon": 3.312152
+    },
+    {
+      "nom": "Rouiba",
+      "lat": 36.7375877,
+      "lon": 3.2491683
+    },
+    {
+      "nom": "Saoula",
+      "lat": 36.6866758,
+      "lon": 3.0056614
+    },
+    {
+      "nom": "Sidi Mhamed",
+      "lat": 36.759285,
+      "lon": 3.0467857
+    },
+    {
+      "nom": "Sidi Moussa",
+      "lat": 36.6162931,
+      "lon": 3.0682748
+    },
+    {
+      "nom": "Souidania",
+      "lat": 36.7112067,
+      "lon": 2.8684395
+    },
+    {
+      "nom": "Staoueli",
+      "lat": 36.7426531,
+      "lon": 2.8372776
+    },
+    {
+      "nom": "Tassala El Merdja",
+      "lat": 36.6277781,
+      "lon": 2.8848547
+    },
+    {
+      "nom": "Zeralda",
+      "lat": 36.6995503,
+      "lon": 2.8049892
+    }
+  ]
+}

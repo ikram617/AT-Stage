@@ -1,0 +1,152 @@
+{
+  "code": 4,
+  "nom": "Oum El Bouaghi",
+  "label": "04 - Oum El Bouaghi",
+  "communes": [
+    {
+      "nom": "Ain Babouche",
+      "lat": 35.9402286,
+      "lon": 7.1751022
+    },
+    {
+      "nom": "Ain Beida",
+      "lat": 35.7948292,
+      "lon": 7.3338883
+    },
+    {
+      "nom": "Ain Diss",
+      "lat": 35.8101391,
+      "lon": 7.2888545
+    },
+    {
+      "nom": "Ain Fekroune",
+      "lat": 35.9745986,
+      "lon": 6.851982
+    },
+    {
+      "nom": "Ain Kercha",
+      "lat": 35.9275632,
+      "lon": 6.6811426
+    },
+    {
+      "nom": "Ain M'lila",
+      "lat": 36.0260869,
+      "lon": 6.4239017
+    },
+    {
+      "nom": "Ain Zitoun",
+      "lat": 35.6841587,
+      "lon": 6.9309782
+    },
+    {
+      "nom": "Behir Chergui",
+      "lat": 35.7937891,
+      "lon": 7.7132713
+    },
+    {
+      "nom": "Berriche",
+      "lat": 35.9155816,
+      "lon": 7.3676848
+    },
+    {
+      "nom": "Bir Chouhada",
+      "lat": 35.9007146,
+      "lon": 6.1753867
+    },
+    {
+      "nom": "Dhala",
+      "lat": 35.4610885,
+      "lon": 7.5379943
+    },
+    {
+      "nom": "El Amiria",
+      "lat": 36.1101777,
+      "lon": 6.9026434
+    },
+    {
+      "nom": "El Belala",
+      "lat": 35.6660914,
+      "lon": 7.7837598
+    },
+    {
+      "nom": "El Djazia",
+      "lat": 35.663473,
+      "lon": 7.5030506
+    },
+    {
+      "nom": "El Fedjoudj Boughrara Saoudi",
+      "lat": 35.709409,
+      "lon": 6.8162978
+    },
+    {
+      "nom": "El Harmilia",
+      "lat": 35.9257478,
+      "lon": 6.6176749
+    },
+    {
+      "nom": "Fkirina",
+      "lat": 35.6638941,
+      "lon": 7.2909736
+    },
+    {
+      "nom": "Hanchir Toumghani",
+      "lat": 35.9371712,
+      "lon": 6.7319584
+    },
+    {
+      "nom": "Ksar Sbahi",
+      "lat": 36.0820976,
+      "lon": 7.250204
+    },
+    {
+      "nom": "Meskiana",
+      "lat": 35.6297416,
+      "lon": 7.6523636
+    },
+    {
+      "nom": "Oued Nini",
+      "lat": 35.5716976,
+      "lon": 7.3377513
+    },
+    {
+      "nom": "Ouled Gacem",
+      "lat": 36.0328844,
+      "lon": 6.6594743
+    },
+    {
+      "nom": "Ouled Hamla",
+      "lat": 36.0811426,
+      "lon": 6.3334038
+    },
+    {
+      "nom": "Ouled Zouai",
+      "lat": 35.8556626,
+      "lon": 6.3821021
+    },
+    {
+      "nom": "Oum El Bouaghi",
+      "lat": 35.8725963,
+      "lon": 7.0830052
+    },
+    {
+      "nom": "Rahia",
+      "lat": 35.7166662,
+      "lon": 7.6579122
+    },
+    {
+      "nom": "Sigus",
+      "lat": 36.1085199,
+      "lon": 6.603674
+    },
+    {
+      "nom": "Souk Naamane",
+      "lat": 35.93924,
+      "lon": 6.2583772
+    },
+    {
+      "nom": "Zorg",
+      "lat": 35.8726014,
+      "lon": 7.1180248
+    }
+  ]
+}

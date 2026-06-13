@@ -1,0 +1,197 @@
+{
+  "code": 48,
+  "nom": "Relizane",
+  "label": "48 - Relizane",
+  "communes": [
+    {
+      "nom": "Ain Rahma",
+      "lat": 35.5602,
+      "lon": 0.3928
+    },
+    {
+      "nom": "Ain Tarek",
+      "lat": 35.7164,
+      "lon": 1.1316
+    },
+    {
+      "nom": "Ammi Moussa",
+      "lat": 35.8033,
+      "lon": 1.1179
+    },
+    {
+      "nom": "Belaassel Bouzegza",
+      "lat": 35.7766,
+      "lon": 0.4999
+    },
+    {
+      "nom": "Bendaoud",
+      "lat": 35.6562,
+      "lon": 0.5191
+    },
+    {
+      "nom": "Beni Dergoun",
+      "lat": 35.7164,
+      "lon": 0.7993
+    },
+    {
+      "nom": "Beni Zentis",
+      "lat": 36.048,
+      "lon": 0.6647
+    },
+    {
+      "nom": "Dar Ben Abdellah",
+      "lat": 35.6383,
+      "lon": 0.6866
+    },
+    {
+      "nom": "Djidiouia",
+      "lat": 35.8657,
+      "lon": 0.8295
+    },
+    {
+      "nom": "El Guettar",
+      "lat": 36.0236,
+      "lon": 0.8157
+    },
+    {
+      "nom": "El Hamadna",
+      "lat": 35.8367,
+      "lon": 0.7498
+    },
+    {
+      "nom": "El Hassi",
+      "lat": 35.7075,
+      "lon": 1.0547
+    },
+    {
+      "nom": "El Matmar",
+      "lat": 35.6673,
+      "lon": 0.4614
+    },
+    {
+      "nom": "El Ouldja",
+      "lat": 35.8479,
+      "lon": 1.1206
+    },
+    {
+      "nom": "Had Echkalla",
+      "lat": 35.616,
+      "lon": 1.1481
+    },
+    {
+      "nom": "Hamri",
+      "lat": 36.042,
+      "lon": -0.379
+    },
+    {
+      "nom": "Kalaa",
+      "lat": 35.5177,
+      "lon": 0.3296
+    },
+    {
+      "nom": "Lahlef",
+      "lat": 35.8301,
+      "lon": 0.9805
+    },
+    {
+      "nom": "Mazouna",
+      "lat": 36.0635,
+      "lon": 0.8762
+    },
+    {
+      "nom": "Mediouna",
+      "lat": 36.0524,
+      "lon": 0.7498
+    },
+    {
+      "nom": "Mendes",
+      "lat": 35.587,
+      "lon": 0.8624
+    },
+    {
+      "nom": "Merdja Sidi Abed",
+      "lat": 36.013883,
+      "lon": 0.989746
+    },
+    {
+      "nom": "Ouarizane",
+      "lat": 35.9813,
+      "lon": 0.8981
+    },
+    {
+      "nom": "Oued El Djemaa",
+      "lat": 35.7343,
+      "lon": 0.6812
+    },
+    {
+      "nom": "Oued Essalem",
+      "lat": 35.5155,
+      "lon": 0.9256
+    },
+    {
+      "nom": "Oued Rhiou",
+      "lat": 35.9035,
+      "lon": 0.9174
+    },
+    {
+      "nom": "Ouled Aiche",
+      "lat": 35.7788,
+      "lon": 0.9998
+    },
+    {
+      "nom": "Ouled Sidi Mihoub",
+      "lat": 35.9752,
+      "lon": 0.6916
+    },
+    {
+      "nom": "Ramka",
+      "lat": 35.7922,
+      "lon": 1.3321
+    },
+    {
+      "nom": "Relizane",
+      "lat": 35.6696,
+      "lon": 0.5493
+    },
+    {
+      "nom": "Sidi Khettab",
+      "lat": 35.8479,
+      "lon": 0.5109
+    },
+    {
+      "nom": "Sidi Lazreg",
+      "lat": 35.5803,
+      "lon": 0.7745
+    },
+    {
+      "nom": "Sidi Mhamed Ben Ali",
+      "lat": 36.0791,
+      "lon": 0.8432
+    },
+    {
+      "nom": "Sidi Mhamed Ben Aouda",
+      "lat": 35.54,
+      "lon": 0.5878
+    },
+    {
+      "nom": "Sidi Saada",
+      "lat": 35.6227,
+      "lon": 0.206
+    },
+    {
+      "nom": "Souk El Haad",
+      "lat": 35.8924,
+      "lon": 1.2469
+    },
+    {
+      "nom": "Yellel",
+      "lat": 35.6584,
+      "lon": 0.3543
+    },
+    {
+      "nom": "Zemmoura",
+      "lat": 35.6539,
+      "lon": 0.7498
+    }
+  ]
+}

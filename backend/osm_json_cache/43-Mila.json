@@ -1,0 +1,167 @@
+{
+  "code": 43,
+  "nom": "Mila",
+  "label": "43 - Mila",
+  "communes": [
+    {
+      "nom": "Ahmed Rachedi",
+      "lat": 36.3273,
+      "lon": 6.1249
+    },
+    {
+      "nom": "Ain Beida Harriche",
+      "lat": 36.3361,
+      "lon": 5.8997
+    },
+    {
+      "nom": "Ain Mellouk",
+      "lat": 36.2121,
+      "lon": 6.1771
+    },
+    {
+      "nom": "Ain Tine",
+      "lat": 36.3339,
+      "lon": 6.3254
+    },
+    {
+      "nom": "Amira Arras",
+      "lat": 36.2587,
+      "lon": 6.3968
+    },
+    {
+      "nom": "Benyahia Abderrahmane",
+      "lat": 36.17,
+      "lon": 6.0123
+    },
+    {
+      "nom": "Bouhatem",
+      "lat": 36.241,
+      "lon": 6.015
+    },
+    {
+      "nom": "Chelghoum Laid",
+      "lat": 36.1035,
+      "lon": 6.1661
+    },
+    {
+      "nom": "Chigara",
+      "lat": 36.4975,
+      "lon": 6.221
+    },
+    {
+      "nom": "Derradji Bousselah",
+      "lat": 36.2764,
+      "lon": 5.9573
+    },
+    {
+      "nom": "El Mechira",
+      "lat": 35.948,
+      "lon": 6.232
+    },
+    {
+      "nom": "Elayadi Barbes",
+      "lat": 36.3782,
+      "lon": 5.8804
+    },
+    {
+      "nom": "Ferdjioua",
+      "lat": 36.345,
+      "lon": 5.9464
+    },
+    {
+      "nom": "Grarem Gouga",
+      "lat": 36.4533,
+      "lon": 6.3336
+    },
+    {
+      "nom": "Hamala",
+      "lat": 36.5085,
+      "lon": 6.3391
+    },
+    {
+      "nom": "Mila",
+      "lat": 36.387,
+      "lon": 6.2677
+    },
+    {
+      "nom": "Minar Zarza",
+      "lat": 36.2542,
+      "lon": 5.5399
+    },
+    {
+      "nom": "Oued Athmenia",
+      "lat": 36.1856,
+      "lon": 6.2869
+    },
+    {
+      "nom": "Oued Endja",
+      "lat": 36.3671,
+      "lon": 6.1221
+    },
+    {
+      "nom": "Oued Seguen",
+      "lat": 36.1079,
+      "lon": 6.4188
+    },
+    {
+      "nom": "Ouled Khalouf",
+      "lat": 35.9947,
+      "lon": 6.1386
+    },
+    {
+      "nom": "Rouached",
+      "lat": 36.2121,
+      "lon": 6.2677
+    },
+    {
+      "nom": "Sidi Khelifa",
+      "lat": 36.2875,
+      "lon": 6.3007
+    },
+    {
+      "nom": "Sidi Merouane",
+      "lat": 36.4577,
+      "lon": 6.2622
+    },
+    {
+      "nom": "Tadjenanet",
+      "lat": 36.0524,
+      "lon": 6.0013
+    },
+    {
+      "nom": "Tassadane Haddada",
+      "lat": 36.345,
+      "lon": 5.9464
+    },
+    {
+      "nom": "Telerghma",
+      "lat": 36.0524,
+      "lon": 6.3638
+    },
+    {
+      "nom": "Terrai Bainen",
+      "lat": 36.4688,
+      "lon": 6.1221
+    },
+    {
+      "nom": "Tessala Lamatai",
+      "lat": 36.2786,
+      "lon": 5.5893
+    },
+    {
+      "nom": "Tiberguent",
+      "lat": 36.3472,
+      "lon": 6.0397
+    },
+    {
+      "nom": "Yahia Beniguecha",
+      "lat": 36.1722,
+      "lon": 5.592
+    },
+    {
+      "nom": "Zeghaia",
+      "lat": 36.4047,
+      "lon": 6.1716
+    }
+  ]
+}

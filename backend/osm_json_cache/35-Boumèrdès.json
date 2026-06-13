@@ -1,0 +1,167 @@
+{
+  "code": 35,
+  "nom": "Boumèrdès",
+  "label": "35 - Boumèrdès",
+  "communes": [
+    {
+      "nom": "Afir",
+      "lat": 36.7048,
+      "lon": 3.7024
+    },
+    {
+      "nom": "Ammal",
+      "lat": 36.5725,
+      "lon": 3.5898
+    },
+    {
+      "nom": "Baghlia",
+      "lat": 36.7532,
+      "lon": 3.8617
+    },
+    {
+      "nom": "Ben Choud",
+      "lat": 36.7994,
+      "lon": 3.8809
+    },
+    {
+      "nom": "Beni Amrane",
+      "lat": 36.6056,
+      "lon": 3.5925
+    },
+    {
+      "nom": "Bordj Menaiel",
+      "lat": 36.6783,
+      "lon": 3.7244
+    },
+    {
+      "nom": "Boudouaou",
+      "lat": 36.6695,
+      "lon": 3.4058
+    },
+    {
+      "nom": "Boudouaou El Bahri",
+      "lat": 36.7114,
+      "lon": 3.3865
+    },
+    {
+      "nom": "Boumerdes",
+      "lat": 36.7048,
+      "lon": 3.4662
+    },
+    {
+      "nom": "Bouzegza Keddara",
+      "lat": 36.5615,
+      "lon": 3.4799
+    },
+    {
+      "nom": "Chabet El Ameur",
+      "lat": 36.5703,
+      "lon": 3.6996
+    },
+    {
+      "nom": "Corso",
+      "lat": 36.6937,
+      "lon": 3.4332
+    },
+    {
+      "nom": "Dellys",
+      "lat": 36.85,
+      "lon": 3.9139
+    },
+    {
+      "nom": "Djinet",
+      "lat": 36.8148,
+      "lon": 3.7244
+    },
+    {
+      "nom": "El Kharrouba",
+      "lat": 36.5946,
+      "lon": 3.4058
+    },
+    {
+      "nom": "Hammedi",
+      "lat": 36.6144,
+      "lon": 3.2684
+    },
+    {
+      "nom": "Isser",
+      "lat": 36.6607,
+      "lon": 3.6667
+    },
+    {
+      "nom": "Khemis El Khechna",
+      "lat": 36.5858,
+      "lon": 3.3289
+    },
+    {
+      "nom": "Laghata",
+      "lat": 36.6871,
+      "lon": 3.6832
+    },
+    {
+      "nom": "Larbatache",
+      "lat": 36.5725,
+      "lon": 3.3728
+    },
+    {
+      "nom": "Naciria",
+      "lat": 36.6849,
+      "lon": 3.8287
+    },
+    {
+      "nom": "Ouled Aissa",
+      "lat": 36.7444,
+      "lon": 3.815
+    },
+    {
+      "nom": "Ouled Hedadj",
+      "lat": 36.6563,
+      "lon": 3.3508
+    },
+    {
+      "nom": "Ouled Moussa",
+      "lat": 36.621,
+      "lon": 3.3673
+    },
+    {
+      "nom": "Si Mustapha",
+      "lat": 36.6629,
+      "lon": 3.6145
+    },
+    {
+      "nom": "Sidi Daoud",
+      "lat": 36.7884,
+      "lon": 3.8507
+    },
+    {
+      "nom": "Souk El Had",
+      "lat": 36.6277,
+      "lon": 3.5898
+    },
+    {
+      "nom": "Taourga",
+      "lat": 36.7312,
+      "lon": 3.9468
+    },
+    {
+      "nom": "Thenia",
+      "lat": 36.6651,
+      "lon": 3.5541
+    },
+    {
+      "nom": "Tidjelabine",
+      "lat": 36.6651,
+      "lon": 3.4964
+    },
+    {
+      "nom": "Timezrit",
+      "lat": 36.61,
+      "lon": 3.8068
+    },
+    {
+      "nom": "Zemmouri",
+      "lat": 36.7202,
+      "lon": 3.6008
+    }
+  ]
+}

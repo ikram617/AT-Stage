@@ -1,0 +1,57 @@
+{
+  "code": 57,
+  "nom": "El M'Ghair",
+  "label": "57 - El M'Ghair",
+  "communes": [
+    {
+      "nom": "Aougrout",
+      "lat": 28.7499992,
+      "lon": 0.2412452
+    },
+    {
+      "nom": "Charouine",
+      "lat": 29.0189483,
+      "lon": -0.2690792
+    },
+    {
+      "nom": "Deldoul",
+      "lat": 34.2080511,
+      "lon": 3.2543828
+    },
+    {
+      "nom": "Ksar Kaddour",
+      "lat": 29.5798013,
+      "lon": 0.3643512
+    },
+    {
+      "nom": "Metarfa",
+      "lat": 28.5978205,
+      "lon": -0.1587011
+    },
+    {
+      "nom": "Ouled Aissa",
+      "lat": 29.4201586,
+      "lon": -0.104542
+    },
+    {
+      "nom": "Ouled Said",
+      "lat": 29.4217292,
+      "lon": 0.2254341
+    },
+    {
+      "nom": "Talmine",
+      "lat": 27.9766155,
+      "lon": -0.20396
+    },
+    {
+      "nom": "Timimoun",
+      "lat": 29.2536341,
+      "lon": 0.218653
+    },
+    {
+      "nom": "Tinerkouk",
+      "lat": 29.708777,
+      "lon": 0.6955288
+    }
+  ]
+}

@@ -1,0 +1,282 @@
+{
+  "code": 5,
+  "nom": "Batna",
+  "label": "05 - Batna",
+  "communes": [
+    {
+      "nom": "Ain Djasser",
+      "lat": 35.8311206,
+      "lon": 5.9331296
+    },
+    {
+      "nom": "Ain Touta",
+      "lat": 35.3640241,
+      "lon": 5.7540788
+    },
+    {
+      "nom": "Ain Yagout",
+      "lat": 35.7864482,
+      "lon": 6.2679257
+    },
+    {
+      "nom": "Arris",
+      "lat": 35.3105194,
+      "lon": 6.2007524
+    },
+    {
+      "nom": "Batna",
+      "lat": 35.5784266,
+      "lon": 6.1083422
+    },
+    {
+      "nom": "Beni Foudhala El Hakania",
+      "lat": 35.3790646,
+      "lon": 5.9300746
+    },
+    {
+      "nom": "Boulhilat",
+      "lat": 35.7374798,
+      "lon": 6.5889619
+    },
+    {
+      "nom": "Boumagueur",
+      "lat": 35.4973671,
+      "lon": 5.5073234
+    },
+    {
+      "nom": "Boumia",
+      "lat": 35.7041224,
+      "lon": 6.3963578
+    },
+    {
+      "nom": "Bouzina",
+      "lat": 35.2757765,
+      "lon": 5.9780111
+    },
+    {
+      "nom": "Chemora",
+      "lat": 35.6301185,
+      "lon": 6.4747992
+    },
+    {
+      "nom": "Chir",
+      "lat": 35.218839,
+      "lon": 6.061661
+    },
+    {
+      "nom": "Djezzar",
+      "lat": 35.5180608,
+      "lon": 5.1947203
+    },
+    {
+      "nom": "El Hassi",
+      "lat": 35.7805122,
+      "lon": 5.8788416
+    },
+    {
+      "nom": "Fesdis",
+      "lat": 35.6179227,
+      "lon": 6.1696788
+    },
+    {
+      "nom": "Foum Toub",
+      "lat": 35.3867728,
+      "lon": 6.4478348
+    },
+    {
+      "nom": "Ghassira",
+      "lat": 35.0629605,
+      "lon": 6.1563323
+    },
+    {
+      "nom": "Gosbat",
+      "lat": 35.6198308,
+      "lon": 5.3394309
+    },
+    {
+      "nom": "Guigba",
+      "lat": 35.7407753,
+      "lon": 5.5352956
+    },
+    {
+      "nom": "Hidoussa",
+      "lat": 35.528608,
+      "lon": 5.7812335
+    },
+    {
+      "nom": "Ichmoul",
+      "lat": 35.3059756,
+      "lon": 6.4186737
+    },
+    {
+      "nom": "Inoughissen",
+      "lat": 35.2771231,
+      "lon": 6.4628765
+    },
+    {
+      "nom": "Kimmel",
+      "lat": 34.9992137,
+      "lon": 6.2208802
+    },
+    {
+      "nom": "Ksar Belezma",
+      "lat": 35.728729,
+      "lon": 5.8247576
+    },
+    {
+      "nom": "Larbaa",
+      "lat": 36.5787079,
+      "lon": 3.103324
+    },
+    {
+      "nom": "Lazrou",
+      "lat": 35.8042574,
+      "lon": 6.2001918
+    },
+    {
+      "nom": "Lemsane",
+      "lat": 35.6384911,
+      "lon": 5.7282516
+    },
+    {
+      "nom": "M'doukel",
+      "lat": 35.1132204,
+      "lon": 5.0064721
+    },
+    {
+      "nom": "Maafa",
+      "lat": 35.2770359,
+      "lon": 5.8156273
+    },
+    {
+      "nom": "Menaa",
+      "lat": 35.1373236,
+      "lon": 5.9981034
+    },
+    {
+      "nom": "Merouana",
+      "lat": 35.6417881,
+      "lon": 5.8172903
+    },
+    {
+      "nom": "Metkaouak",
+      "lat": 35.323352,
+      "lon": 4.6952399
+    },
+    {
+      "nom": "Ngaous",
+      "lat": 35.5525842,
+      "lon": 5.5189965
+    },
+    {
+      "nom": "Oued Chaaba",
+      "lat": 35.5243377,
+      "lon": 6.011965
+    },
+    {
+      "nom": "Oued El Ma",
+      "lat": 35.6696259,
+      "lon": 5.952935
+    },
+    {
+      "nom": "Oued Taga",
+      "lat": 35.4185955,
+      "lon": 6.2379494
+    },
+    {
+      "nom": "Ouled Aouf",
+      "lat": 35.4740373,
+      "lon": 5.7172224
+    },
+    {
+      "nom": "Ouled Fadel",
+      "lat": 35.5552777,
+      "lon": 6.540245
+    },
+    {
+      "nom": "Ouled Selam",
+      "lat": 35.8457485,
+      "lon": 5.7276937
+    },
+    {
+      "nom": "Ouled Si Slimane",
+      "lat": 35.5671114,
+      "lon": 5.5504885
+    },
+    {
+      "nom": "Ouyoun El Assafir",
+      "lat": 35.5468473,
+      "lon": 6.2710449
+    },
+    {
+      "nom": "Rahbat",
+      "lat": 35.7257797,
+      "lon": 5.5571911
+    },
+    {
+      "nom": "Ras El Aioun",
+      "lat": 35.6547596,
+      "lon": 5.5340598
+    },
+    {
+      "nom": "Sefiane",
+      "lat": 35.4280853,
+      "lon": 5.5186532
+    },
+    {
+      "nom": "Seriana",
+      "lat": 35.7161562,
+      "lon": 6.127064
+    },
+    {
+      "nom": "Talkhamt",
+      "lat": 35.722912,
+      "lon": 5.7070515
+    },
+    {
+      "nom": "Taxlent",
+      "lat": 35.5635407,
+      "lon": 5.7388089
+    },
+    {
+      "nom": "Tazoult",
+      "lat": 35.470362,
+      "lon": 6.1694644
+    },
+    {
+      "nom": "Teniet El Abed",
+      "lat": 35.2869315,
+      "lon": 6.1926387
+    },
+    {
+      "nom": "Tighanimine",
+      "lat": 35.185829,
+      "lon": 6.2290737
+    },
+    {
+      "nom": "Tigherghar",
+      "lat": 35.0765612,
+      "lon": 5.8212842
+    },
+    {
+      "nom": "Tilatou",
+      "lat": 35.3131323,
+      "lon": 5.4911366
+    },
+    {
+      "nom": "Timgad",
+      "lat": 35.5269245,
+      "lon": 6.3713303
+    },
+    {
+      "nom": "Tkout",
+      "lat": 35.1533059,
+      "lon": 6.2237014
+    },
+    {
+      "nom": "Zanat El Beida",
+      "lat": 35.7947074,
+      "lon": 5.9551803
+    }
+  ]
+}

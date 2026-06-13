@@ -1,0 +1,342 @@
+{
+  "code": 15,
+  "nom": "Tizi Ouzou",
+  "label": "15 - Tizi Ouzou",
+  "communes": [
+    {
+      "nom": "Abi Youcef",
+      "lat": 36.524679,
+      "lon": 4.3011139
+    },
+    {
+      "nom": "Aghrib",
+      "lat": 36.8198487,
+      "lon": 4.2726598
+    },
+    {
+      "nom": "Agouni Gueghrane",
+      "lat": 36.5042565,
+      "lon": 4.0879622
+    },
+    {
+      "nom": "Ain El Hammam",
+      "lat": 36.5725501,
+      "lon": 4.246757
+    },
+    {
+      "nom": "Ain Zaouia",
+      "lat": 36.576394,
+      "lon": 3.8364146
+    },
+    {
+      "nom": "Ait Aggouacha",
+      "lat": 36.6198894,
+      "lon": 4.2120707
+    },
+    {
+      "nom": "Ait Aissa Mimoun",
+      "lat": 36.7514348,
+      "lon": 4.0819593
+    },
+    {
+      "nom": "Ait Bouadou",
+      "lat": 36.5074837,
+      "lon": 4.0215722
+    },
+    {
+      "nom": "Ait Boumehdi",
+      "lat": 36.4881938,
+      "lon": 4.1571444
+    },
+    {
+      "nom": "Ait Chaffaa",
+      "lat": 36.8274474,
+      "lon": 4.4618199
+    },
+    {
+      "nom": "Ait Khelil",
+      "lat": 36.6760946,
+      "lon": 4.2387675
+    },
+    {
+      "nom": "Ait Mahmoud",
+      "lat": 36.6099011,
+      "lon": 4.0829223
+    },
+    {
+      "nom": "Ait Oumalou",
+      "lat": 36.6546349,
+      "lon": 4.1929358
+    },
+    {
+      "nom": "Ait Toudert",
+      "lat": 36.5308324,
+      "lon": 4.1318418
+    },
+    {
+      "nom": "Ait Yahia",
+      "lat": 36.5983865,
+      "lon": 4.2844951
+    },
+    {
+      "nom": "Ait Yahia Moussa",
+      "lat": 36.6423405,
+      "lon": 3.8041329
+    },
+    {
+      "nom": "Akbil",
+      "lat": 36.5045347,
+      "lon": 4.2789395
+    },
+    {
+      "nom": "Akerrou",
+      "lat": 36.8097183,
+      "lon": 4.4087242
+    },
+    {
+      "nom": "Assi Youcef",
+      "lat": 36.5028276,
+      "lon": 3.9916789
+    },
+    {
+      "nom": "Azazga",
+      "lat": 36.7422819,
+      "lon": 4.3001578
+    },
+    {
+      "nom": "Azzefoun",
+      "lat": 36.8702256,
+      "lon": 4.3178818
+    },
+    {
+      "nom": "Beni Aissi",
+      "lat": 36.6547723,
+      "lon": 4.0545452
+    },
+    {
+      "nom": "Beni Douala",
+      "lat": 36.6234865,
+      "lon": 4.0457361
+    },
+    {
+      "nom": "Beni Yenni",
+      "lat": 36.5780655,
+      "lon": 4.1617148
+    },
+    {
+      "nom": "Beni Ziki",
+      "lat": 36.5577577,
+      "lon": 4.4700776
+    },
+    {
+      "nom": "Beni Zmenzer",
+      "lat": 36.6377976,
+      "lon": 4.0034
+    },
+    {
+      "nom": "Boghni",
+      "lat": 36.5145938,
+      "lon": 3.9000151
+    },
+    {
+      "nom": "Boudjima",
+      "lat": 36.8046355,
+      "lon": 4.1193574
+    },
+    {
+      "nom": "Bounouh",
+      "lat": 36.4936137,
+      "lon": 3.9005751
+    },
+    {
+      "nom": "Bouzguen",
+      "lat": 36.6175618,
+      "lon": 4.4228207
+    },
+    {
+      "nom": "Draa Ben Khedda",
+      "lat": 36.7218395,
+      "lon": 3.9216358
+    },
+    {
+      "nom": "Draa El Mizan",
+      "lat": 36.5470073,
+      "lon": 3.7377549
+    },
+    {
+      "nom": "Freha",
+      "lat": 36.7609641,
+      "lon": 4.1820964
+    },
+    {
+      "nom": "Frikat",
+      "lat": 36.4984125,
+      "lon": 3.8441856
+    },
+    {
+      "nom": "Iboudraren",
+      "lat": 36.5115392,
+      "lon": 4.1786226
+    },
+    {
+      "nom": "Idjeur",
+      "lat": 36.6731533,
+      "lon": 4.4981712
+    },
+    {
+      "nom": "Iferhounene",
+      "lat": 36.5212265,
+      "lon": 4.3082031
+    },
+    {
+      "nom": "Ifigha",
+      "lat": 36.6655524,
+      "lon": 4.3826971
+    },
+    {
+      "nom": "Iflissen",
+      "lat": 36.8728441,
+      "lon": 4.1818421
+    },
+    {
+      "nom": "Illilten",
+      "lat": 36.5107269,
+      "lon": 4.3705193
+    },
+    {
+      "nom": "Iloula Oumalou",
+      "lat": 36.5648402,
+      "lon": 4.3743839
+    },
+    {
+      "nom": "Imsouhal",
+      "lat": 36.5781164,
+      "lon": 4.3630843
+    },
+    {
+      "nom": "Irdjen",
+      "lat": 36.6675039,
+      "lon": 4.1060517
+    },
+    {
+      "nom": "Larba Nait Irathen",
+      "lat": 36.6369786,
+      "lon": 4.1448706
+    },
+    {
+      "nom": "Maatka",
+      "lat": 36.6103742,
+      "lon": 3.9321607
+    },
+    {
+      "nom": "Makouda",
+      "lat": 36.7937385,
+      "lon": 4.0162747
+    },
+    {
+      "nom": "Mechtrass",
+      "lat": 36.5543756,
+      "lon": 3.9810203
+    },
+    {
+      "nom": "Mekla",
+      "lat": 36.6754811,
+      "lon": 4.1969679
+    },
+    {
+      "nom": "Mizrana",
+      "lat": 36.8631777,
+      "lon": 4.0352004
+    },
+    {
+      "nom": "Mkira",
+      "lat": 36.6308053,
+      "lon": 3.7426895
+    },
+    {
+      "nom": "Ouacif",
+      "lat": 36.518106,
+      "lon": 4.1780763
+    },
+    {
+      "nom": "Ouadhia",
+      "lat": 36.5677265,
+      "lon": 4.0785704
+    },
+    {
+      "nom": "Ouaguenoun",
+      "lat": 36.75758,
+      "lon": 4.1374033
+    },
+    {
+      "nom": "Sidi Naamane",
+      "lat": 36.7771939,
+      "lon": 3.9208277
+    },
+    {
+      "nom": "Souamaa",
+      "lat": 36.6699749,
+      "lon": 4.2847082
+    },
+    {
+      "nom": "Souk El Thenine",
+      "lat": 36.6035414,
+      "lon": 3.9314975
+    },
+    {
+      "nom": "Tadmait",
+      "lat": 36.7209434,
+      "lon": 3.8253437
+    },
+    {
+      "nom": "Tigzirt",
+      "lat": 36.8639518,
+      "lon": 4.1020626
+    },
+    {
+      "nom": "Timizart",
+      "lat": 36.7971206,
+      "lon": 4.1694482
+    },
+    {
+      "nom": "Tirmitine",
+      "lat": 36.6686122,
+      "lon": 3.9267051
+    },
+    {
+      "nom": "Tizi Ghenif",
+      "lat": 36.5902982,
+      "lon": 3.7422175
+    },
+    {
+      "nom": "Tizi Nthlata",
+      "lat": 36.5614012,
+      "lon": 4.0110525
+    },
+    {
+      "nom": "Tizi Ouzou",
+      "lat": 36.7001863,
+      "lon": 4.0059166
+    },
+    {
+      "nom": "Tizi Rached",
+      "lat": 36.6869348,
+      "lon": 4.1508398
+    },
+    {
+      "nom": "Yakouren",
+      "lat": 36.7370677,
+      "lon": 4.3947111
+    },
+    {
+      "nom": "Yatafen",
+      "lat": 36.5076873,
+      "lon": 4.2052774
+    },
+    {
+      "nom": "Zekri",
+      "lat": 36.7845712,
+      "lon": 4.5092844
+    }
+  ]
+}

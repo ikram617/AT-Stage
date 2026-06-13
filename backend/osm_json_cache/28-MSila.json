@@ -1,0 +1,152 @@
+{
+  "code": 28,
+  "nom": "M'Sila",
+  "label": "28 - M'Sila",
+  "communes": [
+    {
+      "nom": "Ain Fares",
+      "lat": 34.742717,
+      "lon": 4.3576134
+    },
+    {
+      "nom": "Ain Khadra",
+      "lat": 35.5456141,
+      "lon": 4.8777554
+    },
+    {
+      "nom": "Beni Ilmane",
+      "lat": 35.9460168,
+      "lon": 3.934125
+    },
+    {
+      "nom": "Benzouh",
+      "lat": 35.4561038,
+      "lon": 3.9870825
+    },
+    {
+      "nom": "Berhoum",
+      "lat": 35.6351693,
+      "lon": 4.9263356
+    },
+    {
+      "nom": "Bir Foda",
+      "lat": 34.8183094,
+      "lon": 3.7172307
+    },
+    {
+      "nom": "Chellal",
+      "lat": 35.5134267,
+      "lon": 0.0
+    },
+    {
+      "nom": "El Hamel",
+      "lat": 35.1212832,
+      "lon": 3.9996217
+    },
+    {
+      "nom": "El Houamed",
+      "lat": 35.1664895,
+      "lon": 4.3637934
+    },
+    {
+      "nom": "Khoubana",
+      "lat": 35.3114022,
+      "lon": 4.3378725
+    },
+    {
+      "nom": "M'cif",
+      "lat": 35.315,
+      "lon": 4.5858374
+    },
+    {
+      "nom": "Maadid",
+      "lat": 35.7973219,
+      "lon": 4.6873829
+    },
+    {
+      "nom": "Medjedel",
+      "lat": 35.0618873,
+      "lon": 3.3440071
+    },
+    {
+      "nom": "Msila",
+      "lat": 35.7210664,
+      "lon": 4.3786421
+    },
+    {
+      "nom": "Mtarfa",
+      "lat": 35.6887798,
+      "lon": 4.5064011
+    },
+    {
+      "nom": "Ouanougha",
+      "lat": 35.9310253,
+      "lon": 4.041585
+    },
+    {
+      "nom": "Oued Chair",
+      "lat": 34.8994154,
+      "lon": 4.3559827
+    },
+    {
+      "nom": "Ouled Addi Guebala",
+      "lat": 35.676541,
+      "lon": 4.7484866
+    },
+    {
+      "nom": "Ouled Atia",
+      "lat": 35.1324378,
+      "lon": 3.455394
+    },
+    {
+      "nom": "Ouled Derradj",
+      "lat": 35.6715243,
+      "lon": 4.6290103
+    },
+    {
+      "nom": "Ouled Mansour",
+      "lat": 35.7319531,
+      "lon": 4.2625131
+    },
+    {
+      "nom": "Ouled Slimane",
+      "lat": 34.9246808,
+      "lon": 4.7197332
+    },
+    {
+      "nom": "Oultene",
+      "lat": 35.1127067,
+      "lon": 4.1979763
+    },
+    {
+      "nom": "Sidi Aissa",
+      "lat": 35.8255783,
+      "lon": 3.6556044
+    },
+    {
+      "nom": "Sidi Hadjeres",
+      "lat": 35.7020457,
+      "lon": 3.7978373
+    },
+    {
+      "nom": "Sidi Mhamed",
+      "lat": 34.7726262,
+      "lon": 4.1440667
+    },
+    {
+      "nom": "Souamaa",
+      "lat": 35.5173258,
+      "lon": 4.5889058
+    },
+    {
+      "nom": "Tarmount",
+      "lat": 35.8174498,
+      "lon": 4.1865609
+    },
+    {
+      "nom": "Zarzour",
+      "lat": 35.0536128,
+      "lon": 4.7163
+    }
+  ]
+}

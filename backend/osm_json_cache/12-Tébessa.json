@@ -1,0 +1,127 @@
+{
+  "code": 12,
+  "nom": "Tébessa",
+  "label": "12 - Tébessa",
+  "communes": [
+    {
+      "nom": "Ain Zerga",
+      "lat": 35.6333322,
+      "lon": 8.2579122
+    },
+    {
+      "nom": "Bedjene",
+      "lat": 35.3487094,
+      "lon": 7.469641
+    },
+    {
+      "nom": "Bekkaria",
+      "lat": 35.3666661,
+      "lon": 8.2412452
+    },
+    {
+      "nom": "Bir Dheb",
+      "lat": 35.4117259,
+      "lon": 8.110545
+    },
+    {
+      "nom": "Bir El Mokadem",
+      "lat": 35.3704867,
+      "lon": 7.8005075
+    },
+    {
+      "nom": "Boukhadra",
+      "lat": 35.7490236,
+      "lon": 8.0267572
+    },
+    {
+      "nom": "Boulhaf Dyr",
+      "lat": 35.4117259,
+      "lon": 8.110545
+    },
+    {
+      "nom": "Cheria",
+      "lat": 35.267904,
+      "lon": 7.7355765
+    },
+    {
+      "nom": "El Aouinet",
+      "lat": 35.8685842,
+      "lon": 7.8693435
+    },
+    {
+      "nom": "El Kouif",
+      "lat": 35.499565,
+      "lon": 8.3115219
+    },
+    {
+      "nom": "El Ma El Biodh",
+      "lat": 35.2066339,
+      "lon": 8.1509541
+    },
+    {
+      "nom": "El Mazeraa",
+      "lat": 35.4117259,
+      "lon": 8.110545
+    },
+    {
+      "nom": "El Meridj",
+      "lat": 35.7935581,
+      "lon": 8.2175374
+    },
+    {
+      "nom": "El Ogla",
+      "lat": 35.1833322,
+      "lon": 7.4579122
+    },
+    {
+      "nom": "Gorriguer",
+      "lat": 35.1833322,
+      "lon": 7.4579122
+    },
+    {
+      "nom": "Hammamet",
+      "lat": 35.4519226,
+      "lon": 7.923867
+    },
+    {
+      "nom": "Lahouidjbet",
+      "lat": 35.292789,
+      "lon": 8.274572
+    },
+    {
+      "nom": "Morsott",
+      "lat": 35.6694643,
+      "lon": 8.0015659
+    },
+    {
+      "nom": "Ouenza",
+      "lat": 35.9421139,
+      "lon": 8.1088536
+    },
+    {
+      "nom": "Oum Ali",
+      "lat": 35.0115532,
+      "lon": 8.2926392
+    },
+    {
+      "nom": "Safsaf El Ouesra",
+      "lat": 34.9570976,
+      "lon": 8.1988049
+    },
+    {
+      "nom": "Stah Guentis",
+      "lat": 34.9951892,
+      "lon": 7.2928362
+    },
+    {
+      "nom": "Tebessa",
+      "lat": 35.4117209,
+      "lon": 8.0755254
+    },
+    {
+      "nom": "Tlidjene",
+      "lat": 35.1184512,
+      "lon": 7.7597808
+    }
+  ]
+}

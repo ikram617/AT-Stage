@@ -1,0 +1,242 @@
+{
+  "code": 29,
+  "nom": "Mascara",
+  "label": "29 - Mascara",
+  "communes": [
+    {
+      "nom": "Ain Fares",
+      "lat": 35.417,
+      "lon": 0.2444
+    },
+    {
+      "nom": "Ain Fekan",
+      "lat": 35.1615,
+      "lon": -0.0027
+    },
+    {
+      "nom": "Ain Ferah",
+      "lat": 35.3162,
+      "lon": 0.7828
+    },
+    {
+      "nom": "Ain Frass",
+      "lat": 35.1255,
+      "lon": -0.1511
+    },
+    {
+      "nom": "Alaimia",
+      "lat": 35.6115,
+      "lon": -0.2197
+    },
+    {
+      "nom": "Aouf",
+      "lat": 35.0334,
+      "lon": 0.3571
+    },
+    {
+      "nom": "Benian",
+      "lat": 35.0356,
+      "lon": 0.2307
+    },
+    {
+      "nom": "Bou Hanifia",
+      "lat": 35.2512,
+      "lon": -0.0494
+    },
+    {
+      "nom": "Bou Henni",
+      "lat": 35.4976,
+      "lon": -0.0851
+    },
+    {
+      "nom": "Chorfa",
+      "lat": 35.3678,
+      "lon": -0.2444
+    },
+    {
+      "nom": "El Bordj",
+      "lat": 35.4528,
+      "lon": 0.3021
+    },
+    {
+      "nom": "El Gaada",
+      "lat": 35.4685,
+      "lon": -0.184
+    },
+    {
+      "nom": "El Ghomri",
+      "lat": 35.6205,
+      "lon": 0.2005
+    },
+    {
+      "nom": "El Hachem",
+      "lat": 35.3028,
+      "lon": 0.4834
+    },
+    {
+      "nom": "El Keurt",
+      "lat": 35.3162,
+      "lon": 0.0906
+    },
+    {
+      "nom": "El Mamounia",
+      "lat": 35.3611,
+      "lon": 0.1401
+    },
+    {
+      "nom": "El Menaouer",
+      "lat": 35.4797,
+      "lon": 0.4037
+    },
+    {
+      "nom": "Ferraguig",
+      "lat": 35.4685,
+      "lon": 0.1538
+    },
+    {
+      "nom": "Froha",
+      "lat": 35.24,
+      "lon": 0.1263
+    },
+    {
+      "nom": "Gharrous",
+      "lat": 35.1323,
+      "lon": 0.401
+    },
+    {
+      "nom": "Gherdjoum",
+      "lat": 35.1143,
+      "lon": 0.0714
+    },
+    {
+      "nom": "Ghriss",
+      "lat": 35.1839,
+      "lon": 0.162
+    },
+    {
+      "nom": "Guettena",
+      "lat": 35.3207,
+      "lon": -0.2032
+    },
+    {
+      "nom": "Hacine",
+      "lat": 35.3969,
+      "lon": -0.0055
+    },
+    {
+      "nom": "Khalouia",
+      "lat": 35.3991,
+      "lon": 0.2966
+    },
+    {
+      "nom": "Makdha",
+      "lat": 35.1076,
+      "lon": 0.2966
+    },
+    {
+      "nom": "Maoussa",
+      "lat": 35.314,
+      "lon": 0.2472
+    },
+    {
+      "nom": "Mascara",
+      "lat": 35.3185,
+      "lon": 0.1511
+    },
+    {
+      "nom": "Matemore",
+      "lat": 35.2624,
+      "lon": 0.2142
+    },
+    {
+      "nom": "Moctadouz",
+      "lat": 35.5356,
+      "lon": -0.0494
+    },
+    {
+      "nom": "Mohammadia",
+      "lat": 35.5266,
+      "lon": 0.0687
+    },
+    {
+      "nom": "Nesmot",
+      "lat": 35.1862,
+      "lon": 0.3845
+    },
+    {
+      "nom": "Oggaz",
+      "lat": 35.502,
+      "lon": -0.2664
+    },
+    {
+      "nom": "Oued El Abtal",
+      "lat": 35.3924,
+      "lon": 0.6894
+    },
+    {
+      "nom": "Oued Taria",
+      "lat": 35.0514,
+      "lon": 0.0879
+    },
+    {
+      "nom": "Ras Ain Amirouche",
+      "lat": 35.5289,
+      "lon": -0.2115
+    },
+    {
+      "nom": "Sedjerara",
+      "lat": 35.6138,
+      "lon": 0.3433
+    },
+    {
+      "nom": "Sehailia",
+      "lat": 35.4484,
+      "lon": 0.3818
+    },
+    {
+      "nom": "Sidi Abdeldjebar",
+      "lat": 35.379,
+      "lon": 0.5246
+    },
+    {
+      "nom": "Sidi Abdelmoumene",
+      "lat": 35.5713,
+      "lon": 0.0522
+    },
+    {
+      "nom": "Sidi Boussaid",
+      "lat": 35.2266,
+      "lon": 0.2966
+    },
+    {
+      "nom": "Sidi Kada",
+      "lat": 35.2692,
+      "lon": 0.3488
+    },
+    {
+      "nom": "Sig",
+      "lat": 35.4685,
+      "lon": -0.184
+    },
+    {
+      "nom": "Teghennif",
+      "lat": 35.3521,
+      "lon": 0.3323
+    },
+    {
+      "nom": "Tizi",
+      "lat": 35.2512,
+      "lon": 0.0714
+    },
+    {
+      "nom": "Zahana",
+      "lat": 35.4551,
+      "lon": -0.412
+    },
+    {
+      "nom": "Zelmata",
+      "lat": 35.2266,
+      "lon": 0.4752
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "code": 53,
+  "nom": "In Salah",
+  "label": "53 - In Salah",
+  "communes": [
+    {
+      "nom": "Djamaa",
+      "lat": 33.467,
+      "lon": 5.9903
+    },
+    {
+      "nom": "El M'Ghair",
+      "lat": 5.9167,
+      "lon": 33.95
+    },
+    {
+      "nom": "M'Rara",
+      "lat": 5.5333,
+      "lon": 33.4333
+    },
+    {
+      "nom": "Oum Touyour",
+      "lat": 34.0879,
+      "lon": 5.8337
+    },
+    {
+      "nom": "Sidi Amrane",
+      "lat": 33.4303,
+      "lon": 6.0123
+    },
+    {
+      "nom": "Sidi Khelil",
+      "lat": 5.95,
+      "lon": 34.0167
+    },
+    {
+      "nom": "Still",
+      "lat": 34.1948,
+      "lon": 5.9134
+    },
+    {
+      "nom": "Tendla",
+      "lat": 33.6112,
+      "lon": 6.0342
+    },
+    {
+      "nom": "Tenedla",
+      "lat": 6.0667,
+      "lon": 33.5667
+    }
+  ]
+}

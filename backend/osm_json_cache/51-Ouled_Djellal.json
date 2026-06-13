@@ -1,0 +1,42 @@
+{
+  "code": 51,
+  "nom": "Ouled Djellal",
+  "label": "51 - Ouled Djellal",
+  "communes": [
+    {
+      "nom": "Besbes",
+      "lat": 36.7204026,
+      "lon": 7.7544139
+    },
+    {
+      "nom": "Chaiba",
+      "lat": 5.1333,
+      "lon": 34.2167
+    },
+    {
+      "nom": "Doucen",
+      "lat": 34.6197821,
+      "lon": 4.9863232
+    },
+    {
+      "nom": "Ouled Djellal",
+      "lat": 34.4174639,
+      "lon": 4.9713028
+    },
+    {
+      "nom": "Ras El Miaad",
+      "lat": 34.0268001,
+      "lon": 4.1596986
+    },
+    {
+      "nom": "Ras El Miad",
+      "lat": 4.4167,
+      "lon": 34.15
+    },
+    {
+      "nom": "Sidi Khaled",
+      "lat": 34.3845588,
+      "lon": 4.8400248
+    }
+  ]
+}

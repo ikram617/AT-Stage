@@ -1,0 +1,17 @@
+{
+  "code": 49,
+  "nom": "Timimoun",
+  "label": "49 - Timimoun",
+  "communes": [
+    {
+      "nom": "In Guezzam",
+      "lat": 20.3875487,
+      "lon": 4.7892187
+    },
+    {
+      "nom": "Tin Zaouatine",
+      "lat": 2.9667,
+      "lon": 19.95
+    }
+  ]
+}

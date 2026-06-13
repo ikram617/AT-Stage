@@ -1,0 +1,132 @@
+{
+  "code": 9,
+  "nom": "Blida",
+  "label": "09 - Blida",
+  "communes": [
+    {
+      "nom": "Ain Romana",
+      "lat": 36.3875985,
+      "lon": 2.5722144
+    },
+    {
+      "nom": "Ben Khlil",
+      "lat": 36.5959588,
+      "lon": 2.7838729
+    },
+    {
+      "nom": "Beni Mered",
+      "lat": 36.5327654,
+      "lon": 2.8198593
+    },
+    {
+      "nom": "Beni Tamou",
+      "lat": 36.5401306,
+      "lon": 2.7729529
+    },
+    {
+      "nom": "Blida",
+      "lat": 36.4802972,
+      "lon": 2.7659184
+    },
+    {
+      "nom": "Bouarfa",
+      "lat": 36.4151693,
+      "lon": 2.7284692
+    },
+    {
+      "nom": "Boufarik",
+      "lat": 36.5739581,
+      "lon": 2.8478167
+    },
+    {
+      "nom": "Bougara",
+      "lat": 36.4936597,
+      "lon": 2.9731862
+    },
+    {
+      "nom": "Bouinan",
+      "lat": 36.5154839,
+      "lon": 2.9218243
+    },
+    {
+      "nom": "Chebli",
+      "lat": 36.5685763,
+      "lon": 2.9433463
+    },
+    {
+      "nom": "Chiffa",
+      "lat": 36.444398,
+      "lon": 2.6691173
+    },
+    {
+      "nom": "Chrea",
+      "lat": 36.4254896,
+      "lon": 2.8286336
+    },
+    {
+      "nom": "Djebabra",
+      "lat": 36.5803885,
+      "lon": 3.2252592
+    },
+    {
+      "nom": "El Affroun",
+      "lat": 36.4460675,
+      "lon": 2.5382873
+    },
+    {
+      "nom": "Guerrouaou",
+      "lat": 36.5019935,
+      "lon": 2.8148899
+    },
+    {
+      "nom": "Hammam Melouane",
+      "lat": 36.436102,
+      "lon": 2.8604689
+    },
+    {
+      "nom": "Larbaa",
+      "lat": 36.5787079,
+      "lon": 3.103324
+    },
+    {
+      "nom": "Meftah",
+      "lat": 36.6238272,
+      "lon": 3.1711838
+    },
+    {
+      "nom": "Mouzaia",
+      "lat": 36.50497,
+      "lon": 2.6139932
+    },
+    {
+      "nom": "Oued Djer",
+      "lat": 36.4223526,
+      "lon": 2.4657911
+    },
+    {
+      "nom": "Oued El Alleug",
+      "lat": 36.5502875,
+      "lon": 2.7026126
+    },
+    {
+      "nom": "Ouled Selama",
+      "lat": 36.514057,
+      "lon": 3.0705904
+    },
+    {
+      "nom": "Ouled Yaich",
+      "lat": 36.4852123,
+      "lon": 2.8325741
+    },
+    {
+      "nom": "Souhane",
+      "lat": 36.5263305,
+      "lon": 3.1705831
+    },
+    {
+      "nom": "Soumaa",
+      "lat": 36.507015,
+      "lon": 2.8509281
+    }
+  ]
+}

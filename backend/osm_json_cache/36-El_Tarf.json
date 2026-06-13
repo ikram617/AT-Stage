@@ -1,0 +1,127 @@
+{
+  "code": 36,
+  "nom": "El Tarf",
+  "label": "36 - El Tarf",
+  "communes": [
+    {
+      "nom": "Ain El Assel",
+      "lat": 36.7246,
+      "lon": 8.3826
+    },
+    {
+      "nom": "Ain Kerma",
+      "lat": 36.5306,
+      "lon": 8.2013
+    },
+    {
+      "nom": "Asfour",
+      "lat": 36.6122,
+      "lon": 7.9761
+    },
+    {
+      "nom": "Ben Mhidi",
+      "lat": 36.7092,
+      "lon": 7.9047
+    },
+    {
+      "nom": "Berrihane",
+      "lat": 36.7752,
+      "lon": 8.1244
+    },
+    {
+      "nom": "Besbes",
+      "lat": 36.6387,
+      "lon": 7.847
+    },
+    {
+      "nom": "Bougous",
+      "lat": 36.5968,
+      "lon": 8.3688
+    },
+    {
+      "nom": "Bouhadjar",
+      "lat": 36.4401,
+      "lon": 8.1052
+    },
+    {
+      "nom": "Bouteldja",
+      "lat": 36.4401,
+      "lon": 8.1052
+    },
+    {
+      "nom": "Chebaita Mokhtar",
+      "lat": 36.6937,
+      "lon": 7.7426
+    },
+    {
+      "nom": "Chefia",
+      "lat": 36.5483,
+      "lon": 8.0392
+    },
+    {
+      "nom": "Chihani",
+      "lat": 36.5836,
+      "lon": 7.7756
+    },
+    {
+      "nom": "Drean",
+      "lat": 36.621,
+      "lon": 7.7509
+    },
+    {
+      "nom": "Echatt",
+      "lat": 36.7664,
+      "lon": 7.8745
+    },
+    {
+      "nom": "El Aioun",
+      "lat": 36.8082,
+      "lon": 8.5968
+    },
+    {
+      "nom": "El Kala",
+      "lat": 36.8324,
+      "lon": 8.443
+    },
+    {
+      "nom": "El Tarf",
+      "lat": 36.7048,
+      "lon": 8.3139
+    },
+    {
+      "nom": "Hammam Beni Salah",
+      "lat": 36.4577,
+      "lon": 8.0338
+    },
+    {
+      "nom": "Lac Des Oiseaux",
+      "lat": 36.7136,
+      "lon": 8.1189
+    },
+    {
+      "nom": "Oued Zitoun",
+      "lat": 36.4025,
+      "lon": 8.0585
+    },
+    {
+      "nom": "Raml Souk",
+      "lat": 36.7224,
+      "lon": 8.5364
+    },
+    {
+      "nom": "Souarekh",
+      "lat": 36.8192,
+      "lon": 8.5638
+    },
+    {
+      "nom": "Zerizer",
+      "lat": 36.6651,
+      "lon": 7.8937
+    },
+    {
+      "nom": "Zitouna",
+      "lat": 36.6056,
+      "lon": 8.2343
+    }
+  ]
+}

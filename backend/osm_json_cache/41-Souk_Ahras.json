@@ -1,0 +1,137 @@
+{
+  "code": 41,
+  "nom": "Souk Ahras",
+  "label": "41 - Souk Ahras",
+  "communes": [
+    {
+      "nom": "Ain Soltane",
+      "lat": 36.1146,
+      "lon": 7.3691
+    },
+    {
+      "nom": "Ain Zana",
+      "lat": 36.3384,
+      "lon": 8.1903
+    },
+    {
+      "nom": "Bir Bouhouche",
+      "lat": 35.9858,
+      "lon": 7.468
+    },
+    {
+      "nom": "Drea",
+      "lat": 36.0524,
+      "lon": 7.8827
+    },
+    {
+      "nom": "Haddada",
+      "lat": 36.1678,
+      "lon": 8.3386
+    },
+    {
+      "nom": "Hanancha",
+      "lat": 36.1545,
+      "lon": 7.8333
+    },
+    {
+      "nom": "Khedara",
+      "lat": 36.221,
+      "lon": 8.3167
+    },
+    {
+      "nom": "Khemissa",
+      "lat": 36.1257,
+      "lon": 7.6602
+    },
+    {
+      "nom": "Mdaourouche",
+      "lat": 36.0124,
+      "lon": 7.8195
+    },
+    {
+      "nom": "Mechroha",
+      "lat": 36.2941,
+      "lon": 7.836
+    },
+    {
+      "nom": "Merahna",
+      "lat": 36.1345,
+      "lon": 8.1738
+    },
+    {
+      "nom": "Oued Keberit",
+      "lat": 35.8701,
+      "lon": 7.9156
+    },
+    {
+      "nom": "Ouled Driss",
+      "lat": 36.2875,
+      "lon": 8.0173
+    },
+    {
+      "nom": "Ouled Moumen",
+      "lat": 36.3472,
+      "lon": 8.399
+    },
+    {
+      "nom": "Oum El Adhaim",
+      "lat": 35.9702,
+      "lon": 7.6025
+    },
+    {
+      "nom": "Quillen",
+      "lat": 36.2653,
+      "lon": 8.1216
+    },
+    {
+      "nom": "Ragouba",
+      "lat": 36.0191,
+      "lon": 7.7179
+    },
+    {
+      "nom": "Safel El Ouiden",
+      "lat": 35.9213,
+      "lon": 7.4625
+    },
+    {
+      "nom": "Sedrata",
+      "lat": 36.0658,
+      "lon": 7.5311
+    },
+    {
+      "nom": "Sidi Fredj",
+      "lat": 36.0902,
+      "lon": 8.1958
+    },
+    {
+      "nom": "Souk Ahras",
+      "lat": 36.2232,
+      "lon": 7.9541
+    },
+    {
+      "nom": "Taoura",
+      "lat": 36.1057,
+      "lon": 8.042
+    },
+    {
+      "nom": "Terraguelt",
+      "lat": 35.839,
+      "lon": 7.5613
+    },
+    {
+      "nom": "Tiffech",
+      "lat": 36.0924,
+      "lon": 7.6987
+    },
+    {
+      "nom": "Zaarouria",
+      "lat": 36.1634,
+      "lon": 7.9568
+    },
+    {
+      "nom": "Zouabi",
+      "lat": 36.0524,
+      "lon": 7.4432
+    }
+  ]
+}

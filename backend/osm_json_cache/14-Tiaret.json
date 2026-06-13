@@ -1,0 +1,187 @@
+{
+  "code": 14,
+  "nom": "Tiaret",
+  "label": "14 - Tiaret",
+  "communes": [
+    {
+      "nom": "Ain Bouchekif",
+      "lat": 35.3543704,
+      "lon": 1.5036248
+    },
+    {
+      "nom": "Ain Deheb",
+      "lat": 34.847125,
+      "lon": 1.530876
+    },
+    {
+      "nom": "Ain El Hadid",
+      "lat": 35.0604573,
+      "lon": 0.8713103
+    },
+    {
+      "nom": "Ain Kermes",
+      "lat": 34.9297691,
+      "lon": 1.00103
+    },
+    {
+      "nom": "Ain Zarit",
+      "lat": 35.351973,
+      "lon": 1.6572618
+    },
+    {
+      "nom": "Chehaima",
+      "lat": 34.897482,
+      "lon": 1.2948222
+    },
+    {
+      "nom": "Dahmouni",
+      "lat": 35.4166137,
+      "lon": 1.4674473
+    },
+    {
+      "nom": "Djillali Ben Amar",
+      "lat": 35.4442917,
+      "lon": 0.8475566
+    },
+    {
+      "nom": "Faidja",
+      "lat": 35.3599899,
+      "lon": 1.3916159
+    },
+    {
+      "nom": "Frenda",
+      "lat": 35.0625636,
+      "lon": 1.0403751
+    },
+    {
+      "nom": "Guertoufa",
+      "lat": 35.3929502,
+      "lon": 1.246283
+    },
+    {
+      "nom": "Madna",
+      "lat": 35.3599899,
+      "lon": 1.3916159
+    },
+    {
+      "nom": "Mahdia",
+      "lat": 35.4312648,
+      "lon": 1.7415474
+    },
+    {
+      "nom": "Mechraa Safa",
+      "lat": 35.3599899,
+      "lon": 1.3916159
+    },
+    {
+      "nom": "Medrissa",
+      "lat": 34.8949768,
+      "lon": 1.2315845
+    },
+    {
+      "nom": "Medroussa",
+      "lat": 35.1752197,
+      "lon": 1.1979175
+    },
+    {
+      "nom": "Meghila",
+      "lat": 35.3633423,
+      "lon": 1.3249683
+    },
+    {
+      "nom": "Mellakou",
+      "lat": 35.2514714,
+      "lon": 1.2272501
+    },
+    {
+      "nom": "Nadorah",
+      "lat": 35.2514714,
+      "lon": 1.2272501
+    },
+    {
+      "nom": "Naima",
+      "lat": 35.092594,
+      "lon": 1.4729726
+    },
+    {
+      "nom": "Oued Lilli",
+      "lat": 35.5119281,
+      "lon": 1.2582952
+    },
+    {
+      "nom": "Ouled Djerad",
+      "lat": 35.3599899,
+      "lon": 1.3916159
+    },
+    {
+      "nom": "Rahouia",
+      "lat": 35.5308956,
+      "lon": 1.0130642
+    },
+    {
+      "nom": "Sebaine",
+      "lat": 35.4574363,
+      "lon": 1.5985322
+    },
+    {
+      "nom": "Sebt",
+      "lat": 35.3599899,
+      "lon": 1.3916159
+    },
+    {
+      "nom": "Sidi Abderrahmane",
+      "lat": 34.7996374,
+      "lon": 1.1235237
+    },
+    {
+      "nom": "Sidi Ali Mellal",
+      "lat": 35.5635054,
+      "lon": 1.2199974
+    },
+    {
+      "nom": "Sidi Bakhti",
+      "lat": 35.2393277,
+      "lon": 0.9755382
+    },
+    {
+      "nom": "Sidi Hosni",
+      "lat": 35.4697136,
+      "lon": 1.5114355
+    },
+    {
+      "nom": "Sougueur",
+      "lat": 35.1812014,
+      "lon": 1.4648287
+    },
+    {
+      "nom": "Tagdemt",
+      "lat": 35.3354988,
+      "lon": 1.2243641
+    },
+    {
+      "nom": "Takhemaret",
+      "lat": 35.1048114,
+      "lon": 0.6649302
+    },
+    {
+      "nom": "Tiaret",
+      "lat": 35.3599696,
+      "lon": 1.3215754
+    },
+    {
+      "nom": "Tidda",
+      "lat": 35.583236,
+      "lon": 1.263181
+    },
+    {
+      "nom": "Tousnina",
+      "lat": 35.1140017,
+      "lon": 1.2658846
+    },
+    {
+      "nom": "Zmalet El Emir Aek",
+      "lat": 34.899755,
+      "lon": 2.279362
+    }
+  ]
+}

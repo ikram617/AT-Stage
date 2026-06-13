@@ -1,0 +1,52 @@
+{
+  "code": 30,
+  "nom": "Ouargla",
+  "label": "30 - Ouargla",
+  "communes": [
+    {
+      "nom": "Ain Beida",
+      "lat": 31.8717,
+      "lon": 5.3888
+    },
+    {
+      "nom": "Balidat Ameur",
+      "lat": 32.8854,
+      "lon": 5.9793
+    },
+    {
+      "nom": "El Borma",
+      "lat": 31.5891,
+      "lon": 9.1791
+    },
+    {
+      "nom": "Hassi Ben Abdellah",
+      "lat": 31.9603,
+      "lon": 5.4684
+    },
+    {
+      "nom": "Hassi Messaoud",
+      "lat": 31.6148,
+      "lon": 6.0727
+    },
+    {
+      "nom": "Ngoussa",
+      "lat": 32.0744,
+      "lon": 5.3091
+    },
+    {
+      "nom": "Ouargla",
+      "lat": 31.8974,
+      "lon": 5.3421
+    },
+    {
+      "nom": "Rouissat",
+      "lat": 31.8694,
+      "lon": 5.3366
+    },
+    {
+      "nom": "Sidi Khouiled",
+      "lat": 31.9137,
+      "lon": 5.419
+    }
+  ]
+}

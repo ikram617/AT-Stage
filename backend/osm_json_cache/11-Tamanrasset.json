@@ -1,0 +1,37 @@
+{
+  "code": 11,
+  "nom": "Tamanrasset",
+  "label": "11 - Tamanrasset",
+  "communes": [
+    {
+      "nom": "Abalessa",
+      "lat": 21.984742,
+      "lon": 2.2077874
+    },
+    {
+      "nom": "Idles",
+      "lat": 23.8174829,
+      "lon": 5.9250425
+    },
+    {
+      "nom": "In Amguel",
+      "lat": 24.9098562,
+      "lon": 1.2189579
+    },
+    {
+      "nom": "Tamanghasset",
+      "lat": 22.2707733,
+      "lon": 4.5540574
+    },
+    {
+      "nom": "Tazouk",
+      "lat": 23.4241274,
+      "lon": 6.2425195
+    },
+    {
+      "nom": "Tinzaouatine",
+      "lat": 20.4281421,
+      "lon": 2.0907022
+    }
+  ]
+}

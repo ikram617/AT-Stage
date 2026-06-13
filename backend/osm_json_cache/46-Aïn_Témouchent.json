@@ -1,0 +1,147 @@
+{
+  "code": 46,
+  "nom": "Aïn Témouchent",
+  "label": "46 - Aïn Témouchent",
+  "communes": [
+    {
+      "nom": "Aghlal",
+      "lat": 35.1356,
+      "lon": -1.0684
+    },
+    {
+      "nom": "Ain El Arbaa",
+      "lat": 35.342,
+      "lon": -0.8817
+    },
+    {
+      "nom": "Ain Kihal",
+      "lat": 35.1401,
+      "lon": -1.1948
+    },
+    {
+      "nom": "Ain Temouchent",
+      "lat": 35.2254,
+      "lon": -1.1398
+    },
+    {
+      "nom": "Ain Tolba",
+      "lat": 35.1828,
+      "lon": -1.2497
+    },
+    {
+      "nom": "Aoubellil",
+      "lat": 35.0705,
+      "lon": -0.9915
+    },
+    {
+      "nom": "Beni Saf",
+      "lat": 35.2366,
+      "lon": -1.3843
+    },
+    {
+      "nom": "Bou Zedjar",
+      "lat": 35.5099,
+      "lon": -1.1673
+    },
+    {
+      "nom": "Chaabet El Ham",
+      "lat": 35.2703,
+      "lon": -1.1014
+    },
+    {
+      "nom": "Chentouf",
+      "lat": 35.2389,
+      "lon": -1.03
+    },
+    {
+      "nom": "El Amria",
+      "lat": 35.4607,
+      "lon": -1.0162
+    },
+    {
+      "nom": "El Emir Abdelkader",
+      "lat": 35.1603,
+      "lon": -1.4035
+    },
+    {
+      "nom": "El Malah",
+      "lat": 35.3286,
+      "lon": -1.0931
+    },
+    {
+      "nom": "El Messaid",
+      "lat": 35.4763,
+      "lon": -1.1234
+    },
+    {
+      "nom": "Hammam Bouhadjar",
+      "lat": 35.3151,
+      "lon": -0.9695
+    },
+    {
+      "nom": "Hassasna",
+      "lat": 35.2075,
+      "lon": -0.986
+    },
+    {
+      "nom": "Hassi El Ghella",
+      "lat": 35.389,
+      "lon": -1.0519
+    },
+    {
+      "nom": "Oued Berkeche",
+      "lat": 35.1581,
+      "lon": -0.9833
+    },
+    {
+      "nom": "Oued Sabah",
+      "lat": 35.3084,
+      "lon": -0.8102
+    },
+    {
+      "nom": "Ouled Boudjemaa",
+      "lat": 35.4092,
+      "lon": -1.192
+    },
+    {
+      "nom": "Ouled Kihal",
+      "lat": 35.3039,
+      "lon": -1.236
+    },
+    {
+      "nom": "Oulhaca El Gheraba",
+      "lat": 35.1671,
+      "lon": -1.5051
+    },
+    {
+      "nom": "Sidi Ben Adda",
+      "lat": 35.2411,
+      "lon": -1.181
+    },
+    {
+      "nom": "Sidi Boumediene",
+      "lat": 35.2882,
+      "lon": -0.8926
+    },
+    {
+      "nom": "Sidi Ouriache",
+      "lat": 35.1244,
+      "lon": -1.5051
+    },
+    {
+      "nom": "Sidi Safi",
+      "lat": 35.2165,
+      "lon": -1.3129
+    },
+    {
+      "nom": "Tamzoura",
+      "lat": 35.3443,
+      "lon": -0.6564
+    },
+    {
+      "nom": "Terga",
+      "lat": 35.3532,
+      "lon": -1.1783
+    }
+  ]
+}

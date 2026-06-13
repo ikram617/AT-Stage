@@ -1,0 +1,17 @@
+{
+  "code": 50,
+  "nom": "Bordj Badji Mokhtar",
+  "label": "50 - Bordj Badji Mokhtar",
+  "communes": [
+    {
+      "nom": "Bordj Badji Mokhtar",
+      "lat": 22.9676154,
+      "lon": -3.946422
+    },
+    {
+      "nom": "Timiaouine",
+      "lat": 20.9259001,
+      "lon": 0.7958642
+    }
+  ]
+}

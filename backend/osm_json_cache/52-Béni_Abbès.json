@@ -1,0 +1,72 @@
+{
+  "code": 52,
+  "nom": "Béni Abbès",
+  "label": "52 - Béni Abbès",
+  "communes": [
+    {
+      "nom": "Beni Abbes",
+      "lat": 30.1302299,
+      "lon": -2.1782542
+    },
+    {
+      "nom": "Beni Ikhlef",
+      "lat": -1.5,
+      "lon": 29.85
+    },
+    {
+      "nom": "El Ouata",
+      "lat": 29.854111,
+      "lon": -1.8650158
+    },
+    {
+      "nom": "Foggaret Ezzaouia",
+      "lat": 27.3604139,
+      "lon": 2.8384638
+    },
+    {
+      "nom": "Igli",
+      "lat": 30.452849,
+      "lon": -2.3000801
+    },
+    {
+      "nom": "In Ghar",
+      "lat": 27.1037909,
+      "lon": 1.8904637
+    },
+    {
+      "nom": "In Salah",
+      "lat": 27.1955358,
+      "lon": 2.4666218
+    },
+    {
+      "nom": "Kerzaz",
+      "lat": 29.4602231,
+      "lon": -1.4553024
+    },
+    {
+      "nom": "Ksabi",
+      "lat": 29.0984238,
+      "lon": -1.0022456
+    },
+    {
+      "nom": "Ouled Khoudir",
+      "lat": 29.2558699,
+      "lon": -1.0641503
+    },
+    {
+      "nom": "Tabelbala",
+      "lat": -3.25,
+      "lon": 29.4
+    },
+    {
+      "nom": "Tamtert",
+      "lat": -1.95,
+      "lon": 30.1333
+    },
+    {
+      "nom": "Timoudi",
+      "lat": 29.3195526,
+      "lon": -1.135803
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "code": 47,
+  "nom": "Ghardaïa",
+  "label": "47 - Ghardaïa",
+  "communes": [
+    {
+      "nom": "Berriane",
+      "lat": 32.7919,
+      "lon": 3.7628
+    },
+    {
+      "nom": "Bounoura",
+      "lat": 32.4194,
+      "lon": 3.7079
+    },
+    {
+      "nom": "Dhayet Bendhahoua",
+      "lat": 32.4704,
+      "lon": 3.6063
+    },
+    {
+      "nom": "El Atteuf",
+      "lat": 32.4101,
+      "lon": 3.7491
+    },
+    {
+      "nom": "El Guerrara",
+      "lat": 32.7226,
+      "lon": 4.4934
+    },
+    {
+      "nom": "El Meniaa",
+      "lat": 30.5197,
+      "lon": 2.8812
+    },
+    {
+      "nom": "Ghardaia",
+      "lat": 32.4171,
+      "lon": 3.6832
+    },
+    {
+      "nom": "Mansoura",
+      "lat": 31.9125,
+      "lon": 3.7463
+    },
+    {
+      "nom": "Metlili",
+      "lat": 32.2058,
+      "lon": 3.6282
+    },
+    {
+      "nom": "Sebseb",
+      "lat": 32.0965,
+      "lon": 3.5898
+    },
+    {
+      "nom": "Zelfana",
+      "lat": 32.612,
+      "lon": 3.312
+    }
+  ]
+}

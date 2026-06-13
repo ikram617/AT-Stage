@@ -1,0 +1,262 @@
+{
+  "code": 13,
+  "nom": "Tlemcen",
+  "label": "13 - Tlemcen",
+  "communes": [
+    {
+      "nom": "Ain Fetah",
+      "lat": 36.0036103,
+      "lon": 0.3170785
+    },
+    {
+      "nom": "Ain Fezza",
+      "lat": 34.8794264,
+      "lon": -1.2421418
+    },
+    {
+      "nom": "Ain Ghoraba",
+      "lat": 34.7147251,
+      "lon": -1.4039435
+    },
+    {
+      "nom": "Ain Kebira",
+      "lat": 35.0317001,
+      "lon": -1.686101
+    },
+    {
+      "nom": "Ain Nehala",
+      "lat": 35.0273782,
+      "lon": -0.9359407
+    },
+    {
+      "nom": "Ain Tallout",
+      "lat": 34.9238688,
+      "lon": -0.9667326
+    },
+    {
+      "nom": "Ain Youcef",
+      "lat": 35.048443,
+      "lon": -1.3841379
+    },
+    {
+      "nom": "Amieur",
+      "lat": 34.8959541,
+      "lon": -1.3150979
+    },
+    {
+      "nom": "Azails",
+      "lat": 34.8959541,
+      "lon": -1.3150979
+    },
+    {
+      "nom": "Bab El Assa",
+      "lat": 34.9654779,
+      "lon": -2.0399109
+    },
+    {
+      "nom": "Beni Bahdel",
+      "lat": 34.7114024,
+      "lon": -1.5174008
+    },
+    {
+      "nom": "Beni Boussaid",
+      "lat": 34.6490781,
+      "lon": -1.762104
+    },
+    {
+      "nom": "Beni Mester",
+      "lat": 34.8639575,
+      "lon": -1.4356042
+    },
+    {
+      "nom": "Beni Ouarsous",
+      "lat": 35.0818832,
+      "lon": -1.5645648
+    },
+    {
+      "nom": "Beni Semiel",
+      "lat": 34.8639575,
+      "lon": -1.4356042
+    },
+    {
+      "nom": "Beni Snous",
+      "lat": 34.6593315,
+      "lon": -1.5615608
+    },
+    {
+      "nom": "Bensekrane",
+      "lat": 35.0745555,
+      "lon": -1.2362705
+    },
+    {
+      "nom": "Bouhlou",
+      "lat": 34.7787462,
+      "lon": -1.5850461
+    },
+    {
+      "nom": "Chetouane",
+      "lat": 34.9175348,
+      "lon": -1.3164927
+    },
+    {
+      "nom": "Dar Yaghmouracene",
+      "lat": 34.8959541,
+      "lon": -1.3150979
+    },
+    {
+      "nom": "Djebala",
+      "lat": 34.9775481,
+      "lon": -1.8940714
+    },
+    {
+      "nom": "El Bouihi",
+      "lat": 34.8959541,
+      "lon": -1.3150979
+    },
+    {
+      "nom": "El Fehoul",
+      "lat": 35.1166788,
+      "lon": -1.2970948
+    },
+    {
+      "nom": "Fellaoucene",
+      "lat": 35.013723,
+      "lon": -1.6538313
+    },
+    {
+      "nom": "Ghazaouet",
+      "lat": 35.0934337,
+      "lon": -1.8720748
+    },
+    {
+      "nom": "Hammam Boughrara",
+      "lat": 34.8904539,
+      "lon": -1.6555881
+    },
+    {
+      "nom": "Hennaya",
+      "lat": 34.9490231,
+      "lon": -1.3866808
+    },
+    {
+      "nom": "Honaine",
+      "lat": 35.1800515,
+      "lon": -1.657691
+    },
+    {
+      "nom": "Maghnia",
+      "lat": 34.8481781,
+      "lon": -1.780215
+    },
+    {
+      "nom": "Mansourah",
+      "lat": 34.8704299,
+      "lon": -1.389299
+    },
+    {
+      "nom": "Marsa Ben Mhidi",
+      "lat": 35.0790982,
+      "lon": -2.2135629
+    },
+    {
+      "nom": "Msirda Fouaga",
+      "lat": 35.0142663,
+      "lon": -2.073219
+    },
+    {
+      "nom": "Nedroma",
+      "lat": 35.0141436,
+      "lon": -1.769829
+    },
+    {
+      "nom": "Oued Chouly",
+      "lat": 34.8666661,
+      "lon": -1.1420878
+    },
+    {
+      "nom": "Ouled Mimoun",
+      "lat": 34.9018053,
+      "lon": -1.0442162
+    },
+    {
+      "nom": "Ouled Riyah",
+      "lat": 34.9615122,
+      "lon": -1.5020585
+    },
+    {
+      "nom": "Remchi",
+      "lat": 35.0550485,
+      "lon": -1.4635847
+    },
+    {
+      "nom": "Sabra",
+      "lat": 34.8255654,
+      "lon": -1.5368414
+    },
+    {
+      "nom": "Sebbaa Chioukh",
+      "lat": 35.1563716,
+      "lon": -1.3705445
+    },
+    {
+      "nom": "Sebdou",
+      "lat": 34.6392357,
+      "lon": -1.3469271
+    },
+    {
+      "nom": "Sidi Abdelli",
+      "lat": 35.0652344,
+      "lon": -1.1432004
+    },
+    {
+      "nom": "Sidi Djillali",
+      "lat": 34.4459186,
+      "lon": -1.5761732
+    },
+    {
+      "nom": "Sidi Medjahed",
+      "lat": 34.77568,
+      "lon": -1.6426706
+    },
+    {
+      "nom": "Souahlia",
+      "lat": 35.0438386,
+      "lon": -1.9086172
+    },
+    {
+      "nom": "Souani",
+      "lat": 34.9184687,
+      "lon": -1.92235
+    },
+    {
+      "nom": "Souk El Khemis",
+      "lat": 35.1732293,
+      "lon": -1.5607239
+    },
+    {
+      "nom": "Souk Thlata",
+      "lat": 35.0194848,
+      "lon": -2.0213987
+    },
+    {
+      "nom": "Terni Beni Hediel",
+      "lat": 34.7966361,
+      "lon": -1.3623785
+    },
+    {
+      "nom": "Tianet",
+      "lat": 35.0491084,
+      "lon": -1.8584921
+    },
+    {
+      "nom": "Tlemcen",
+      "lat": 34.8959491,
+      "lon": -1.3501175
+    },
+    {
+      "nom": "Zenata",
+      "lat": 34.9849042,
+      "lon": -1.4760198
+    }
+  ]
+}

@@ -1,0 +1,147 @@
+{
+  "code": 18,
+  "nom": "Jijel",
+  "label": "18 - Jijel",
+  "communes": [
+    {
+      "nom": "Bordj T'her",
+      "lat": 36.7484784,
+      "lon": 6.0248638
+    },
+    {
+      "nom": "Boudria Beni Yadjis",
+      "lat": 36.5902781,
+      "lon": 5.6954215
+    },
+    {
+      "nom": "Bouraoui Belhadef",
+      "lat": 36.6979904,
+      "lon": 6.0968648
+    },
+    {
+      "nom": "Boussif Ouled Askeur",
+      "lat": 36.6455063,
+      "lon": 6.0109806
+    },
+    {
+      "nom": "Chahna",
+      "lat": 36.6772642,
+      "lon": 5.9446441
+    },
+    {
+      "nom": "Chekfa",
+      "lat": 36.7728541,
+      "lon": 5.9468436
+    },
+    {
+      "nom": "Djemaa Beni Habibi",
+      "lat": 36.809857,
+      "lon": 6.1050402
+    },
+    {
+      "nom": "Djmila",
+      "lat": 36.5827122,
+      "lon": 5.8287487
+    },
+    {
+      "nom": "El Ancer",
+      "lat": 36.7982581,
+      "lon": 6.1523866
+    },
+    {
+      "nom": "El Aouana",
+      "lat": 36.7383739,
+      "lon": 5.5575774
+    },
+    {
+      "nom": "El Kennar Nouchfi",
+      "lat": 36.8243495,
+      "lon": 5.9558128
+    },
+    {
+      "nom": "El Milia",
+      "lat": 36.7469209,
+      "lon": 6.2451046
+    },
+    {
+      "nom": "Emir Abdelkader",
+      "lat": 36.7557894,
+      "lon": 5.778586
+    },
+    {
+      "nom": "Erraguene",
+      "lat": 36.7962714,
+      "lon": 5.7504845
+    },
+    {
+      "nom": "Ghebala",
+      "lat": 36.6290636,
+      "lon": 6.3831317
+    },
+    {
+      "nom": "Jijel",
+      "lat": 36.7962663,
+      "lon": 5.715465
+    },
+    {
+      "nom": "Kaous",
+      "lat": 36.7590016,
+      "lon": 5.7313651
+    },
+    {
+      "nom": "Kemir Oued Adjoul",
+      "lat": 36.8774044,
+      "lon": 6.1179255
+    },
+    {
+      "nom": "Ouadjana",
+      "lat": 36.675,
+      "lon": 5.8128487
+    },
+    {
+      "nom": "Ouled Rabah",
+      "lat": 36.5974059,
+      "lon": 6.1619139
+    },
+    {
+      "nom": "Ouled Yahia Khadrouch",
+      "lat": 36.7223204,
+      "lon": 6.1822341
+    },
+    {
+      "nom": "Selma Benziada",
+      "lat": 36.6505425,
+      "lon": 5.5628345
+    },
+    {
+      "nom": "Settara",
+      "lat": 36.7183649,
+      "lon": 6.324544
+    },
+    {
+      "nom": "Sidi Abdelaziz",
+      "lat": 36.8535179,
+      "lon": 6.0439396
+    },
+    {
+      "nom": "Sidi Maarouf",
+      "lat": 36.6373452,
+      "lon": 6.2617134
+    },
+    {
+      "nom": "Taher",
+      "lat": 36.7775912,
+      "lon": 5.8348749
+    },
+    {
+      "nom": "Texena",
+      "lat": 36.6702895,
+      "lon": 5.6987689
+    },
+    {
+      "nom": "Ziamma Mansouriah",
+      "lat": 36.6501629,
+      "lon": 5.4284118
+    }
+  ]
+}

@@ -1,0 +1,137 @@
+{
+  "code": 31,
+  "nom": "Oran",
+  "label": "31 - Oran",
+  "communes": [
+    {
+      "nom": "Ain Biya",
+      "lat": 35.751,
+      "lon": -0.2829
+    },
+    {
+      "nom": "Ain Kerma",
+      "lat": 35.5836,
+      "lon": -0.975
+    },
+    {
+      "nom": "Ain Turk",
+      "lat": 35.6662,
+      "lon": -0.7498
+    },
+    {
+      "nom": "Arzew",
+      "lat": 35.8044,
+      "lon": -0.3214
+    },
+    {
+      "nom": "Ben Freha",
+      "lat": 35.6283,
+      "lon": -0.4202
+    },
+    {
+      "nom": "Bethioua",
+      "lat": 35.7398,
+      "lon": -0.2609
+    },
+    {
+      "nom": "Bir El Djir",
+      "lat": 35.6729,
+      "lon": -0.5548
+    },
+    {
+      "nom": "Boufatis",
+      "lat": 35.6149,
+      "lon": -0.412
+    },
+    {
+      "nom": "Bousfer",
+      "lat": 35.6461,
+      "lon": -0.8102
+    },
+    {
+      "nom": "Boutlelis",
+      "lat": 35.5076,
+      "lon": -0.9009
+    },
+    {
+      "nom": "El Ancar",
+      "lat": 35.6216,
+      "lon": -0.8679
+    },
+    {
+      "nom": "El Braya",
+      "lat": 35.5657,
+      "lon": -0.5191
+    },
+    {
+      "nom": "El Karma",
+      "lat": 35.5479,
+      "lon": -0.5795
+    },
+    {
+      "nom": "Es Senia",
+      "lat": 35.5859,
+      "lon": -0.618
+    },
+    {
+      "nom": "Gdyel",
+      "lat": 35.7175,
+      "lon": -0.423
+    },
+    {
+      "nom": "Hassi Ben Okba",
+      "lat": 35.664,
+      "lon": -0.4669
+    },
+    {
+      "nom": "Hassi Bounif",
+      "lat": 35.635,
+      "lon": -0.4999
+    },
+    {
+      "nom": "Hassi Mefsoukh",
+      "lat": 35.7376,
+      "lon": -0.3735
+    },
+    {
+      "nom": "Marsat El Hadjadj",
+      "lat": 35.7198,
+      "lon": -0.1675
+    },
+    {
+      "nom": "Mers El Kebir",
+      "lat": 35.6751,
+      "lon": -0.7196
+    },
+    {
+      "nom": "Messerghin",
+      "lat": 35.5546,
+      "lon": -0.7306
+    },
+    {
+      "nom": "Oran",
+      "lat": 35.6372,
+      "lon": -0.6482
+    },
+    {
+      "nom": "Oued Tlelat",
+      "lat": 35.4853,
+      "lon": -0.4504
+    },
+    {
+      "nom": "Sidi Ben Yabka",
+      "lat": 35.7643,
+      "lon": -0.3955
+    },
+    {
+      "nom": "Sidi Chami",
+      "lat": 35.5859,
+      "lon": -0.5191
+    },
+    {
+      "nom": "Tafraoui",
+      "lat": 35.4182,
+      "lon": -0.5273
+    }
+  ]
+}

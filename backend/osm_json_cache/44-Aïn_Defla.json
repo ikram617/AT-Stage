@@ -1,0 +1,187 @@
+{
+  "code": 44,
+  "nom": "Aïn Defla",
+  "label": "44 - Aïn Defla",
+  "communes": [
+    {
+      "nom": "Ain Benian",
+      "lat": 36.291,
+      "lon": 2.472
+    },
+    {
+      "nom": "Ain Bouyahia",
+      "lat": 36.2199,
+      "lon": 1.7661
+    },
+    {
+      "nom": "Ain Defla",
+      "lat": 36.2,
+      "lon": 1.9693
+    },
+    {
+      "nom": "Ain Lechiakh",
+      "lat": 36.0935,
+      "lon": 2.4033
+    },
+    {
+      "nom": "Ain Soltane",
+      "lat": 36.1822,
+      "lon": 2.2961
+    },
+    {
+      "nom": "Ain Torki",
+      "lat": 36.2686,
+      "lon": 2.3016
+    },
+    {
+      "nom": "Arib",
+      "lat": 36.2199,
+      "lon": 2.0654
+    },
+    {
+      "nom": "Barbouche",
+      "lat": 36.0358,
+      "lon": 2.4829
+    },
+    {
+      "nom": "Bathia",
+      "lat": 35.8512,
+      "lon": 1.8402
+    },
+    {
+      "nom": "Belaas",
+      "lat": 35.918,
+      "lon": 1.8512
+    },
+    {
+      "nom": "Ben Allal",
+      "lat": 36.2465,
+      "lon": 2.1588
+    },
+    {
+      "nom": "Bir Ouled Khelifa",
+      "lat": 36.1179,
+      "lon": 2.233
+    },
+    {
+      "nom": "Bordj Emir Khaled",
+      "lat": 36.058,
+      "lon": 2.2055
+    },
+    {
+      "nom": "Boumedfaa",
+      "lat": 36.3063,
+      "lon": 2.4774
+    },
+    {
+      "nom": "Bourached",
+      "lat": 36.1046,
+      "lon": 1.9281
+    },
+    {
+      "nom": "Djelida",
+      "lat": 36.1357,
+      "lon": 2.0847
+    },
+    {
+      "nom": "Djemaa Ouled Chikh",
+      "lat": 36.0136,
+      "lon": 2.005
+    },
+    {
+      "nom": "Djendel",
+      "lat": 36.1534,
+      "lon": 2.4088
+    },
+    {
+      "nom": "El Abadia",
+      "lat": 36.2044,
+      "lon": 1.6837
+    },
+    {
+      "nom": "El Amra",
+      "lat": 36.2398,
+      "lon": 1.8457
+    },
+    {
+      "nom": "El Attaf",
+      "lat": 36.1578,
+      "lon": 1.6699
+    },
+    {
+      "nom": "El Hassania",
+      "lat": 35.8824,
+      "lon": 1.9171
+    },
+    {
+      "nom": "El Maine",
+      "lat": 35.9869,
+      "lon": 1.7578
+    },
+    {
+      "nom": "Hammam Righa",
+      "lat": 36.3196,
+      "lon": 2.4005
+    },
+    {
+      "nom": "Hoceinia",
+      "lat": 36.2531,
+      "lon": 2.4005
+    },
+    {
+      "nom": "Khemis Miliana",
+      "lat": 36.1955,
+      "lon": 2.2
+    },
+    {
+      "nom": "Mekhatria",
+      "lat": 36.2376,
+      "lon": 1.9611
+    },
+    {
+      "nom": "Miliana",
+      "lat": 36.2266,
+      "lon": 2.211
+    },
+    {
+      "nom": "Oued Chorfa",
+      "lat": 36.1357,
+      "lon": 2.5159
+    },
+    {
+      "nom": "Oued Djemaa",
+      "lat": 35.7354,
+      "lon": 0.6839
+    },
+    {
+      "nom": "Rouina",
+      "lat": 36.1867,
+      "lon": 1.8155
+    },
+    {
+      "nom": "Sidi Lakhdar",
+      "lat": 36.2022,
+      "lon": 2.1616
+    },
+    {
+      "nom": "Tachta Zegagha",
+      "lat": 36.2863,
+      "lon": 1.6507
+    },
+    {
+      "nom": "Tarik Ibn Ziad",
+      "lat": 35.9358,
+      "lon": 2.1506
+    },
+    {
+      "nom": "Tiberkanine",
+      "lat": 36.1024,
+      "lon": 1.6342
+    },
+    {
+      "nom": "Zeddine",
+      "lat": 36.1024,
+      "lon": 1.8512
+    }
+  ]
+}

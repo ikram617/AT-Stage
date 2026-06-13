@@ -1,0 +1,67 @@
+{
+  "code": 23,
+  "nom": "Annaba",
+  "label": "23 - Annaba",
+  "communes": [
+    {
+      "nom": "Ain Berda",
+      "lat": 36.6718947,
+      "lon": 7.5182507
+    },
+    {
+      "nom": "Annaba",
+      "lat": 36.9184139,
+      "lon": 7.6752351
+    },
+    {
+      "nom": "Berrahel",
+      "lat": 36.8106093,
+      "lon": 7.4170564
+    },
+    {
+      "nom": "Chetaibi",
+      "lat": 37.0130857,
+      "lon": 7.3259042
+    },
+    {
+      "nom": "Cheurfa",
+      "lat": 36.721776,
+      "lon": 7.5026509
+    },
+    {
+      "nom": "El Bouni",
+      "lat": 36.8404084,
+      "lon": 7.6381562
+    },
+    {
+      "nom": "El Hadjar",
+      "lat": 36.7742133,
+      "lon": 7.6264832
+    },
+    {
+      "nom": "Eulma",
+      "lat": 36.7095806,
+      "lon": 7.3636267
+    },
+    {
+      "nom": "Oued El Aneb",
+      "lat": 36.936216,
+      "lon": 7.4220268
+    },
+    {
+      "nom": "Seraidi",
+      "lat": 36.9465799,
+      "lon": 7.5518106
+    },
+    {
+      "nom": "Sidi Amer",
+      "lat": 36.8079881,
+      "lon": 7.5912068
+    },
+    {
+      "nom": "Treat",
+      "lat": 36.933511,
+      "lon": 7.3342297
+    }
+  ]
+}

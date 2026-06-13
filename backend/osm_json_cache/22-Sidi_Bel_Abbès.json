@@ -1,0 +1,267 @@
+{
+  "code": 22,
+  "nom": "Sidi Bel Abbès",
+  "label": "22 - Sidi Bel Abbès",
+  "communes": [
+    {
+      "nom": "Ain Adden",
+      "lat": 35.330304,
+      "lon": -0.2660537
+    },
+    {
+      "nom": "Ain El Berd",
+      "lat": 35.3828523,
+      "lon": -0.5661419
+    },
+    {
+      "nom": "Ain Kada",
+      "lat": 35.1368876,
+      "lon": -0.8607745
+    },
+    {
+      "nom": "Ain Thrid",
+      "lat": 35.284671,
+      "lon": -0.6782448
+    },
+    {
+      "nom": "Ain Tindamine",
+      "lat": 34.6890805,
+      "lon": -0.7245612
+    },
+    {
+      "nom": "Amarnas",
+      "lat": 35.0999604,
+      "lon": -0.6567147
+    },
+    {
+      "nom": "Badredine El Mokrani",
+      "lat": 35.0098106,
+      "lon": -0.8547677
+    },
+    {
+      "nom": "Belarbi",
+      "lat": 35.1309933,
+      "lon": -0.5169609
+    },
+    {
+      "nom": "Ben Badis",
+      "lat": 34.92614,
+      "lon": -0.9757259
+    },
+    {
+      "nom": "Benachiba Chelia",
+      "lat": 34.9637049,
+      "lon": -0.6169817
+    },
+    {
+      "nom": "Bir El Hammam",
+      "lat": 34.4187435,
+      "lon": -0.5031502
+    },
+    {
+      "nom": "Boudjebaa El Bordj",
+      "lat": 35.3519121,
+      "lon": -0.3280353
+    },
+    {
+      "nom": "Boukhanafis",
+      "lat": 35.046047,
+      "lon": -0.7594111
+    },
+    {
+      "nom": "Chetouane Belaila",
+      "lat": 34.950063,
+      "lon": -0.8453465
+    },
+    {
+      "nom": "Dhaya",
+      "lat": 34.6752163,
+      "lon": -0.6322849
+    },
+    {
+      "nom": "El Hacaiba",
+      "lat": 34.699542,
+      "lon": -0.7694292
+    },
+    {
+      "nom": "Hassi Dahou",
+      "lat": 35.108878,
+      "lon": -0.5963542
+    },
+    {
+      "nom": "Hassi Zehana",
+      "lat": 35.0251892,
+      "lon": -0.8964662
+    },
+    {
+      "nom": "Lamtar",
+      "lat": 35.0592826,
+      "lon": -0.8357771
+    },
+    {
+      "nom": "Makedra",
+      "lat": 35.4412149,
+      "lon": -0.4348398
+    },
+    {
+      "nom": "Marhoum",
+      "lat": 34.4457418,
+      "lon": -0.2038049
+    },
+    {
+      "nom": "Mcid",
+      "lat": 35.139035,
+      "lon": -0.2525651
+    },
+    {
+      "nom": "Merine",
+      "lat": 34.7805884,
+      "lon": -0.4548597
+    },
+    {
+      "nom": "Mezaourou",
+      "lat": 34.834391,
+      "lon": -0.795146
+    },
+    {
+      "nom": "Mostefa Ben Brahim",
+      "lat": 35.1721396,
+      "lon": -0.4142215
+    },
+    {
+      "nom": "Moulay Slissen",
+      "lat": 34.821448,
+      "lon": -0.769794
+    },
+    {
+      "nom": "Oued Sbaa",
+      "lat": 34.5903826,
+      "lon": -0.717178
+    },
+    {
+      "nom": "Oued Sefioun",
+      "lat": 35.0664471,
+      "lon": -0.3616477
+    },
+    {
+      "nom": "Oued Taourira",
+      "lat": 34.8024792,
+      "lon": -0.3307029
+    },
+    {
+      "nom": "Ras El Ma",
+      "lat": 34.5039368,
+      "lon": -0.8212282
+    },
+    {
+      "nom": "Redjem Demouche",
+      "lat": 34.4269826,
+      "lon": -0.8185673
+    },
+    {
+      "nom": "Sehala Thaoura",
+      "lat": 35.2240535,
+      "lon": -0.929592
+    },
+    {
+      "nom": "Sfissef",
+      "lat": 35.2442317,
+      "lon": -0.3162029
+    },
+    {
+      "nom": "Sidi Ali Benyoub",
+      "lat": 34.9488777,
+      "lon": -0.794194
+    },
+    {
+      "nom": "Sidi Ali Boussidi",
+      "lat": 35.1040625,
+      "lon": -0.8716112
+    },
+    {
+      "nom": "Sidi Bel Abbes",
+      "lat": 35.2063139,
+      "lon": -0.7001772
+    },
+    {
+      "nom": "Sidi Brahim",
+      "lat": 35.2591019,
+      "lon": -0.5991847
+    },
+    {
+      "nom": "Sidi Chaib",
+      "lat": 34.5927664,
+      "lon": -0.555625
+    },
+    {
+      "nom": "Sidi Dahou",
+      "lat": 35.1171744,
+      "lon": -0.9150603
+    },
+    {
+      "nom": "Sidi Hamadouche",
+      "lat": 35.3114849,
+      "lon": -0.5885866
+    },
+    {
+      "nom": "Sidi Khaled",
+      "lat": 35.1200723,
+      "lon": -0.7417066
+    },
+    {
+      "nom": "Sidi Lahcene",
+      "lat": 35.1925854,
+      "lon": -0.8112957
+    },
+    {
+      "nom": "Sidi Yacoub",
+      "lat": 35.1557033,
+      "lon": -0.8069145
+    },
+    {
+      "nom": "Tabia",
+      "lat": 35.0181729,
+      "lon": -0.7786567
+    },
+    {
+      "nom": "Tafissour",
+      "lat": 34.6926458,
+      "lon": -0.2074045
+    },
+    {
+      "nom": "Taoudmout",
+      "lat": 34.5881382,
+      "lon": -0.1211071
+    },
+    {
+      "nom": "Teghalimet",
+      "lat": 34.8852137,
+      "lon": -0.563019
+    },
+    {
+      "nom": "Telagh",
+      "lat": 34.8036693,
+      "lon": -0.6044224
+    },
+    {
+      "nom": "Tenira",
+      "lat": 35.0063927,
+      "lon": -0.5771282
+    },
+    {
+      "nom": "Tessala",
+      "lat": 35.2714294,
+      "lon": -0.8558205
+    },
+    {
+      "nom": "Tilmouni",
+      "lat": 35.1832214,
+      "lon": -0.5905178
+    },
+    {
+      "nom": "Zerouala",
+      "lat": 35.2429835,
+      "lon": -0.5271103
+    }
+  ]
+}

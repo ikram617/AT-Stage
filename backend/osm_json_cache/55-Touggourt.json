@@ -1,0 +1,82 @@
+{
+  "code": 55,
+  "nom": "Touggourt",
+  "label": "55 - Touggourt",
+  "communes": [
+    {
+      "nom": "Benaceur",
+      "lat": 33.0444,
+      "lon": 6.4407
+    },
+    {
+      "nom": "Blidet Amor",
+      "lat": 6.0,
+      "lon": 32.95
+    },
+    {
+      "nom": "El Allia",
+      "lat": 32.6313,
+      "lon": 5.4245
+    },
+    {
+      "nom": "El Hadjira",
+      "lat": 32.548,
+      "lon": 5.5124
+    },
+    {
+      "nom": "Hadjira",
+      "lat": 5.5167,
+      "lon": 32.5667
+    },
+    {
+      "nom": "Megarine",
+      "lat": 33.1272,
+      "lon": 6.0947
+    },
+    {
+      "nom": "Mnaguer",
+      "lat": 33.0467,
+      "lon": 6.405
+    },
+    {
+      "nom": "Nezla",
+      "lat": 33.0167,
+      "lon": 6.0507
+    },
+    {
+      "nom": "Sidi Slimane",
+      "lat": 33.2238,
+      "lon": 6.0919
+    },
+    {
+      "nom": "Taibet",
+      "lat": 33.019,
+      "lon": 6.3995
+    },
+    {
+      "nom": "Tamacine",
+      "lat": 32.9568,
+      "lon": 6.0233
+    },
+    {
+      "nom": "Tebesbest",
+      "lat": 33.0536,
+      "lon": 6.0809
+    },
+    {
+      "nom": "Temacine",
+      "lat": 6.0167,
+      "lon": 33.0167
+    },
+    {
+      "nom": "Touggourt",
+      "lat": 33.0351,
+      "lon": 6.0672
+    },
+    {
+      "nom": "Zaouia El Abidia",
+      "lat": 33.072,
+      "lon": 6.0809
+    }
+  ]
+}

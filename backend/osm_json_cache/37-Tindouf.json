@@ -1,0 +1,17 @@
+{
+  "code": 37,
+  "nom": "Tindouf",
+  "label": "37 - Tindouf",
+  "communes": [
+    {
+      "nom": "Oum El Assel",
+      "lat": 28.2983,
+      "lon": -6.5341
+    },
+    {
+      "nom": "Tindouf",
+      "lat": 27.5972,
+      "lon": -8.1491
+    }
+  ]
+}
