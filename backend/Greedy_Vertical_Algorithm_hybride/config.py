@@ -4,6 +4,7 @@ from pydantic import field_validator
 from pydantic_settings import BaseSettings  # lit aussi les .env
 
 
+
 class ATConfig(BaseSettings):
     OLT_CARDS_PER_OLT: int = 2
     GPON_PORTS_PER_CARD: int = 16
